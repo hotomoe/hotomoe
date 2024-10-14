@@ -11,7 +11,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			{{ message }}
 		</MkInfo>
 		<div v-if="!totpLogin" class="normal-signin _gaps_m">
-			<MkInput v-model="username" :placeholder="i18n.ts.username" type="text" pattern="^[a-zA-Z0-9_]+$" :spellcheck="false" autocomplete="username webauthn" autofocus required data-cy-signin-username @update:modelValue="onUsernameChange">
+			<MkInput v-model="username" :debounce="true" :placeholder="i18n.ts.username" type="text" pattern="^[a-zA-Z0-9_]+$" :spellcheck="false" autocomplete="username webauthn" autofocus required data-cy-signin-username @update:modelValue="onUsernameChange">
 				<template #prefix>@</template>
 				<template #suffix>@{{ host }}</template>
 			</MkInput>
@@ -19,7 +19,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<template #prefix><i class="ti ti-lock"></i></template>
 				<template #caption><button class="_textButton" type="button" @click="resetPassword">{{ i18n.ts.forgotPassword }}</button></template>
 			</MkInput>
-			<MkButton type="submit" large primary rounded :disabled="signing" style="margin: 0 auto;">{{ signing ? i18n.ts.loggingIn : i18n.ts.login }}</MkButton>
+			<MkCaptcha v-if="!user?.twoFactorEnabled && instance.enableHcaptcha" ref="hcaptcha" v-model="hCaptchaResponse" :class="$style.captcha" provider="hcaptcha" :sitekey="instance.hcaptchaSiteKey"/>
+			<MkCaptcha v-if="!user?.twoFactorEnabled && instance.enableMcaptcha" ref="mcaptcha" v-model="mCaptchaResponse" :class="$style.captcha" provider="mcaptcha" :sitekey="instance.mcaptchaSiteKey" :instanceUrl="instance.mcaptchaInstanceUrl"/>
+			<MkCaptcha v-if="!user?.twoFactorEnabled && instance.enableRecaptcha" ref="recaptcha" v-model="reCaptchaResponse" :class="$style.captcha" provider="recaptcha" :sitekey="instance.recaptchaSiteKey"/>
+			<MkCaptcha v-if="!user?.twoFactorEnabled && instance.enableTurnstile" ref="turnstile" v-model="turnstileResponse" :class="$style.captcha" provider="turnstile" :sitekey="instance.turnstileSiteKey"/>
+			<MkButton type="submit" large primary rounded :disabled="!user || captchaFailed || signing" style="margin: 0 auto;">{{ signing ? i18n.ts.loggingIn : i18n.ts.login }}</MkButton>
 		</div>
 		<div v-if="totpLogin" class="2fa-signin" :class="{ securityKeys: user && user.securityKeys }">
 			<div v-if="user && user.securityKeys" class="twofa-group tap-group">
@@ -49,7 +53,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import { toUnicode } from 'punycode/';
 import * as Misskey from 'misskey-js';
 import { supported as webAuthnSupported, get as webAuthnRequest, parseRequestOptionsFromJSON } from '@github/webauthn-json/browser-ponyfill';
@@ -62,8 +66,11 @@ import * as os from '@/os.js';
 import { misskeyApi } from '@/scripts/misskey-api.js';
 import { login } from '@/account.js';
 import { i18n } from '@/i18n.js';
+import { instance } from '@/instance.js';
+import MkCaptcha, { type Captcha } from '@/components/MkCaptcha.vue';
 
 const signing = ref(false);
+const userAbortController = ref<AbortController>();
 const user = ref<Misskey.entities.UserDetailed | null>(null);
 const username = ref('');
 const password = ref('');
@@ -73,6 +80,22 @@ const totpLogin = ref(false);
 const isBackupCode = ref(false);
 const queryingKey = ref(false);
 const credentialRequest = ref<CredentialRequestOptions | null>(null);
+const hcaptcha = ref<Captcha | undefined>();
+const mcaptcha = ref<Captcha | undefined>();
+const recaptcha = ref<Captcha | undefined>();
+const turnstile = ref<Captcha | undefined>();
+const hCaptchaResponse = ref<string | null>(null);
+const mCaptchaResponse = ref<string | null>(null);
+const reCaptchaResponse = ref<string | null>(null);
+const turnstileResponse = ref<string | null>(null);
+
+const captchaFailed = computed((): boolean => {
+	return !user.value?.twoFactorEnabled && (
+		instance.enableHcaptcha && !hCaptchaResponse.value ||
+		instance.enableMcaptcha && !mCaptchaResponse.value ||
+		instance.enableRecaptcha && !reCaptchaResponse.value ||
+		instance.enableTurnstile && !turnstileResponse.value);
+});
 
 const emit = defineEmits<{
 	(ev: 'login', v: any): void;
@@ -97,9 +120,13 @@ const props = defineProps({
 });
 
 function onUsernameChange(): void {
+	if (userAbortController.value) {
+		userAbortController.value.abort();
+	}
+	userAbortController.value = new AbortController();
 	misskeyApi('users/show', {
 		username: username.value,
-	}).then(userResponse => {
+	}, undefined, userAbortController.value.signal).then(userResponse => {
 		user.value = userResponse;
 	}, () => {
 		user.value = null;
@@ -165,6 +192,10 @@ function onSubmit(): void {
 		misskeyApi('signin', {
 			username: username.value,
 			password: password.value,
+			'hcaptcha-response': hCaptchaResponse.value,
+			'm-captcha-response': mCaptchaResponse.value,
+			'g-recaptcha-response': reCaptchaResponse.value,
+			'turnstile-response': turnstileResponse.value,
 			token: user.value?.twoFactorEnabled ? token.value : undefined,
 		}).then(res => {
 			emit('login', res);
@@ -174,6 +205,11 @@ function onSubmit(): void {
 }
 
 function loginFailed(err: any): void {
+	hcaptcha.value?.reset?.();
+	mcaptcha.value?.reset?.();
+	recaptcha.value?.reset?.();
+	turnstile.value?.reset?.();
+
 	switch (err.id) {
 		case '6cc579cc-885d-43d8-95c2-b8c7fc963280': {
 			os.alert({

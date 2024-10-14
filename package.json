@@ -1,7 +1,7 @@
 {
 	"name": "misskey",
 	"version": "2024.5.0-hotomoe.7",
-	"codename": "hajimete",
+	"codename": "hakase",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/MisskeyIO/misskey.git"
@@ -56,7 +56,6 @@
 		"cssnano": "7.0.5",
 		"execa": "9.3.0",
 		"js-yaml": "4.1.0",
-		"moment-timezone": "^0.5.45",
 		"postcss": "8.4.41",
 		"terser": "5.31.5",
 		"typescript": "5.5.4"

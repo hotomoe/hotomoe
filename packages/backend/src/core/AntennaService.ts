@@ -129,31 +129,29 @@ export class AntennaService implements OnApplicationShutdown {
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている
 
 	@bindThis
-	private async filter(me: MiUser | null, note: (MiNote | Packed<'Note'>)): Promise<boolean> {
+	private async filter(userId: MiUser['id'], note: (MiNote | Packed<'Note'>)): Promise<boolean> {
 		const [
 			userIdsWhoMeMuting,
 			userIdsWhoBlockingMe,
-		] = me ? await Promise.all([
-			this.cacheService.userMutingsCache.fetch(me.id),
-			this.cacheService.userBlockedCache.fetch(me.id),
-		]) : [new Set<string>(), new Set<string>()];
-		if (me && isUserRelated(note, userIdsWhoBlockingMe)) return false;
-		if (me && isUserRelated(note, userIdsWhoMeMuting)) return false;
+		] = await Promise.all([
+			this.cacheService.userMutingsCache.fetch(userId),
+			this.cacheService.userBlockedCache.fetch(userId),
+		]);
+		if (isUserRelated(note, userIdsWhoBlockingMe)) return false;
+		if (isUserRelated(note, userIdsWhoMeMuting)) return false;
 		if (['followers', 'specified'].includes(note.visibility)) {
-			if (me == null) return false;
-			if (me.id === note.userId) return true;
+			if (userId === note.userId) return true;
 			if (note.visibility === 'followers') {
-				const relationship = await this.userEntityService.getRelation(me.id, note.userId);
-				if (relationship.isFollowing) return true;
+				return await this.cacheService.userFollowingsCache.fetch(userId).then(followings => Object.hasOwn(followings, note.userId));
 			}
-			if (!note.visibleUserIds?.includes(me.id) && !note.mentions?.includes(me.id)) return false;
+			if (!note.visibleUserIds?.includes(userId)) return false;
 		}
 		return true;
 	}
 
 	@bindThis
 	public async checkHitAntenna(antenna: MiAntenna, note: (MiNote | Packed<'Note'>), noteUser: { id: MiUser['id']; username: string; host: string | null; isBot: boolean; }): Promise<boolean> {
-		const result = await this.filter(antenna.user, note);
+		const result = await this.filter(antenna.userId, note);
 		if (!result) return false;
 
 		if (antenna.excludeBots && noteUser.isBot) return false;
@@ -165,11 +163,14 @@ export class AntennaService implements OnApplicationShutdown {
 		if (antenna.src === 'home') {
 			// TODO
 		} else if (antenna.src === 'list') {
-			const listUsers = (await this.userListMembershipsRepository.findBy({
-				userListId: antenna.userListId!,
-			})).map(x => x.userId);
-
-			if (!listUsers.includes(note.userId)) return false;
+			if (antenna.userListId == null) return false;
+			const exists = await this.userListMembershipsRepository.exists({
+				where: {
+					userListId: antenna.userListId,
+					userId: note.userId,
+				},
+			});
+			if (!exists) return false;
 		} else if (antenna.src === 'users') {
 			const accts = antenna.users.map(x => {
 				const { username, host } = Acct.parse(x);

@@ -90,6 +90,7 @@ const emit = defineEmits<{
 const host = toUnicode(config.host);
 
 const hcaptcha = ref<Captcha | undefined>();
+const mcaptcha = ref<Captcha | undefined>();
 const recaptcha = ref<Captcha | undefined>();
 const turnstile = ref<Captcha | undefined>();
 
@@ -189,7 +190,7 @@ async function onSubmit(): Promise<void> {
 	submitting.value = true;
 
 	try {
-		await misskeyApi('signup', {
+		await os.apiWithDialog('signup', {
 			username: username.value,
 			password: password.value.password,
 			emailAddress: email.value,
@@ -198,35 +199,28 @@ async function onSubmit(): Promise<void> {
 			'm-captcha-response': mCaptchaResponse.value,
 			'g-recaptcha-response': reCaptchaResponse.value,
 			'turnstile-response': turnstileResponse.value,
-		});
-		if (instance.emailRequiredForSignup) {
-			os.alert({
-				type: 'success',
-				title: i18n.ts._signup.almostThere,
-				text: i18n.tsx._signup.emailSent({ email: email.value }),
-			});
-			emit('signupEmailPending');
-		} else {
-			const res = await misskeyApi('signin', {
-				username: username.value,
-				password: password.value.password,
-			});
-			emit('signup', res);
+		}, undefined, (res) => {
+			if (instance.emailRequiredForSignup) {
+				os.alert({
+					type: 'success',
+					title: i18n.ts._signup.almostThere,
+					text: i18n.tsx._signup.emailSent({ email: email.value }),
+				});
+				emit('signupEmailPending');
+			} else {
+				emit('signup', { id: res.id, i: res.token });
 
-			if (props.autoSet) {
-				return login(res.i, '/onboarding');
+				if (props.autoSet) {
+					login(res.token, '/onboarding');
+				}
 			}
-		}
+		});
 	} catch {
 		submitting.value = false;
 		hcaptcha.value?.reset?.();
+		mcaptcha.value?.reset?.();
 		recaptcha.value?.reset?.();
 		turnstile.value?.reset?.();
-
-		os.alert({
-			type: 'error',
-			text: i18n.ts.somethingHappened,
-		});
 	}
 }
 </script>
