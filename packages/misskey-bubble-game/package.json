@@ -19,28 +19,29 @@
 		"tsc-esm": "tsc --outDir built/esm",
 		"tsc-dts": "tsc --outDir built/dts --declaration true --emitDeclarationOnly true --declarationMap true",
 		"watch": "nodemon -w src -e ts,js,cjs,mjs,json --exec \"pnpm run build:tsc\"",
-		"eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
+		"eslint": "eslint './**/*.{js,jsx,ts,tsx}'",
 		"typecheck": "tsc --noEmit",
 		"lint": "pnpm typecheck && pnpm eslint"
 	},
 	"devDependencies": {
-		"@misskey-dev/eslint-plugin": "1.0.0",
 		"@types/matter-js": "0.19.8",
-		"@types/node": "22.13.0",
+		"@types/node": "22.15.17",
 		"@types/seedrandom": "3.0.8",
-		"@typescript-eslint/eslint-plugin": "7.10.0",
-		"@typescript-eslint/parser": "7.10.0",
-		"eslint": "8.57.1",
-		"nodemon": "3.1.9",
-		"typescript": "5.7.3"
+		"@typescript-eslint/eslint-plugin": "8.33.1",
+		"@typescript-eslint/parser": "8.33.1",
+		"execa": "8.0.1",
+		"eslint": "9.27.0",
+		"nodemon": "3.1.10",
+		"esbuild": "managed",
+		"typescript": "5.8.3"
 	},
 	"files": [
 		"built"
 	],
 	"dependencies": {
-		"esbuild": "0.24.2",
+		"esbuild": "managed",
 		"eventemitter3": "5.0.1",
-		"glob": "11.0.1",
+		"glob": "11.0.2",
 		"matter-js": "0.20.0",
 		"seedrandom": "3.0.5"
 	}

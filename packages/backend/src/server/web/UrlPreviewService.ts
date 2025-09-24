@@ -9,7 +9,6 @@ import { summaly } from '@misskey-dev/summaly';
 import { SummalyResult } from '@misskey-dev/summaly/dist/summary.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import type Logger from '@/logger.js';
 import { appendQuery, omitHttps, query } from '@/misc/prelude/url.js';
@@ -27,7 +26,9 @@ export class UrlPreviewService {
 		@Inject(DI.config)
 		private config: Config,
 
-		private metaService: MetaService,
+		@Inject(DI.meta)
+		private meta: MiMeta,
+
 		private httpRequestService: HttpRequestService,
 		private loggerService: LoggerService,
 	) {
@@ -37,7 +38,6 @@ export class UrlPreviewService {
 	@bindThis
 	private wrap(url?: string | null): string | null {
 		if (!url) return null;
-		if (!RegExp(/^https?:\/\//).exec(url)) return url;
 
 		return appendQuery(
 			`${this.config.mediaProxy}/preview/${encodeURIComponent(omitHttps(url))}`,
@@ -64,9 +64,7 @@ export class UrlPreviewService {
 			return;
 		}
 
-		const meta = await this.metaService.fetch();
-
-		if (!meta.urlPreviewEnabled) {
+		if (!this.meta.urlPreviewEnabled) {
 			reply.code(403);
 			return {
 				error: new ApiError({
@@ -77,14 +75,14 @@ export class UrlPreviewService {
 			};
 		}
 
-		this.logger.info(meta.urlPreviewSummaryProxyUrl
+		this.logger.info(this.meta.urlPreviewSummaryProxyUrl
 			? `(Proxy) Getting preview of ${url}@${lang} ...`
 			: `Getting preview of ${url}@${lang} ...`);
 
 		try {
-			const summary = meta.urlPreviewSummaryProxyUrl
-				? await this.fetchSummaryFromProxy(url, meta, lang)
-				: await this.fetchSummary(url, meta, lang);
+			const summary = this.meta.urlPreviewSummaryProxyUrl
+				? await this.fetchSummaryFromProxy(url, this.meta, lang)
+				: await this.fetchSummary(url, this.meta, lang);
 
 			this.logger.succ(`Got preview of ${url}: ${summary.title}`);
 
@@ -99,7 +97,7 @@ export class UrlPreviewService {
 			summary.icon = this.wrap(summary.icon);
 			summary.thumbnail = this.wrap(summary.thumbnail);
 
-			const includeDenyList = meta.urlPreviewDenyList.some(filter => {
+			const includeDenyList = this.meta.urlPreviewDenyList.some(filter => {
 				// represents RegExp
 				const regexp = /^\/(.+)\/(.*)$/.exec(filter);
 				// This should never happen due to input sanitisation.

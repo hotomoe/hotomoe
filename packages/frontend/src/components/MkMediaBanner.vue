@@ -24,25 +24,24 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { shallowRef, watch, ref } from 'vue';
+import { ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
+import * as os from '@/os.js';
 import MkMediaAudio from '@/components/MkMediaAudio.vue';
-import { pleaseLogin } from '@/scripts/please-login.js';
-import { $i } from '@/account.js';
-import { defaultStore } from '@/store.js';
+import { pleaseLogin } from '@/utility/please-login.js';
+import { $i } from '@/i.js';
+import { prefer } from '@/preferences.js';
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
 	media: Misskey.entities.DriveFile;
 	user?: Misskey.entities.UserLite;
-}>(), {
-});
+}>();
 
-const audioEl = shallowRef<HTMLAudioElement>();
 const hide = ref(true);
 
 function showHiddenContent(ev: MouseEvent) {
-	if (hide.value && defaultStore.state.sensitiveDoubleClickRequired) {
+	if (hide.value && prefer.s.sensitiveDoubleClickRequired) {
 		ev.preventDefault();
 		ev.stopPropagation();
 		return;
@@ -76,12 +75,6 @@ function showHiddenContentDouble(ev: MouseEvent) {
 		hide.value = false;
 	}
 }
-
-watch(audioEl, () => {
-	if (audioEl.value) {
-		audioEl.value.volume = 0.3;
-	}
-});
 </script>
 
 <style lang="scss" module>
@@ -102,7 +95,6 @@ watch(audioEl, () => {
 }
 
 .download {
-	background: var(--noteAttachedFile);
 }
 
 .sensitive {

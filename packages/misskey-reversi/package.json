@@ -19,23 +19,24 @@
 		"tsc-esm": "tsc --outDir built/esm",
 		"tsc-dts": "tsc --outDir built/dts --declaration true --emitDeclarationOnly true --declarationMap true",
 		"watch": "nodemon -w src -e ts,js,cjs,mjs,json --exec \"pnpm run build:tsc\"",
-		"eslint": "eslint . --ext .js,.jsx,.ts,.tsx",
+		"eslint": "eslint './**/*.{js,jsx,ts,tsx}'",
 		"typecheck": "tsc --noEmit",
 		"lint": "pnpm typecheck && pnpm eslint"
 	},
 	"devDependencies": {
-		"@misskey-dev/eslint-plugin": "1.0.0",
-		"@types/node": "22.13.0",
-		"@typescript-eslint/eslint-plugin": "7.10.0",
-		"@typescript-eslint/parser": "7.10.0",
-		"eslint": "8.57.1",
-		"nodemon": "3.1.9",
-		"typescript": "5.7.3"
+		"@misskey-dev/eslint-plugin": "2.1.0",
+		"@types/node": "22.15.17",
+		"@typescript-eslint/eslint-plugin": "8.32.1",
+		"@typescript-eslint/parser": "8.32.1",
+		"execa": "9.5.2",
+		"eslint": "9.27.0",
+		"nodemon": "3.1.10",
+		"typescript": "5.8.3"
 	},
 	"dependencies": {
 		"crc-32": "1.2.2",
-		"esbuild": "0.24.2",
-		"glob": "11.0.1"
+		"esbuild": "managed",
+		"glob": "11.0.2"
 	},
 	"files": [
 		"built"

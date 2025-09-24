@@ -44,7 +44,7 @@ import MkInput from '@/components/MkInput.vue';
 import MkFoldableSection from '@/components/MkFoldableSection.vue';
 import { customEmojis, customEmojiCategories, getCustomEmojiTags } from '@/custom-emojis.js';
 import { i18n } from '@/i18n.js';
-import { $i, iAmAdmin } from '@/account.js';
+import { $i, iAmAdmin } from '@/i.js';
 
 const customEmojiTags = getCustomEmojiTags();
 const q = ref('');

@@ -8,6 +8,14 @@ on:
       - '**-hotomoe.*'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
@@ -19,6 +27,11 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+      - name: Persist git metadata for Docker build
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$(git rev-parse --short HEAD)" > .git-commit
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
@@ -29,15 +42,37 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/hotomoe/hotomoe
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Prepare image tags
+      - name: Prepare image metadata
+        shell: bash
         run: |
-          echo "FORMATTED_BRANCH_NAME=$(echo ${{ github.ref_name }} | sed -e 's/\//-/g' )" >> $GITHUB_ENV
+          set -euo pipefail
+
+          ref_type="${{ github.ref_type }}"
+          ref_name="$(echo ${{ github.ref_name }} | sed -e 's/\//-/g')"
+
+          branch_name="main"
+          case "${ref_type}" in
+            branch)
+              branch_name="${ref_name}"
+              ;;
+            tag)
+              if [[ "${ref_name}" =~ -([a-zA-Z0-9]+)\..* ]]; then
+                branch_name="${BASH_REMATCH[1]}"
+              fi
+              ;;
+          esac
+
+          echo "BRANCH_NAME=${branch_name}" >> "${GITHUB_ENV}"
       - name: Build and Push to GitHub Container Registry
         uses: docker/build-push-action@v6
         with:
@@ -46,9 +81,7 @@ jobs:
           push: true
           platforms: ${{ steps.buildx.outputs.platforms }}
           provenance: false
-          labels: ${{ env.FORMATTED_BRANCH_NAME }}
-          cache-from: type=registry,ref=ghcr.io/hotomoe/hotomoe:hotomoe-buildcache
-          cache-to: type=registry,ref=ghcr.io/hotomoe/hotomoe:hotomoe-buildcache,mode=max
-          tags: |
-            ghcr.io/hotomoe/hotomoe:latest
-            ghcr.io/hotomoe/hotomoe:${{ env.FORMATTED_BRANCH_NAME }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=ghcr.io/hotomoe/hotomoe:buildcache-${{ env.BRANCH_NAME }}
+          cache-to: type=registry,ref=ghcr.io/hotomoe/hotomoe:buildcache-${{ env.BRANCH_NAME }},mode=max
