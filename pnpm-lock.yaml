@@ -4,6 +4,12 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@simplewebauthn/browser':
+      specifier: 13.2.2
+      version: 13.2.2
+
 overrides:
   '@aiscript-dev/aiscript-languageserver': github:aiscript-dev/aiscript-languageserver#0.1.6
   '@misskey-dev/summaly': github:MisskeyIO/summaly#5.2.1-io.1
@@ -785,6 +791,9 @@ importers:
       '@sentry/vue':
         specifier: 9.14.0
         version: 9.14.0(vue@3.5.13(typescript@5.8.3))
+      '@simplewebauthn/browser':
+        specifier: 'catalog:'
+        version: 13.2.2
       '@syuilo/aiscript':
         specifier: 0.19.0
         version: 0.19.0
@@ -1404,9 +1413,9 @@ importers:
 
   packages/misskey-js:
     dependencies:
-      '@simplewebauthn/types':
-        specifier: 12.0.0
-        version: 12.0.0
+      '@simplewebauthn/browser':
+        specifier: 'catalog:'
+        version: 13.2.2
       '@swc/cli':
         specifier: 0.7.7
         version: 0.7.7(@swc/core@1.11.24)(chokidar@4.0.3)
@@ -3681,16 +3690,15 @@ packages:
   '@sideway/pinpoint@2.0.0':
     resolution: {integrity: sha512-RNiOoTPkptFtSVzQevY/yWtZwf/RxyVnPy/OcA9HBM3MlGDnBEYL5B41H0MTn0Uec8Hi+2qUtTfG2WWZBmMejQ==}
 
+  '@simplewebauthn/browser@13.2.2':
+    resolution: {integrity: sha512-FNW1oLQpTJyqG5kkDg5ZsotvWgmBaC6jCHR7Ej0qUNep36Wl9tj2eZu7J5rP+uhXgHaLk+QQ3lqcw2vS5MX1IA==}
+
   '@simplewebauthn/server@13.1.1':
     resolution: {integrity: sha512-1hsLpRHfSuMB9ee2aAdh0Htza/X3f4djhYISrggqGe3xopNjOcePiSDkDDoPzDYaaMCrbqGP1H2TYU7bgL9PmA==}
     engines: {node: '>=20.0.0'}
 
   '@simplewebauthn/types@10.0.0':
     resolution: {integrity: sha512-SFXke7xkgPRowY2E+8djKbdEznTVnD5R6GO7GPTthpHrokLvNKw8C3lFZypTxLI7KkCfGPfhtqB3d7OVGGa9jQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
-
-  '@simplewebauthn/types@12.0.0':
-    resolution: {integrity: sha512-q6y8MkoV8V8jB4zzp18Uyj2I7oFp2/ONL8c3j8uT06AOWu3cIChc1au71QYHrP2b+xDapkGTiv+9lX7xkTlAsA==}
     deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   '@sinclair/typebox@0.27.8':
@@ -14067,6 +14075,8 @@ snapshots:
 
   '@sideway/pinpoint@2.0.0': {}
 
+  '@simplewebauthn/browser@13.2.2': {}
+
   '@simplewebauthn/server@13.1.1':
     dependencies:
       '@hexagon/base64': 1.1.28
@@ -14078,8 +14088,6 @@ snapshots:
       '@peculiar/asn1-x509': 2.6.0
 
   '@simplewebauthn/types@10.0.0': {}
-
-  '@simplewebauthn/types@12.0.0': {}
 
   '@sinclair/typebox@0.27.8': {}
 

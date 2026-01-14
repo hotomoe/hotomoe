@@ -27,4 +27,6 @@ onlyBuiltDependencies:
   - utf-8-validate
   - v-code-diff
   - vue-demi
+catalog:
+  '@simplewebauthn/browser': 13.2.2
 ignorePatchFailures: false

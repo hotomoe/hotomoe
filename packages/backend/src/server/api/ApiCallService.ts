@@ -16,13 +16,14 @@ import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { MiLocalUser, MiUser } from '@/models/User.js';
 import type { MiAccessToken } from '@/models/AccessToken.js';
 import type Logger from '@/logger.js';
-import type { MiMeta, UserIpsRepository } from '@/models/_.js';
+import type { UserIpsRepository } from '@/models/_.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
-import { type RolePolicies, RoleService } from '@/core/RoleService.js';
+import { RoleService } from '@/core/RoleService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { Config } from '@/config.js';
+import { MetaService } from '@/core/MetaService.js';
 import { ApiError } from './error.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { ApiLoggerService } from './ApiLoggerService.js';
@@ -44,16 +45,12 @@ export class ApiCallService implements OnApplicationShutdown {
 	private userIpHistoriesClearIntervalId: NodeJS.Timeout;
 
 	constructor(
-		@Inject(DI.meta)
-		private meta: MiMeta,
-
 		@Inject(DI.config)
 		private config: Config,
-
 		@Inject(DI.userIpsRepository)
 		private userIpsRepository: UserIpsRepository,
-
 		private userEntityService: UserEntityService,
+		private metaService: MetaService,
 		private authenticateService: AuthenticateService,
 		private rateLimiterService: RateLimiterService,
 		private roleService: RoleService,
@@ -289,8 +286,9 @@ export class ApiCallService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private logIp(request: FastifyRequest, user: MiLocalUser) {
-		if (!this.meta.enableIpLogging) return;
+	private async logIp(request: FastifyRequest, user: MiLocalUser) {
+		const meta = await this.metaService.fetch();
+		if (!meta.enableIpLogging) return;
 		const ip = request.ip;
 		const ips = this.userIpHistories.get(user.id);
 		if (ips == null || !ips.has(ip)) {
@@ -301,13 +299,12 @@ export class ApiCallService implements OnApplicationShutdown {
 			}
 
 			try {
-				await this.userIpsRepository.createQueryBuilder().insert().values({
+				this.userIpsRepository.createQueryBuilder().insert().values({
 					createdAt: new Date(),
 					userId: user.id,
 					ip: ip,
 				}).orIgnore(true).execute();
 			} catch {
-				/* empty */
 			}
 		}
 	}
@@ -322,6 +319,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		request: FastifyRequest<{ Body: Record<string, unknown> | undefined, Querystring: Record<string, unknown> }>,
 	) {
 		const isSecure = user != null && token == null;
+		const meta = await this.metaService.fetch();
 
 		if (ep.meta.secure && !isSecure) {
 			throw new ApiError(accessDenied);
@@ -426,8 +424,8 @@ export class ApiCallService implements OnApplicationShutdown {
 
 		if (ep.meta.requireModerator || ep.meta.requireAdmin) {
 			const myRoles = await this.roleService.getUserRoles(user!.id);
-			const isModerator = myRoles.some(r => r.isModerator || r.isAdministrator) || (this.meta.rootUserId !== user!.id);
-			const isAdmin = myRoles.some(r => r.isAdministrator) || (this.meta.rootUserId !== user!.id);
+			const isModerator = myRoles.some(r => r.isModerator || r.isAdministrator) || (meta.rootUserId !== user!.id);
+			const isAdmin = myRoles.some(r => r.isAdministrator) || (meta.rootUserId !== user!.id);
 			const userProfile = await this.userEntityService.pack(user!.id, user, { schema: 'MeDetailed' });
 			const isMFAEnabled = userProfile.twoFactorEnabled;
 			if (!isMFAEnabled) {
@@ -464,7 +462,7 @@ export class ApiCallService implements OnApplicationShutdown {
 			}
 		}
 
-		if (ep.meta.requiredRolePolicy != null && (this.meta.rootUserId !== user!.id)) {
+		if (ep.meta.requiredRolePolicy != null && (meta.rootUserId !== user!.id)) {
 			const myRoles = await this.roleService.getUserRoles(user!.id);
 			const policies = await this.roleService.getUserPolicies(user!.id);
 			if (!policies[ep.meta.requiredRolePolicy] && !myRoles.some(r => r.isAdministrator)) {
