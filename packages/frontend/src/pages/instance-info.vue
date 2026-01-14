@@ -30,8 +30,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<template #value>{{ instance.description }}</template>
 			</MkKeyValue>
 
-			<MkFolder v-if="iAmModerator">
-				<template #label>{{ i18n.ts.moderation }}</template>
+			<FormSection v-if="iAmModerator">
+				<template #label>Moderation</template>
 				<div class="_gaps_s">
 					<MkKeyValue>
 						<template #key>
@@ -46,14 +46,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<MkSwitch v-model="isBlocked" :disabled="!meta || !instance" @update:modelValue="toggleBlock">{{ i18n.ts.blockThisInstance }}</MkSwitch>
 					<MkSwitch v-model="isSilenced" :disabled="!meta || !instance" @update:modelValue="toggleSilenced">{{ i18n.ts.silenceThisInstance }}</MkSwitch>
 					<MkSwitch v-model="isSensitiveMedia" :disabled="!meta || !instance" @update:modelValue="toggleSensitiveMedia">{{ i18n.ts.sensitiveMediaThisInstance }}</MkSwitch>
-					<MkButton :disabled="!meta || !instance" @click="refreshMetadata"><i class="ti ti-refresh"></i> {{ i18n.ts.refreshMetadata }}</MkButton>
-					<MkButton :disabled="!meta || !instance" @click="removeAllFollowings"><i class="ti ti-users-minus"></i> {{ i18n.ts.removeAllFollowings }}</MkButton>
+					<MkButton @click="refreshMetadata"><i class="ti ti-refresh"></i> Refresh metadata</MkButton>
+					<MkButton @click="removeAllFollowings"><i class="ti ti-users-minus"></i> Removing all followings</MkButton>
 					<MkTextarea v-model="moderationNote" manualSave>
 						<template #label>{{ i18n.ts.moderationNote }}</template>
 						<template #caption>{{ i18n.ts.moderationNoteDescription }}</template>
 					</MkTextarea>
 				</div>
-			</MkFolder>
+			</FormSection>
 
 			<FormSection>
 				<MkKeyValue oneline style="margin: 1em 0;">
@@ -144,7 +144,6 @@ import FormSection from '@/components/form/section.vue';
 import MkKeyValue from '@/components/MkKeyValue.vue';
 import MkSelect from '@/components/MkSelect.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
-import MkFolder from '@/components/MkFolder.vue';
 import * as os from '@/os.js';
 import { misskeyApi } from '@/utility/misskey-api.js';
 import number from '@/filters/number.js';
@@ -270,8 +269,11 @@ async function resumeDelivery(): Promise<void> {
 function refreshMetadata(): void {
 	if (!iAmModerator) return;
 	if (!instance.value) throw new Error('No instance?');
-	await os.apiWithDialog('admin/federation/refresh-remote-instance-metadata', {
+	misskeyApi('admin/federation/refresh-remote-instance-metadata', {
 		host: instance.value.host,
+	});
+	os.alert({
+		text: 'Refresh requested',
 	});
 }
 
