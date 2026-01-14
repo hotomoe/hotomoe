@@ -287,6 +287,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 									</MkPreferenceContainer>
 								</SearchMarker>
 
+								<SearchMarker :keywords="['footer', 'action', 'translate', 'show']">
+									<MkPreferenceContainer k="showTranslateButtonInNoteFooter">
+										<MkSwitch v-model="showTranslateButtonInNoteFooter">
+											<template #label><SearchLabel>{{ i18n.ts.showTranslateButtonInNoteFooter }}</SearchLabel></template>
+										</MkSwitch>
+									</MkPreferenceContainer>
+								</SearchMarker>
+
 								<SearchMarker :keywords="['replies', 'count', 'show']">
 									<MkPreferenceContainer k="showRepliesCount">
 										<MkSwitch v-model="showRepliesCount">
@@ -883,6 +891,7 @@ const serverDisconnectedBehavior = prefer.model('serverDisconnectedBehavior');
 const hemisphere = prefer.model('hemisphere');
 const showNoteActionsOnlyHover = prefer.model('showNoteActionsOnlyHover');
 const showClipButtonInNoteFooter = prefer.model('showClipButtonInNoteFooter');
+const showTranslateButtonInNoteFooter = prefer.model('showTranslateButtonInNoteFooter');
 const collapseRenotes = prefer.model('collapseRenotes');
 const advancedMfm = prefer.model('advancedMfm');
 const showRepliesCount = prefer.model('showRepliesCount');
