@@ -24,7 +24,7 @@ overrides:
   sharp: 0.34.0-rc.0
   storybook-addon-misskey-theme: github:misskey-dev/storybook-addon-misskey-theme
   tough-cookie: 5.1.2
-  webgl-audiovisualizer: github:tar-bin/webgl-audiovisualizer
+  webgl-audiovisualizer: git+https://github.com/MisskeyIO/webgl-audiovisualizer.git
   web-streams-polyfill: 4.1.0
 
 importers:
@@ -954,8 +954,8 @@ importers:
         specifier: 5.3.1
         version: 5.3.1
       webgl-audiovisualizer:
-        specifier: github:tar-bin/webgl-audiovisualizer
-        version: git+https://git@github.com:tar-bin/webgl-audiovisualizer.git#0a07f95e141c558c74497dcbe01f8c6d50555a32
+        specifier: git+https://github.com/MisskeyIO/webgl-audiovisualizer.git
+        version: webgl-audiovisualizer.git@https://codeload.github.com/MisskeyIO/webgl-audiovisualizer/tar.gz/0a07f95e141c558c74497dcbe01f8c6d50555a32
     devDependencies:
       '@misskey-dev/eslint-plugin':
         specifier: 2.1.0
@@ -11243,8 +11243,8 @@ packages:
     resolution: {integrity: sha512-A7Jxrg7+eV+eZR/CIdESDnRGFb6/bcKukGvJBB5snI6cw3is1c2qamkYstC1bY1p08TyMRlN9eTMkxmnKJBPBw==}
     engines: {node: '>= 8'}
 
-  webgl-audiovisualizer@git+https://git@github.com:tar-bin/webgl-audiovisualizer.git#0a07f95e141c558c74497dcbe01f8c6d50555a32:
-    resolution: {commit: 0a07f95e141c558c74497dcbe01f8c6d50555a32, repo: git@github.com:tar-bin/webgl-audiovisualizer.git, type: git}
+  webgl-audiovisualizer.git@https://codeload.github.com/MisskeyIO/webgl-audiovisualizer/tar.gz/0a07f95e141c558c74497dcbe01f8c6d50555a32:
+    resolution: {tarball: https://codeload.github.com/MisskeyIO/webgl-audiovisualizer/tar.gz/0a07f95e141c558c74497dcbe01f8c6d50555a32}
     version: 0.0.0
 
   webidl-conversions@3.0.1:
@@ -23251,7 +23251,7 @@ snapshots:
 
   web-streams-polyfill@4.1.0: {}
 
-  webgl-audiovisualizer@git+https://git@github.com:tar-bin/webgl-audiovisualizer.git#0a07f95e141c558c74497dcbe01f8c6d50555a32: {}
+  webgl-audiovisualizer.git@https://codeload.github.com/MisskeyIO/webgl-audiovisualizer/tar.gz/0a07f95e141c558c74497dcbe01f8c6d50555a32: {}
 
   webidl-conversions@3.0.1: {}
 
