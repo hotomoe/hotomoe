@@ -24,6 +24,7 @@ import { UserSuspendProcessorService } from './processors/UserSuspendProcessorSe
 import { DeleteAccountProcessorService } from './processors/DeleteAccountProcessorService.js';
 import { DeleteDriveFilesProcessorService } from './processors/DeleteDriveFilesProcessorService.js';
 import { DeleteFileProcessorService } from './processors/DeleteFileProcessorService.js';
+import { ReindexNotesProcessorService } from './processors/ReindexNotesProcessorService.js';
 import { ExportBlockingProcessorService } from './processors/ExportBlockingProcessorService.js';
 import { ExportCustomEmojisProcessorService } from './processors/ExportCustomEmojisProcessorService.js';
 import { ExportFollowingProcessorService } from './processors/ExportFollowingProcessorService.js';
@@ -63,6 +64,7 @@ import { CleanBlockedRemoteCustomEmojisProcessorService } from './processors/Cle
 		BakeBufferedReactionsProcessorService,
 		CleanProcessorService,
 		DeleteDriveFilesProcessorService,
+		ReindexNotesProcessorService,
 		ExportCustomEmojisProcessorService,
 		ExportNotesProcessorService,
 		ExportClipsProcessorService,

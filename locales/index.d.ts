@@ -3326,6 +3326,10 @@ export interface Locale extends ILocale {
      */
     "experimentalFeatures": string;
     /**
+     * Misskeyの実験的機能
+     */
+    "misskeyExperimentalFeatures": string;
+    /**
      * 実験的
      */
     "experimental": string;
@@ -3333,6 +3337,90 @@ export interface Locale extends ILocale {
      * これは実験的な機能です。仕様が変更されたり、正常に動作しなかったりする可能性があります。
      */
     "thisIsExperimentalFeature": string;
+    /**
+     * 휴가 모드
+     */
+    "vacationMode": string;
+    /**
+     * 휴가 모드는, 관리자가 잠시 직무를 내려놓고 일반 유저로 이용할 수 있도록 임시로 권한을 제거하는 모드입니다.
+     */
+    "vacationModeDescription": string;
+    /**
+     * バケーションモードを使用する
+     */
+    "useVacationMode": string;
+    /**
+     * デジタルデトックス
+     */
+    "mindControl": string;
+    /**
+     * 必要に応じて、Misskeyの使用時に疲労感を感じにくくなるよう、いくつかの設定を調整できます。
+     */
+    "mindControlDescription": string;
+    /**
+     * すべてのカウンターを隠す
+     */
+    "hideCounters": string;
+    /**
+     * ユーザーページのノート数、フォロー数、フォロワー数などの統計を非表示にします。
+     */
+    "hideCountersDescription": string;
+    /**
+     * 現在バケーションモード中です。このメッセージを閉じるにはここをクリックしてください。
+     */
+    "youAreOnVacation": string;
+    /**
+     * プライベートモード
+     */
+    "privateMode": string;
+    /**
+     * 画面共有時や公共の場所でプライバシーを保護するために、機密情報を画面から非表示にします。
+     */
+    "privateModeDescription": string;
+    /**
+     * 一時的に表示する
+     */
+    "temporarilySeeThis": string;
+    /**
+     * プライベートモードが有効なため、このコンテンツは非表示になっています。
+     */
+    "youAreHidingSensitiveInformation": string;
+    /**
+     * プライベートモードの設定により、このノートは非表示になっています。
+     */
+    "hiddenBecauseOfPrivateMode": string;
+    /**
+     * ダイレクトメッセージを隠す
+     */
+    "hideDirectMessages": string;
+    /**
+     * プライバシーのため、ダイレクトメッセージの内容を非表示にします。
+     */
+    "hideDirectMessagesDescription": string;
+    /**
+     * ドライブファイル一覧を隠す
+     */
+    "hideDriveFileList": string;
+    /**
+     * ドライブのファイル一覧を非表示にします。
+     */
+    "hideDriveFileListDescription": string;
+    /**
+     * ロールバッジを隠す
+     */
+    "hideRoleList": string;
+    /**
+     * ユーザープロフィールでロールバッジを非表示にします。
+     */
+    "hideRoleListDescription": string;
+    /**
+     * モデレーションノートを隠す
+     */
+    "hideModerationNote": string;
+    /**
+     * ユーザープロフィールでモデレーションノートを非表示にします。
+     */
+    "hideModerationNoteDescription": string;
     /**
      * 開発者
      */
@@ -5483,6 +5571,14 @@ export interface Locale extends ILocale {
      * 相互リンク
      */
     "mutualLink": string;
+    /**
+     * モデレーター権限を利用するには、まず二要素認証を有効にする必要があります。
+     */
+    "youNeedToEnableTwoFactor": string;
+    /**
+     * 未対応の通報が{count}件あります。
+     */
+    "thereIsUnresolvedReportAbuse": ParameterizedString<"count">;
     /**
      * このファイルをドライブに保存する
      */

@@ -18,6 +18,7 @@ import { EndedPollNotificationProcessorService } from './processors/EndedPollNot
 import { DeliverProcessorService } from './processors/DeliverProcessorService.js';
 import { InboxProcessorService } from './processors/InboxProcessorService.js';
 import { DeleteDriveFilesProcessorService } from './processors/DeleteDriveFilesProcessorService.js';
+import { ReindexNotesProcessorService } from './processors/ReindexNotesProcessorService.js';
 import { ExportCustomEmojisProcessorService } from './processors/ExportCustomEmojisProcessorService.js';
 import { ExportNotesProcessorService } from './processors/ExportNotesProcessorService.js';
 import { ExportClipsProcessorService } from './processors/ExportClipsProcessorService.js';
@@ -101,6 +102,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private deliverProcessorService: DeliverProcessorService,
 		private inboxProcessorService: InboxProcessorService,
 		private deleteDriveFilesProcessorService: DeleteDriveFilesProcessorService,
+		private reindexNotesProcessorService: ReindexNotesProcessorService,
 		private exportCustomEmojisProcessorService: ExportCustomEmojisProcessorService,
 		private exportNotesProcessorService: ExportNotesProcessorService,
 		private exportClipsProcessorService: ExportClipsProcessorService,
@@ -233,6 +235,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				switch (job.name) {
 					case 'deleteDriveFiles':
 						return this.deleteDriveFilesProcessorService.process(job);
+					case 'reindexNotes':
+						return this.reindexNotesProcessorService.process(job);
 					case 'exportCustomEmojis':
 						return this.exportCustomEmojisProcessorService.process(job);
 					case 'exportNotes':

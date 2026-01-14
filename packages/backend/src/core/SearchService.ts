@@ -189,7 +189,7 @@ export class SearchService {
 	@bindThis
 	public async indexNote(note: MiNote): Promise<void> {
 		if (note.text == null && note.cw == null) return;
-		if (!['home', 'public'].includes(note.visibility)) return;
+		// if (!['home', 'public'].includes(note.visibility)) return;
 
 		if (this.meilisearch) {
 			switch (this.meilisearchIndexScope) {
@@ -243,7 +243,7 @@ export class SearchService {
 
 	@bindThis
 	public async unindexNote(note: MiNote): Promise<void> {
-		if (!['home', 'public'].includes(note.visibility)) return;
+		// if (!['home', 'public'].includes(note.visibility)) return;
 
 		if (this.meilisearch) {
 			await this.meilisearchNoteIndex!.deleteDocument(note.id);
@@ -256,6 +256,24 @@ export class SearchService {
 				this.logger.error(error);
 			});
 			*/
+		}
+	}
+
+	@bindThis
+	public async unindexAllNotes(): Promise<void> {
+		if (this.meilisearch) {
+			await this.meilisearchNoteIndex?.deleteAllDocuments();
+		} else if (this.opensearch) {
+			await this.opensearch.deleteByQuery({
+				index: this.opensearchNoteIndex + '*' as string,
+				body: {
+					query: {
+						match_all: {},
+					},
+				},
+			}).catch((error) => {
+				this.logger.error(error);
+			});
 		}
 	}
 

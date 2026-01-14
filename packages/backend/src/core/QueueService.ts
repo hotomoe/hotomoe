@@ -223,6 +223,14 @@ export class QueueService {
 	}
 
 	@bindThis
+	public createNoteReindexJob() {
+		return this.dbQueue.add('reindexNotes', {}, {
+			removeOnComplete: true,
+			removeOnFail: true,
+		});
+	}
+
+	@bindThis
 	public createExportCustomEmojisJob(user: ThinUser) {
 		return this.dbQueue.add('exportCustomEmojis', {
 			user: { id: user.id },
@@ -270,9 +278,9 @@ export class QueueService {
 			.update(JSON.stringify([...blockedRemoteCustomEmojis].sort()))
 			.digest('hex')
 			.substring(0, 16);
-		
+
 		const jobId = `cleanBlockedRemoteCustomEmojis-${hash}`;
-		
+
 		// Check if a job with the same hash is already in the queue
 		// Only skip if the job is waiting, active, or delayed (not completed or failed)
 		const existingJobState = await this.dbQueue.getJobState(jobId);
@@ -280,7 +288,7 @@ export class QueueService {
 			// Job with same hash is already pending, skip enqueuing
 			return null;
 		}
-		
+
 		return this.dbQueue.add('cleanBlockedRemoteCustomEmojis', {
 			blockedRemoteCustomEmojis,
 		}, {

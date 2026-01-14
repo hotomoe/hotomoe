@@ -14,11 +14,13 @@ import { bindThis } from '@/decorators.js';
 import { DI } from '@/di-symbols.js';
 import * as Acct from '@/misc/acct.js';
 import type { Packed } from '@/misc/json-schema.js';
-import type { AntennasRepository, UserListMembershipsRepository } from '@/models/_.js';
+import { isUserRelated } from '@/misc/is-user-related.js';
+import type { AntennasRepository, FollowingsRepository, UserListMembershipsRepository } from '@/models/_.js';
 import type { MiAntenna } from '@/models/Antenna.js';
 import type { MiNote } from '@/models/Note.js';
 import type { MiUser } from '@/models/User.js';
 import { CacheService } from './CacheService.js';
+import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { RolePolicies, RoleService } from '@/core/RoleService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
@@ -37,10 +39,14 @@ export class AntennaService implements OnApplicationShutdown {
 		@Inject(DI.antennasRepository)
 		private antennasRepository: AntennasRepository,
 
+		@Inject(DI.followingsRepository)
+		private followingsRepository: FollowingsRepository,
+
 		@Inject(DI.userListMembershipsRepository)
 		private userListMembershipsRepository: UserListMembershipsRepository,
 
 		private cacheService: CacheService,
+		private userEntityService: UserEntityService,
 		private utilityService: UtilityService,
 		private globalEventService: GlobalEventService,
 		private fanoutTimelineService: FanoutTimelineService,
@@ -124,26 +130,36 @@ export class AntennaService implements OnApplicationShutdown {
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている
 
 	@bindThis
+	private async filter(userId: MiUser['id'], note: (MiNote | Packed<'Note'>)): Promise<boolean> {
+		const [
+			userIdsWhoMeMuting,
+			userIdsWhoBlockingMe,
+		] = await Promise.all([
+			this.cacheService.userMutingsCache.fetch(userId),
+			this.cacheService.userBlockedCache.fetch(userId),
+		]);
+		if (isUserRelated(note, userIdsWhoBlockingMe)) return false;
+		if (isUserRelated(note, userIdsWhoMeMuting)) return false;
+		if (['followers', 'specified'].includes(note.visibility)) {
+			if (userId === note.userId) return true;
+			if (note.visibility === 'followers') {
+				return await this.cacheService.userFollowingsCache.fetch(userId).then(followings => Object.hasOwn(followings, note.userId));
+			}
+			if (!note.visibleUserIds?.includes(userId)) return false;
+		}
+		return true;
+	}
+
+	@bindThis
 	public async checkHitAntenna(antenna: MiAntenna, note: (MiNote | Packed<'Note'>), noteUser: { id: MiUser['id']; username: string; host: string | null; isBot: boolean; }): Promise<boolean> {
-		if (antenna.excludeNotesInSensitiveChannel && note.channel?.isSensitive) return false;
+		const result = await this.filter(antenna.userId, note);
+		if (!result) return false;
 
 		if (antenna.excludeBots && noteUser.isBot) return false;
 
 		if (antenna.localOnly && noteUser.host != null) return false;
 
 		if (!antenna.withReplies && note.replyId != null) return false;
-
-		if (note.visibility === 'specified') {
-			if (note.userId !== antenna.userId) {
-				if (note.visibleUserIds == null) return false;
-				if (!note.visibleUserIds.includes(antenna.userId)) return false;
-			}
-		}
-
-		if (note.visibility === 'followers') {
-			const isFollowing = Object.hasOwn(await this.cacheService.userFollowingsCache.fetch(antenna.userId), note.userId);
-			if (!isFollowing && antenna.userId !== note.userId) return false;
-		}
 
 		if (antenna.src === 'home') {
 			// TODO
