@@ -87,6 +87,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<template #icon><i class="ti ti-message"></i></template>
 					<template #default>{{ i18n.ts.feedback }}</template>
 				</FormLink>
+				<FormLink to="https://hotomoe.fanbox.cc" external>
+					<template #icon><i class="ti ti-pig-money"></i></template>
+					<template #default>{{ i18n.tsx.supportThisInstance({ name: instance.name ?? host }) }}</template>
+					<template #suffix>pixivFANBOX</template>
+				</FormLink>
 			</div>
 		</div>
 	</FormSection>
