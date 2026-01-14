@@ -67,7 +67,7 @@
 		"sharp": "0.34.0-rc.0",
 		"storybook-addon-misskey-theme": "github:misskey-dev/storybook-addon-misskey-theme",
 		"tough-cookie": "5.1.2",
-		"webgl-audiovisualizer": "github:tar-bin/webgl-audiovisualizer",
+		"webgl-audiovisualizer": "git+https://github.com/MisskeyIO/webgl-audiovisualizer.git",
 		"web-streams-polyfill": "4.1.0"
 	},
 	"dependencies": {
