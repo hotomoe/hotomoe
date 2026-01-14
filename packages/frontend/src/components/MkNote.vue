@@ -134,6 +134,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" :class="$style.footerButton" class="_button" @mousedown.prevent="clip()">
 					<i class="ti ti-paperclip"></i>
 				</button>
+				<!-- hotomoe: translate button -->
+				<button v-if="prefer.s.showTranslateButtonInNoteFooter && canTranslate" :class="$style.footerButton" class="_button" @mousedown.prevent="translate()">
+					<i class="ti ti-language-hiragana"></i>
+				</button>
 				<button ref="menuButton" :class="$style.footerButton" class="_button" @mousedown.prevent="showMenu()">
 					<i class="ti ti-dots"></i>
 				</button>
@@ -203,6 +207,7 @@ import { misskeyApi, misskeyApiGet } from '@/utility/misskey-api.js';
 import { reactionPicker } from '@/utility/reaction-picker.js';
 import { extractUrlFromMfm } from '@/utility/extract-url-from-mfm.js';
 import { $i } from '@/i.js';
+import { miLocalStorage } from '@/local-storage.js';
 import { i18n } from '@/i18n.js';
 import {
 	getAbuseNoteMenu,
@@ -218,7 +223,7 @@ import { claimAchievement } from '@/utility/achievements.js';
 import { getNoteSummary } from '@/utility/get-note-summary.js';
 import MkRippleEffect from '@/components/MkRippleEffect.vue';
 import { showMovedDialog } from '@/utility/show-moved-dialog.js';
-import { isEnabledUrlPreview } from '@/instance.js';
+import { isEnabledUrlPreview, instance } from '@/instance.js';
 import { focusNext, focusPrev } from '@/utility/focus.js';
 import { getAppearNote } from '@/utility/get-appear-note.js';
 import { prefer } from '@/preferences.js';
@@ -593,6 +598,23 @@ async function clip(): Promise<void> {
 	}
 
 	os.popupMenu(await getNoteClipMenu({ note: note.value, isDeleted, currentClip: currentClip?.value }), clipButton.value).then(focus);
+}
+
+// hotomoe: translate button in note footer
+const canTranslate = computed(() => {
+	return $i && $i.policies.canUseTranslator && instance.translatorAvailable && appearNote.value.text;
+});
+
+async function translate(): Promise<void> {
+	if (props.mock) return;
+	if (translation.value != null) return;
+
+	translating.value = true;
+	translation.value = await misskeyApi('notes/translate', {
+		noteId: appearNote.value.id,
+		targetLang: miLocalStorage.getItem('lang') ?? navigator.language,
+	});
+	translating.value = false;
 }
 
 async function showRenoteMenu(): Promise<void> {

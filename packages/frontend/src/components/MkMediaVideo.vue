@@ -19,7 +19,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 	@contextmenu.stop
 	@keydown.stop
 >
-	<button v-if="hide" :class="$style.hidden" @click="showHiddenContent">
+	<button v-if="hide" :class="$style.hidden" @click="showHiddenContent" @dblclick="showHiddenContentDouble">
 		<div :class="$style.hiddenTextWrapper">
 			<b v-if="video.isSensitive" style="display: block;"><i class="ti ti-eye-exclamation"></i> {{ i18n.ts.sensitive }}{{ prefer.s.dataSaver.media ? ` (${i18n.ts.video}${video.size ? ' ' + bytes(video.size) : ''})` : '' }}</b>
 			<b v-else style="display: block;"><i class="ti ti-movie"></i> {{ prefer.s.dataSaver.media && video.size ? bytes(video.size) : i18n.ts.video }}</b>
@@ -304,6 +304,39 @@ function showMenu(ev: MouseEvent) {
 }
 
 async function showHiddenContent(ev: MouseEvent) {
+	if (!hide.value) return;
+
+	// hotomoe: sensitive videos require double click
+	if (props.video.isSensitive && prefer.s.sensitiveDoubleClickRequired) {
+		return;
+	}
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	if (props.video.isSensitive && !$i) {
+		await pleaseLogin();
+		return;
+	}
+
+	if (props.video.isSensitive && sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) return;
+	}
+
+	if (props.video.isSensitive && prefer.s.confirmWhenRevealingSensitiveMedia) {
+		const { canceled } = await os.confirm({
+			type: 'question',
+			text: i18n.ts.sensitiveMediaRevealConfirm,
+		});
+		if (canceled) return;
+	}
+
+	hide.value = false;
+}
+
+// hotomoe: double click handler for sensitive videos
+async function showHiddenContentDouble(ev: MouseEvent) {
 	if (!hide.value) return;
 
 	ev.preventDefault();

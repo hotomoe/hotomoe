@@ -58,6 +58,8 @@ export function openInstanceMenu(ev: MouseEvent) {
 		to: '/about#emojis',
 	});
 
+	// hotomoe: hide federation link
+	/*
 	if (instance.federation !== 'none') {
 		menuItems.push({
 			type: 'link',
@@ -66,6 +68,7 @@ export function openInstanceMenu(ev: MouseEvent) {
 			to: '/about#federation',
 		});
 	}
+	*/
 
 	menuItems.push({
 		type: 'link',

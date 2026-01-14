@@ -13,7 +13,10 @@ import { DI } from '@/di-symbols.js';
 export const meta = {
 	tags: ['federation'],
 
-	requireCredential: false,
+	// hotomoe: hide federation status from public
+	requireCredential: true,
+	requireModerator: true,
+	kind: 'read:admin:server-info',
 
 	res: {
 		type: 'object',

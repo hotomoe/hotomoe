@@ -4681,6 +4681,10 @@ export interface Locale extends ILocale {
      */
     "showClipButtonInNoteFooter": string;
     /**
+     * ノートのアクションに翻訳を追加
+     */
+    "showTranslateButtonInNoteFooter": string;
+    /**
      * リアクションの表示サイズ
      */
     "reactionsDisplaySize": string;
@@ -5608,6 +5612,10 @@ export interface Locale extends ILocale {
      * センシティブなメディアを表示するとき確認する
      */
     "confirmWhenRevealingSensitiveMedia": string;
+    /**
+     * センシティブなメディアを表示するにはダブルクリックが必要
+     */
+    "sensitiveDoubleClickRequired": string;
     /**
      * センシティブなメディアです。表示しますか？
      */

@@ -256,6 +256,9 @@ export const PREF_DEF = {
 	showClipButtonInNoteFooter: {
 		default: false,
 	},
+	showTranslateButtonInNoteFooter: {
+		default: false,
+	},
 	reactionsDisplaySize: {
 		default: 'medium' as 'small' | 'medium' | 'large',
 	},
@@ -326,6 +329,9 @@ export const PREF_DEF = {
 		default: true,
 	},
 	confirmWhenRevealingSensitiveMedia: {
+		default: false,
+	},
+	sensitiveDoubleClickRequired: {
 		default: false,
 	},
 	contextMenu: {

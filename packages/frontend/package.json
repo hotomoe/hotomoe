@@ -60,6 +60,7 @@
     "misskey-bubble-game": "workspace:*",
     "misskey-js": "workspace:*",
     "misskey-reversi": "workspace:*",
+    "moment-timezone": "catalog:",
     "photoswipe": "catalog:",
     "punycode.js": "catalog:",
     "rollup": "catalog:",

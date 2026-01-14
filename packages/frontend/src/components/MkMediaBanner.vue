@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div v-if="!blocked" :class="$style.root">
-	<div v-if="media.isSensitive && hide" :class="$style.sensitive" @click="showHiddenContent">
+	<div v-if="media.isSensitive && hide" :class="$style.sensitive" @click="showHiddenContent" @dblclick="showHiddenContentDouble">
 		<span style="font-size: 1.6em;"><i class="ti ti-alert-triangle"></i></span>
 		<b>{{ i18n.ts.sensitive }}</b>
 		<span>{{ i18n.ts.clickToShow }}</span>
@@ -50,6 +50,39 @@ function calcHide(): boolean {
 const hide = ref(calcHide());
 
 async function showHiddenContent(ev: MouseEvent) {
+	if (!hide.value) return;
+
+	// hotomoe: sensitive media require double click
+	if (props.media.isSensitive && prefer.s.sensitiveDoubleClickRequired) {
+		return;
+	}
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	if (props.media.isSensitive && !$i) {
+		await pleaseLogin();
+		return;
+	}
+
+	if (props.media.isSensitive && sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) return;
+	}
+
+	if (props.media.isSensitive && prefer.s.confirmWhenRevealingSensitiveMedia) {
+		const { canceled } = await os.confirm({
+			type: 'question',
+			text: i18n.ts.sensitiveMediaRevealConfirm,
+		});
+		if (canceled) return;
+	}
+
+	hide.value = false;
+}
+
+// hotomoe: double click handler for sensitive media
+async function showHiddenContentDouble(ev: MouseEvent) {
 	if (!hide.value) return;
 
 	ev.preventDefault();

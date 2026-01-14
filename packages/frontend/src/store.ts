@@ -228,6 +228,10 @@ export const store = markRaw(new Pizzax('base', {
 		where: 'device',
 		default: false,
 	},
+	sensitiveDoubleClickRequired: {
+		where: 'device',
+		default: false,
+	},
 	animation: {
 		where: 'device',
 		default: !window.matchMedia('(prefers-reduced-motion)').matches,
@@ -341,6 +345,11 @@ export const store = markRaw(new Pizzax('base', {
 		default: false,
 	},
 	showClipButtonInNoteFooter: {
+		where: 'device',
+		default: false,
+	},
+	// hotomoe: translate button in note footer
+	showTranslateButtonInNoteFooter: {
 		where: 'device',
 		default: false,
 	},

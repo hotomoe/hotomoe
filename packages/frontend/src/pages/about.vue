@@ -6,9 +6,12 @@
 	<div v-else-if="tab === 'emojis'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XEmojis/>
 	</div>
+	<!-- hotomoe: hide federation status -->
+	<!--
 	<div v-else-if="instance.federation !== 'none' && tab === 'federation'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<XFederation/>
 	</div>
+	-->
 	<div v-else-if="tab === 'charts'" class="_spacer" style="--MI_SPACER-w: 1000px; --MI_SPACER-min: 20px;">
 		<MkInstanceStats/>
 	</div>
@@ -55,6 +58,8 @@ const headerTabs = computed(() => {
 		icon: 'ti ti-icons',
 	});
 
+	// hotomoe: hide federation status
+	/*
 	if (instance.federation !== 'none') {
 		items.push({
 			key: 'federation',
@@ -62,6 +67,7 @@ const headerTabs = computed(() => {
 			icon: 'ti ti-whirl',
 		});
 	}
+	*/
 
 	items.push({
 		key: 'charts',

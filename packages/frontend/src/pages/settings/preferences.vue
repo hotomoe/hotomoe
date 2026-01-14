@@ -82,6 +82,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 								</MkPreferenceContainer>
 							</SearchMarker>
 
+							<SearchMarker :keywords="['sensitive', 'nsfw', 'media', 'image', 'photo', 'picture', 'double', 'click']">
+								<MkPreferenceContainer k="sensitiveDoubleClickRequired">
+									<MkSwitch v-model="sensitiveDoubleClickRequired">
+										<template #label><SearchLabel>{{ i18n.ts.sensitiveDoubleClickRequired }}</SearchLabel></template>
+									</MkSwitch>
+								</MkPreferenceContainer>
+							</SearchMarker>
+
 							<SearchMarker :keywords="['mfm', 'enable', 'show', 'advanced']">
 								<MkPreferenceContainer k="advancedMfm">
 									<MkSwitch v-model="advancedMfm">
@@ -896,6 +904,7 @@ const dimension = prefer.model('dimension');
 const useGroupedNotifications = prefer.model('useGroupedNotifications');
 const alwaysConfirmFollow = prefer.model('alwaysConfirmFollow');
 const confirmWhenRevealingSensitiveMedia = prefer.model('confirmWhenRevealingSensitiveMedia');
+const sensitiveDoubleClickRequired = prefer.model('sensitiveDoubleClickRequired');
 const confirmOnReact = prefer.model('confirmOnReact');
 const defaultNoteVisibility = prefer.model('defaultNoteVisibility');
 const defaultNoteLocalOnly = prefer.model('defaultNoteLocalOnly');

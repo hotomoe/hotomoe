@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div v-if="!blocked" :class="[hide ? $style.hidden : $style.visible, (image.isSensitive && prefer.s.highlightSensitiveMedia) && $style.sensitive]" @click="showHiddenContent">
+<div v-if="!blocked" :class="[hide ? $style.hidden : $style.visible, (image.isSensitive && prefer.s.highlightSensitiveMedia) && $style.sensitive]" @click="showHiddenContent" @dblclick="showHiddenContentDouble">
 	<component
 		:is="(image.isSensitive && !$i) || disableImageLink ? 'div' : 'a'"
 		v-bind="(image.isSensitive && !$i) || disableImageLink ? {
@@ -182,6 +182,41 @@ function showMenu(ev: MouseEvent) {
 }
 
 async function showHiddenContent(ev: MouseEvent) {
+	if (!props.controls || !hide.value) {
+		return;
+	}
+
+	// hotomoe: sensitive images require double click
+	if (props.image.isSensitive && prefer.s.sensitiveDoubleClickRequired) {
+		return;
+	}
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	if (props.image.isSensitive && !$i) {
+		await pleaseLogin();
+		return;
+	}
+
+	if (props.image.isSensitive && sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) return;
+	}
+
+	if (props.image.isSensitive && prefer.s.confirmWhenRevealingSensitiveMedia) {
+		const { canceled } = await os.confirm({
+			type: 'question',
+			text: i18n.ts.sensitiveMediaRevealConfirm,
+		});
+		if (canceled) return;
+	}
+
+	hide.value = false;
+}
+
+// hotomoe: double click handler for sensitive images
+async function showHiddenContentDouble(ev: MouseEvent) {
 	if (!props.controls || !hide.value) {
 		return;
 	}
