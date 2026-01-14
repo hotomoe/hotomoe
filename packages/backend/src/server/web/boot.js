@@ -31,7 +31,7 @@
 	if (!Object.hasOwn(localStorage, 'locale')) {
 		let lang = localStorage.getItem('lang');
 		if (lang == null || lang.toString == null || lang.toString() === 'null') {
-			lang = 'ja-JP';
+			lang = 'en-US';
 		}
 
 		const metaRes = await window.fetch('/api/meta', {
@@ -39,7 +39,7 @@
 			credentials: 'omit',
 			headers: {
 				'Content-Type': 'application/json',
-				'X-Client-Transaction-Id': `${id}-misskey-${crypto.randomUUID().replaceAll('-', '')}`
+				'X-Client-Transaction-Id': `${id}-misskey-${crypto.randomUUID().replaceAll('-', '')}`,
 			},
 		});
 		if (metaRes.status !== 200) {
@@ -193,7 +193,7 @@
 			<br>
 			<div id="errors"></div>
 			`;
-			document.getElementById("reload").addEventListener('click', () => {
+			document.getElementById('reload').addEventListener('click', () => {
 				location.reload();
 			});
 			errorsElement = document.getElementById('errors');
