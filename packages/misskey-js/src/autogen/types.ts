@@ -9440,6 +9440,7 @@ export type components = {
             followedMessage: string | null;
             isModerator: boolean | null;
             isAdmin: boolean | null;
+            isVacation: boolean | null;
             injectFeaturedNote: boolean;
             receiveAnnouncementEmail: boolean;
             alwaysMarkNsfw: boolean;
