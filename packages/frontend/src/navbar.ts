@@ -192,7 +192,7 @@ export const navbarItemDef = reactive({
 		title: i18n.tsx.supportThisInstance({ name: instance.name ?? host }),
 		icon: 'ti ti-pig-money',
 		action: (ev) => {
-			window.open('https://go.misskey.io/donate', '_blank', 'noopener');
+			window.open('https://hotomoe.fanbox.cc');
 		},
 	},
 	cacheClear: {

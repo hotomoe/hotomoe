@@ -98,6 +98,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</div>
 				<div :class="$style.headerText">{{ i18n.ts._auth.denied }}</div>
 			</div>
+			<div class="_buttonsCenter">
+				<MkButton rounded gradate @click="goToMisskey">{{ i18n.ts.goToMisskey }}</MkButton>
+			</div>
 		</div>
 		<div v-else-if="phase === 'failed'" key="failed" :class="$style.root" class="_gaps_s">
 			<div :class="$style.header" class="_gaps_s">
@@ -105,6 +108,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<i class="ti ti-x"></i>
 				</div>
 				<div :class="$style.headerText">{{ i18n.ts.somethingHappened }}</div>
+			</div>
+			<div class="_buttonsCenter">
+				<MkButton rounded gradate @click="goToMisskey">{{ i18n.ts.goToMisskey }}</MkButton>
 			</div>
 		</div>
 	</Transition>
@@ -249,6 +255,10 @@ async function clickAccept() {
 function showUI(state: 'success' | 'denied' | 'failed') {
 	phase.value = state;
 	waiting.value = false;
+}
+
+function goToMisskey(): void {
+	location.href = '/';
 }
 
 defineExpose({
