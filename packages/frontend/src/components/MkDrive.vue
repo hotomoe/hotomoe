@@ -93,6 +93,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 		</div>
 		<MkLoading v-if="fetching"/>
+		<div v-if="prefer.s.privateMode && prefer.s.hideDriveFileList" :class="$style.privateOverlay">
+			<div :class="$style.privateOverlayContent">
+				<div>{{ i18n.ts.youAreHidingSensitiveInformation }}</div>
+				<MkButton @click="temporarilySee">{{ i18n.ts.temporarilySeeThis }}</MkButton>
+			</div>
+		</div>
 	</div>
 	<div v-if="draghover" :class="$style.dropzone"></div>
 	<input ref="fileInput" style="display: none;" class="mk-input-file" type="file" accept="*/*" multiple tabindex="-1" @change="onChangeFileInput"/>
@@ -734,6 +740,10 @@ function closeTip() {
 	store.set('readDriveTip', true);
 }
 
+function temporarilySee() {
+	prefer.commit('hideDriveFileList', false);
+}
+
 onMounted(() => {
 	if (showFiles.value && prefer.s.enableInfiniteScroll && loadMoreFiles.value) {
 		nextTick(() => {
@@ -867,5 +877,24 @@ onBeforeUnmount(() => {
 	height: calc(100% - 38px);
 	border: dashed 2px var(--MI_THEME-focus);
 	pointer-events: none;
+}
+
+.privateOverlay {
+	position: absolute;
+	inset: 0;
+	background: color-mix(in srgb, var(--MI_THEME-bg), transparent 20%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+}
+
+.privateOverlayContent {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	padding: 32px;
+	text-align: center;
 }
 </style>

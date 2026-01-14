@@ -55,7 +55,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 							<div><MkSparkle><Mfm :plain="true" :text="user.followedMessage" :author="user" class="_selectable"/></MkSparkle></div>
 						</MkFukidashi>
 					</div>
-					<div v-if="user.roles.length > 0" class="roles">
+					<div v-if="user.roles.length > 0 && !hideRoleList" class="roles">
 						<span v-for="role in user.roles" :key="role.id" v-tooltip="role.description" class="role" :style="{ '--color': role.color }">
 							<MkA v-adaptive-bg :to="`/roles/${role.id}`">
 								<img v-if="role.iconUrl" style="height: 1.3em; vertical-align: -22%;" :src="role.iconUrl"/>
@@ -63,7 +63,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 							</MkA>
 						</span>
 					</div>
-					<div v-if="iAmModerator" class="moderationNote">
+					<div v-if="!hideModerationNote" class="moderationNote">
 						<MkTextarea v-if="editModerationNote || (moderationNote != null && moderationNote !== '')" v-model="moderationNote" manualSave>
 							<template #label>{{ i18n.ts.moderationNote }}</template>
 							<template #caption>{{ i18n.ts.moderationNoteDescription }}</template>
@@ -298,7 +298,9 @@ const isEditingMemo = ref(false);
 const moderationNote = ref(props.user.moderationNote);
 const editModerationNote = ref(false);
 const movedFromLog = ref<null | { movedFromId: string; }[]>(null);
-const hideCounters = prefer.s.hideCounters;
+const hideCounters = computed(() => prefer.s.hideCounters);
+const hideModerationNote = computed(() => !iAmModerator || (prefer.s.privateMode && prefer.s.hideModerationLog));
+const hideRoleList = computed(() => prefer.s.privateMode && prefer.s.hideRoleList);
 
 watch(moderationNote, async () => {
 	await misskeyApi('admin/update-user-note', { userId: props.user.id, text: moderationNote.value });
