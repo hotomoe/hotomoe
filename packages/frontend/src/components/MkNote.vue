@@ -45,13 +45,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 	</div>
 	<article v-else :class="$style.article" @contextmenu.stop="onContextmenu">
 		<div v-if="appearNote.channel" :class="$style.colorBar" :style="{ background: appearNote.channel.color }"></div>
-		<MkAvatar :class="[$style.avatar, prefer.s.useStickyIcons ? $style.useSticky : null]" :user="appearNote.user" :link="!mock" :preview="!mock"/>
+		<div v-if="isRedacted && !showRedacted" :class="[$style.avatar, $style.redactedAvatar]"><i class="ti ti-user-question"></i></div>
+		<MkAvatar v-else :class="[$style.avatar, prefer.s.useStickyIcons ? $style.useSticky : null]" :user="appearNote.user" :link="!mock" :preview="!mock"/>
 		<div :class="$style.main">
-			<MkNoteHeader :note="appearNote" :mini="true"/>
-			<MkInstanceTicker v-if="showTicker" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
+			<MkNoteHeader v-if="!isRedacted || showRedacted" :note="appearNote" :mini="true"/>
+			<MkInstanceTicker v-if="showTicker && (!isRedacted || showRedacted)" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
 			<div style="container-type: inline-size;">
-				<div v-if="isRedacted" :class="$style.text">
-					<span style="opacity: 0.7">({{ i18n.ts.hiddenBecauseOfPrivateMode }})</span>
+				<div v-if="isRedacted && !showRedacted" :class="$style.text">
+					<button class="_button" style="opacity: 0.7; cursor: pointer;" @click="showRedacted = true">({{ i18n.ts.hiddenBecauseOfPrivateMode }})</button>
 				</div>
 				<template v-else>
 					<p v-if="appearNote.cw != null" :class="$style.cw">
@@ -302,6 +303,7 @@ const showSoftWordMutedWord = computed(() => prefer.s.showSoftWordMutedWord);
 const translation = ref<Misskey.entities.NotesTranslateResponse | null>(null);
 const translating = ref(false);
 const isRedacted = computed(() => prefer.s.privateMode && prefer.s.hideDirectMessages && appearNote.value.visibility === 'specified');
+const showRedacted = ref(false);
 const showTicker = (prefer.s.instanceTicker === 'always') || (prefer.s.instanceTicker === 'remote' && appearNote.value.user.instance);
 const canRenote = computed(() => ['public', 'home'].includes(appearNote.value.visibility) || (appearNote.value.visibility === 'followers' && appearNote.value.userId === $i?.id));
 const renoteCollapsed = ref(
@@ -906,6 +908,17 @@ function emitUpdReaction(emoji: string, delta: number) {
 		top: calc(22px + var(--MI-stickyTop, 0px));
 		left: 0;
 	}
+}
+
+.redactedAvatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--MI_THEME-bg);
+	border-radius: 999px;
+	color: var(--MI_THEME-fg);
+	opacity: 0.5;
+	font-size: 24px;
 }
 
 .main {
