@@ -8305,6 +8305,10 @@ export interface Locale extends ILocale {
              */
             "mutualLinkLimit": string;
             /**
+             * アカウント削除を許可
+             */
+            "canUseAccountRemoval": string;
+            /**
              * チャットを許可
              */
             "chatAvailability": string;
@@ -8501,6 +8505,10 @@ export interface Locale extends ILocale {
          * 削除が中断されてしまいますので、アカウントにログインしないことをおすすめします。
          */
         "dontLogin": string;
+        /**
+         * サーバーポリシーにより、アカウントを削除することができません。管理者に連絡してください。
+         */
+        "cannotRemoveAccount": string;
     };
     "_ad": {
         /**

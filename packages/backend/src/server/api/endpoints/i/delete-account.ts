@@ -10,6 +10,7 @@ import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DeleteAccountService } from '@/core/DeleteAccountService.js';
 import { DI } from '@/di-symbols.js';
 import { UserAuthService } from '@/core/UserAuthService.js';
+import { RoleService } from '@/core/RoleService.js';
 import { ApiError } from '@/server/api/error.js';
 
 export const meta = {
@@ -18,6 +19,12 @@ export const meta = {
 	secure: true,
 
 	errors: {
+		cannotRemoveAccount: {
+			message: 'You cannot remove your account.',
+			code: 'CANNOT_REMOVE_ACCOUNT',
+			id: '4a7d98dc-eb6c-4ebc-a56c-4afed7e12201',
+		},
+
 		incorrectPassword: {
 			message: 'Incorrect password.',
 			code: 'INCORRECT_PASSWORD',
@@ -52,8 +59,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private userAuthService: UserAuthService,
 		private deleteAccountService: DeleteAccountService,
+		private roleService: RoleService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
+			const policies = await this.roleService.getUserPolicies(me.id);
+			if (!policies.canUseAccountRemoval) {
+				throw new ApiError(meta.errors.cannotRemoveAccount);
+			}
+
 			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
 
 			const userDetailed = await this.usersRepository.findOneByOrFail({ id: me.id });

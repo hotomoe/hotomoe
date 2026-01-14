@@ -84,6 +84,7 @@ export type RolePolicies = {
 	canImportUserLists: boolean;
 	mutualLinkSectionLimit: number;
 	mutualLinkLimit: number;
+	canUseAccountRemoval: boolean;
 	chatAvailability: 'available' | 'readonly' | 'unavailable';
 };
 
@@ -136,6 +137,7 @@ export const DEFAULT_POLICIES: RolePolicies = {
 	canImportUserLists: true,
 	mutualLinkSectionLimit: 1,
 	mutualLinkLimit: 3,
+	canUseAccountRemoval: true,
 	chatAvailability: 'available',
 };
 
@@ -491,6 +493,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 			canImportFollowing: calc('canImportFollowing', vs => vs.some(v => v === true)),
 			canImportMuting: calc('canImportMuting', vs => vs.some(v => v === true)),
 			canImportUserLists: calc('canImportUserLists', vs => vs.some(v => v === true)),
+			canUseAccountRemoval: calc('canUseAccountRemoval', vs => vs.some(v => v === true)),
 			chatAvailability: calc('chatAvailability', aggregateChatAvailability),
 		};
 

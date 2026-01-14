@@ -155,6 +155,11 @@ const menuDef = computed<SuperMenuDef[]>(() => [{
 		to: '/settings/account-data',
 		active: currentPage.value?.route.name === 'account-data',
 	}, {
+		icon: 'ti ti-barrier-block',
+		text: i18n.ts.experimentalFeatures,
+		to: '/settings/laboratory',
+		active: currentPage.value?.route.name === 'laboratory',
+	}, {
 		icon: 'ti ti-dots',
 		text: i18n.ts.other,
 		to: '/settings/other',

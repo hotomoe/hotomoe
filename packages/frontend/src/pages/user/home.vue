@@ -177,7 +177,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 						</dl>
 					</div>
 
-					<div class="status">
+					<div v-if="!hideCounters" class="status">
 						<MkA :to="userPage(user)">
 							<b>{{ number(user.notesCount) }}</b>
 							<span>{{ i18n.ts.notes }}</span>
@@ -203,7 +203,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<MkLazy>
 						<XFiles :key="user.id" :user="user" @unfold="emit('unfoldFiles')"/>
 					</MkLazy>
-					<MkLazy>
+					<MkLazy v-if="!hideCounters">
 						<XActivity :key="user.id" :user="user"/>
 					</MkLazy>
 				</template>
@@ -216,7 +216,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 		<div v-if="!narrow" class="sub _gaps" style="container-type: inline-size;">
 			<XFiles :key="user.id" :user="user" @unfold="emit('unfoldFiles')"/>
-			<XActivity :key="user.id" :user="user"/>
+			<XActivity v-if="!hideCounters" :key="user.id" :user="user"/>
 		</div>
 	</div>
 </div>
@@ -298,6 +298,7 @@ const isEditingMemo = ref(false);
 const moderationNote = ref(props.user.moderationNote);
 const editModerationNote = ref(false);
 const movedFromLog = ref<null | { movedFromId: string; }[]>(null);
+const hideCounters = prefer.s.hideCounters;
 
 watch(moderationNote, async () => {
 	await misskeyApi('admin/update-user-note', { userId: props.user.id, text: moderationNote.value });

@@ -187,6 +187,10 @@ export const ROUTE_DEF: RouteDef[] = [{
 		name: 'other',
 		component: page(() => import('@/pages/settings/other.vue')),
 	}, {
+		path: '/laboratory',
+		name: 'laboratory',
+		component: page(() => import('@/pages/settings/laboratory.vue')),
+	}, {
 		path: '/',
 		component: page(() => import('@/pages/_empty_.vue')),
 	}],

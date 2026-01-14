@@ -502,6 +502,14 @@ export class ApiCallService implements OnApplicationShutdown {
 
 		if ((ep.meta.requireModerator || ep.meta.requireAdmin) && (meta.rootUserId !== user!.id)) {
 			const myRoles = await this.roleService.getUserRoles(user!.id);
+			if (user!.isVacation) {
+				throw new ApiError({
+					message: 'You are on vacation.',
+					code: 'VACATION_MODE',
+					kind: 'permission',
+					id: 'bbe5ef78-fab6-46a2-9e29-64639747096c',
+				});
+			}
 			if (ep.meta.requireModerator && !myRoles.some(r => r.isModerator || r.isAdministrator)) {
 				throw new ApiError({
 					message: 'You are not assigned to a moderator role.',

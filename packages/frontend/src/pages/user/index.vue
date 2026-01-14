@@ -22,7 +22,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<XRaw v-else-if="tab === 'raw'" :user="user"/>
 	</div>
 	<div v-else-if="error">
-		<MkError @retry="fetchUser()"/>
+		<MkErrorDetailed :error="error" @retry="fetchUser()"/>
 	</div>
 	<div v-else-if="userstatus">
 		<MkUserNotFound v-if="userstatus === 'notfound'"/>

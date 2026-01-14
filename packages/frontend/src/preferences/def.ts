@@ -334,6 +334,30 @@ export const PREF_DEF = {
 	sensitiveDoubleClickRequired: {
 		default: false,
 	},
+	vacationAlert: {
+		default: true,
+	},
+	privateMode: {
+		default: false,
+	},
+	hideDirectMessages: {
+		default: false,
+	},
+	hideDriveFileList: {
+		default: false,
+	},
+	hideModerationLog: {
+		default: false,
+	},
+	hideRoleList: {
+		default: false,
+	},
+	hideCounters: {
+		default: false,
+	},
+	enableCondensedLineForAcct: {
+		default: false,
+	},
 	contextMenu: {
 		default: 'app' as 'app' | 'appWithShift' | 'native',
 	},

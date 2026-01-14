@@ -129,6 +129,7 @@ export const ROLE_POLICIES = [
 	'canImportUserLists',
 	'mutualLinkSectionLimit',
 	'mutualLinkLimit',
+	'canUseAccountRemoval',
 	'chatAvailability',
 ] as const;
 

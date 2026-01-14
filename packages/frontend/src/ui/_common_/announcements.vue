@@ -17,6 +17,24 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</span>
 		<span :class="$style.title">{{ i18n.ts.verificationEmailSent }}</span>
 	</MkA>
+	<MkA v-if="iAmModerator && unresolvedReportCount > 0" :class="$style.item" to="/admin/abuses">
+		<span :class="$style.icon">
+			<i class="ti ti-alert-triangle"></i>
+		</span>
+		<span :class="$style.title">{{ i18n.tsx.thereIsUnresolvedReportAbuse({ count: unresolvedReportCount }) }}</span>
+	</MkA>
+	<MkA v-if="($i?.isModerator ?? $i?.isAdmin) && !$i?.twoFactorEnabled" :class="$style.item" to="/settings/security">
+		<span :class="$style.icon">
+			<i class="ti ti-circle-key"></i>
+		</span>
+		<span :class="$style.title">{{ i18n.ts.youNeedToEnableTwoFactor }}</span>
+	</MkA>
+	<a v-if="($i?.isModerator ?? $i?.isAdmin) && $i?.isVacation && showVacationAlert" :class="$style.item" href="#" @click.prevent.stop="removeVacationAlert()">
+		<span :class="$style.icon">
+			<i class="ti ti-sandbox"></i>
+		</span>
+		<span :class="$style.title">{{ i18n.ts.youAreOnVacation }}</span>
+	</a>
 	<MkA
 		v-for="announcement in $i.unreadAnnouncements.filter(x => x.display === 'banner')"
 		:key="announcement.id"
@@ -36,10 +54,28 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
+import { ref } from 'vue';
 import { instanceName } from '@@/js/config.js';
 import { instance } from '@/instance.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { i18n } from '@/i18n.js';
+import { prefer } from '@/preferences.js';
+import { misskeyApi } from '@/utility/misskey-api.js';
+
+const unresolvedReportCount = ref<number>(0);
+const showVacationAlert = prefer.r.vacationAlert;
+
+function removeVacationAlert(): void {
+	prefer.commit('vacationAlert', false);
+}
+
+if (iAmModerator) {
+	misskeyApi('admin/abuse-user-reports', {
+		state: 'unresolved',
+	}).then((reports) => {
+		unresolvedReportCount.value = reports.length;
+	});
+}
 </script>
 
 <style lang="scss" module>

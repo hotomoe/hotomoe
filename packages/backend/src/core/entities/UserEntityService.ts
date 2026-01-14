@@ -427,7 +427,8 @@ export class UserEntityService implements OnModuleInit {
 		const isDetailed = opts.schema !== 'UserLite';
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
-		const iAmModerator = me ? await this.roleService.isModerator(me as MiUser) : false;
+		const meUser = me ? await this.usersRepository.findOneBy({ id: me.id }) : null;
+		const iAmModerator = me ? (await this.roleService.isModerator(me as MiUser)) && !meUser?.isVacation : false;
 		if (user.isSuspended && !iAmModerator) throw new IdentifiableError('85ab9bd7-3a41-4530-959d-f07073900109', `User ${user.id} has been suspended.`);
 
 		const profile = isDetailed

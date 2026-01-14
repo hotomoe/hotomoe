@@ -110,7 +110,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div class="_gaps_m">
 						<FormInfo warn>{{ i18n.ts._accountDelete.mayTakeTime }}</FormInfo>
 						<FormInfo>{{ i18n.ts._accountDelete.sendEmail }}</FormInfo>
-						<MkButton v-if="!$i.isDeleted" danger @click="deleteAccount"><SearchKeyword>{{ i18n.ts._accountDelete.requestAccountDelete }}</SearchKeyword></MkButton>
+						<MkButton v-if="!$i.isDeleted && $i.policies.canUseAccountRemoval" danger @click="deleteAccount"><SearchKeyword>{{ i18n.ts._accountDelete.requestAccountDelete }}</SearchKeyword></MkButton>
+						<FormInfo v-else-if="!$i.policies.canUseAccountRemoval" warn>{{ i18n.ts._accountDelete.cannotRemoveAccount }}</FormInfo>
 						<MkButton v-else disabled>{{ i18n.ts._accountDelete.inProgress }}</MkButton>
 					</div>
 				</MkFolder>

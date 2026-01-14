@@ -360,6 +360,10 @@ export const packedRolePoliciesSchema = {
 			type: 'integer',
 			optional: false, nullable: false,
 		},
+		canUseAccountRemoval: {
+			type: 'boolean',
+			optional: false, nullable: false,
+		},
 		chatAvailability: {
 			type: 'string',
 			optional: false, nullable: false,
