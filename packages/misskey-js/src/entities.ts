@@ -1,5 +1,5 @@
-import { ModerationLogPayloads } from './consts.js';
-import {
+import type { ModerationLogPayloads } from './consts.js';
+import type {
 	Announcement,
 	EmojiDetailed,
 	MeDetailed,
@@ -10,7 +10,7 @@ import {
 	User,
 	UserDetailedNotMe,
 } from './autogen/models.js';
-import type { AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/types';
+import type { AuthenticationResponseJSON, PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
 
 export * from './autogen/entities.js';
 export * from './autogen/models.js';
@@ -214,24 +214,6 @@ export type ModerationLog = {
 	type: 'deleteChatRoom';
 	info: ModerationLogPayloads['deleteChatRoom'];
 });
-
-export type ServerStats = {
-	cpu: number;
-	mem: {
-		used: number;
-		active: number;
-	};
-	net: {
-		rx: number;
-		tx: number;
-	};
-	fs: {
-		r: number;
-		w: number;
-	}
-};
-
-export type ServerStatsLog = ServerStats[];
 
 export type QueueStats = {
 	deliver: {

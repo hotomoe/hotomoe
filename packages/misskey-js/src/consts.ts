@@ -75,7 +75,6 @@ export const permissions = [
 	'write:admin:regenerate-user-token',
 	'write:admin:resolve-abuse-user-report',
 	'write:admin:send-email',
-	'read:admin:server-info',
 	'read:admin:show-moderation-log',
 	'read:admin:show-account-move-log',
 	'read:admin:show-user',
@@ -198,9 +197,9 @@ export const reversiUpdateKeys = [
 
 export type ReversiUpdateKey = typeof reversiUpdateKeys[number];
 
-type AvatarDecoration = UserLite['avatarDecorations'][number];
+export type AvatarDecoration = UserLite['avatarDecorations'][number];
 
-type ReceivedAbuseReport = {
+export type ReceivedAbuseReport = {
 	reportId: AbuseReportNotificationRecipient['id'];
 	report: operations['admin___abuse-user-reports']['responses'][200]['content']['application/json'];
 	forwarded: boolean;

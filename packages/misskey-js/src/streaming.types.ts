@@ -1,4 +1,4 @@
-import {
+import type {
 	Antenna,
 	ChatMessage,
 	ChatMessageLite,
@@ -12,22 +12,20 @@ import {
 	UserDetailedNotMe,
 	UserLite,
 } from './autogen/models.js';
-import {
+import type {
 	AnnouncementCreated,
 	EmojiAdded, EmojiDeleted,
 	EmojiUpdated,
 	PageEvent,
 	QueueStats,
 	QueueStatsLog,
-	ServerStats,
-	ServerStatsLog,
 	ReversiGameDetailed,
 } from './entities.js';
-import {
+import type {
 	ReversiUpdateKey,
 } from './consts.js';
 
-type ReversiUpdateSettings<K extends ReversiUpdateKey> = {
+export type ReversiUpdateSettings<K extends ReversiUpdateKey> = {
 	key: K;
 	value: ReversiGameDetailed[K];
 };
@@ -72,6 +70,7 @@ export type Channels = {
 			withRenotes?: boolean;
 			withFiles?: boolean;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -84,6 +83,7 @@ export type Channels = {
 			withReplies?: boolean;
 			withFiles?: boolean;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -96,6 +96,7 @@ export type Channels = {
 			withReplies?: boolean;
 			withFiles?: boolean;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -107,6 +108,7 @@ export type Channels = {
 			withRenotes?: boolean;
 			withFiles?: boolean;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -128,6 +130,7 @@ export type Channels = {
 	hashtag: {
 		params: {
 			q: string[][];
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -138,6 +141,7 @@ export type Channels = {
 		params: {
 			roleId: string;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -158,6 +162,7 @@ export type Channels = {
 		params: {
 			channelId: string;
 			minimize?: boolean,
+			dimension?: number | null,
 		};
 		events: {
 			note: (payload: Note) => void;
@@ -175,19 +180,6 @@ export type Channels = {
 			folderUpdated: (payload: DriveFolder) => void;
 		};
 		receives: null;
-	};
-	serverStats: {
-		params: null;
-		events: {
-			stats: (payload: ServerStats) => void;
-			statsLog: (payload: ServerStatsLog) => void;
-		};
-		receives: {
-			requestLog: {
-				id: string | number;
-				length: number;
-			};
-		};
 	};
 	queueStats: {
 		params: null;
