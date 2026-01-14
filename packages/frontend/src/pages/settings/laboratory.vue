@@ -126,13 +126,14 @@ const hideDriveFileList = prefer.model('hideDriveFileList');
 const hideModerationLog = prefer.model('hideModerationLog');
 const hideRoleList = prefer.model('hideRoleList');
 
-function save() {
+async function save() {
 	if (isVacation.value === true) {
 		prefer.commit('vacationAlert', true);
 	}
-	misskeyApi('i/update', {
+	await misskeyApi('i/update', {
 		isVacation: isVacation.value,
 	});
+	await reloadAsk();
 }
 
 async function reloadAsk() {
@@ -146,7 +147,6 @@ async function reloadAsk() {
 }
 
 watch([
-	isVacation,
 	enableCondensedLineForAcct,
 	privateMode,
 	hideCounters,
