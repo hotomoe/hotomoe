@@ -1694,6 +1694,24 @@ _announcement:
   silence: "No notification"
   silenceDescription: "Turning this on will skip the notification of this announcement and the user won't need to read it."
 
+_initialAccountSetting:
+  accountCreated: "Your account was successfully created!"
+  letsStartAccountSetup: "For starters, let's set up your profile."
+  letsFillYourProfile: "First, let's set up your profile."
+  profileSetting: "Profile settings"
+  privacySetting: "Privacy settings"
+  theseSettingsCanEditLater: "You can always change these settings later."
+  youCanEditMoreSettingsInSettingsPageLater: "There are many more settings you can configure from the \"Settings\" page. Be sure to visit it later."
+  followUsers: "Try following some users that interest you to build up your timeline."
+  pushNotificationDescription: "Enabling push notifications will allow you to receive notifications from {name} directly on your device."
+  initialAccountSettingCompleted: "Profile setup complete!"
+  haveFun: "Enjoy {name}!"
+  continueTutorial: "Now, let's proceed with a tutorial on how to use {name} (Misskey)."
+  startTutorial: "Start Tutorial"
+  skipAreYouSure: "Really skip profile setup?"
+  laterAreYouSure: "Really do profile setup later?"
+  mustBeSetBotOwner: "The bot account must have an administrator specified. Please select an administrator account from below."
+
 _initialTutorial:
   launchTutorial: "Start Tutorial"
   title: "Tutorial"

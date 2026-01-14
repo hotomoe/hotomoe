@@ -1683,6 +1683,24 @@ _announcement:
   silence: "非通知"
   silenceDescription: "オンにすると、このお知らせは通知されず、既読にする必要もなくなります。"
 
+_initialAccountSetting:
+  accountCreated: "アカウントの作成が完了しました！"
+  letsStartAccountSetup: "さっそくアカウントの初期設定を行いましょう。"
+  letsFillYourProfile: "まずはあなたのプロフィールを設定しましょう。"
+  profileSetting: "プロフィール設定"
+  privacySetting: "プライバシー設定"
+  theseSettingsCanEditLater: "これらの設定は後から変更できます。"
+  youCanEditMoreSettingsInSettingsPageLater: "この他にも様々な設定を「設定」ページから行えます。ぜひ後で確認してみてください。"
+  followUsers: "タイムラインを構築するため、気になるユーザーをフォローしてみましょう。"
+  pushNotificationDescription: "プッシュ通知を有効にすると{name}の通知をお使いのデバイスで受け取ることができます。"
+  initialAccountSettingCompleted: "初期設定が完了しました！"
+  haveFun: "{name}をお楽しみください！"
+  continueTutorial: "このまま{name}(Misskey)の使い方についてのチュートリアルに進みます。"
+  startTutorial: "チュートリアルを開始"
+  skipAreYouSure: "初期設定をスキップしますか？"
+  laterAreYouSure: "初期設定をあとでやり直しますか？"
+  mustBeSetBotOwner: "Botアカウントは管理者を必ず記載する必要があります。以下から管理者のアカウントを選択してください。"
+
 _initialTutorial:
   launchTutorial: "チュートリアルを見る"
   title: "チュートリアル"
