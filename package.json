@@ -1,7 +1,7 @@
 {
   "name": "misskey",
-  "version": "2025.4.1-hotomoe.1",
-  "codename": "hakase",
+  "version": "2025.4.1-hotomoe.0b1",
+  "codename": "nadeshiko",
   "repository": {
     "type": "git",
     "url": "https://github.com/hotomoe/hotomoe.git"
