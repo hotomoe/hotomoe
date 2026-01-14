@@ -14,7 +14,7 @@ import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { MiLocalUser, MiUser } from '@/models/User.js';
 import type { MiAccessToken } from '@/models/AccessToken.js';
 import type Logger from '@/logger.js';
-import type { UserIpsRepository } from '@/models/_.js';
+import type { UserIpsRepository, UserProfilesRepository } from '@/models/_.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { AttachmentFile } from '@/server/api/endpoint-base.js';
 import { bindThis } from '@/decorators.js';
@@ -63,6 +63,8 @@ export class ApiCallService implements OnApplicationShutdown {
 		private config: Config,
 		@Inject(DI.userIpsRepository)
 		private userIpsRepository: UserIpsRepository,
+		@Inject(DI.userProfilesRepository)
+		private userProfilesRepository: UserProfilesRepository,
 		private metaService: MetaService,
 		private authenticateService: AuthenticateService,
 		private rateLimiterService: RateLimiterService,
@@ -508,6 +510,15 @@ export class ApiCallService implements OnApplicationShutdown {
 					code: 'VACATION_MODE',
 					kind: 'permission',
 					id: 'bbe5ef78-fab6-46a2-9e29-64639747096c',
+				});
+			}
+			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user!.id });
+			if (!profile.twoFactorEnabled) {
+				throw new ApiError({
+					message: 'Two-factor authentication is required to use moderator permissions.',
+					code: 'TWO_FACTOR_REQUIRED',
+					kind: 'permission',
+					id: '8a267f66-c3b3-4c6d-8a4e-5e6c7e7a9e8b',
 				});
 			}
 			if (ep.meta.requireModerator && !myRoles.some(r => r.isModerator || r.isAdministrator)) {
