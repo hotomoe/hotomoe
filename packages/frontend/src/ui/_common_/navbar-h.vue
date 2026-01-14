@@ -21,7 +21,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</component>
 			</template>
 			<div class="divider"></div>
-			<MkA v-if="$i.isAdmin || $i.isModerator" v-click-anime v-tooltip="i18n.ts.controlPanel" class="item" activeClass="active" to="/admin" :behavior="settingsWindowed ? 'window' : null">
+			<MkA v-if="iAmModerator" v-click-anime v-tooltip="i18n.ts.controlPanel" class="item" activeClass="active" to="/admin" :behavior="settingsWindowed ? 'window' : null">
 				<i class="ti ti-dashboard ti-fw"></i>
 			</MkA>
 			<button v-click-anime class="item _button" @click="more">
@@ -56,7 +56,7 @@ import { instance } from '@/instance.js';
 import { i18n } from '@/i18n.js';
 import { prefer } from '@/preferences.js';
 import { openAccountMenu as openAccountMenu_ } from '@/accounts.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 
 const WINDOW_THRESHOLD = 1400;
 

@@ -36,7 +36,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</component>
 			</template>
 			<div :class="$style.divider"></div>
-			<MkA v-if="$i != null && ($i.isAdmin || $i.isModerator)" v-tooltip.noDelay.right="i18n.ts.controlPanel" :class="$style.item" :activeClass="$style.active" to="/admin">
+			<MkA v-if="iAmModerator" v-tooltip.noDelay.right="i18n.ts.controlPanel" :class="$style.item" :activeClass="$style.active" to="/admin">
 				<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw" style="view-transition-name: navbar-controlPanel;"></i><span :class="$style.itemText">{{ i18n.ts.controlPanel }}</span>
 			</MkA>
 			<button class="_button" :class="$style.item" @click="more">
@@ -103,7 +103,7 @@ import { getHTMLElementOrNull } from '@/utility/get-dom-node-or-null.js';
 import { useRouter } from '@/router.js';
 import { prefer } from '@/preferences.js';
 import { openAccountMenu as openAccountMenu_ } from '@/accounts.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { miLocalStorage } from '@/local-storage.js';
 
 const router = useRouter();

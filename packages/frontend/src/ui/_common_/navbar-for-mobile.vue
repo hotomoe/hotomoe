@@ -27,7 +27,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</component>
 		</template>
 		<div :class="$style.divider"></div>
-		<MkA v-if="$i.isAdmin || $i.isModerator" :class="$style.item" :activeClass="$style.active" to="/admin">
+		<MkA v-if="iAmModerator" :class="$style.item" :activeClass="$style.active" to="/admin">
 			<i :class="$style.itemIcon" class="ti ti-dashboard ti-fw"></i><span :class="$style.itemText">{{ i18n.ts.controlPanel }}</span>
 		</MkA>
 		<button :class="$style.item" class="_button" @click="more">
@@ -58,7 +58,7 @@ import { prefer } from '@/preferences.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
 import { openAccountMenu as openAccountMenu_ } from '@/accounts.js';
-import { $i } from '@/i.js';
+import { $i, iAmModerator } from '@/i.js';
 import { miLocalStorage } from '@/local-storage.js';
 
 const kawaiiMode = miLocalStorage.getItem('kawaii') === 'true';
