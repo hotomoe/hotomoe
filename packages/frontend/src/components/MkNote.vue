@@ -51,7 +51,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<MkNoteHeader v-if="!isRedacted || showRedacted" :note="appearNote" :mini="true"/>
 			<MkInstanceTicker v-if="showTicker && (!isRedacted || showRedacted)" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
 			<div style="container-type: inline-size;">
-				<div v-if="isRedacted && !showRedacted" :class="$style.text">
+				<div v-if="isRedacted && !showRedacted" :class="[$style.text, $style.redactedText]">
 					<button class="_button" style="opacity: 0.7; cursor: pointer;" @click="showRedacted = true">({{ i18n.ts.hiddenBecauseOfPrivateMode }})</button>
 				</div>
 				<template v-else>
@@ -911,14 +911,18 @@ function emitUpdReaction(emoji: string, delta: number) {
 }
 
 .redactedAvatar {
-	display: flex;
+	display: flex !important;
 	align-items: center;
 	justify-content: center;
-	background: var(--MI_THEME-bg);
+	background: var(--MI_THEME-panel);
 	border-radius: 999px;
 	color: var(--MI_THEME-fg);
 	opacity: 0.5;
-	font-size: 24px;
+	font-size: 28px;
+}
+
+.redactedText {
+	padding-top: 12px;
 }
 
 .main {
