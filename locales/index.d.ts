@@ -3338,11 +3338,11 @@ export interface Locale extends ILocale {
      */
     "thisIsExperimentalFeature": string;
     /**
-     * 휴가 모드
+     * バケーションモード
      */
     "vacationMode": string;
     /**
-     * 휴가 모드는, 관리자가 잠시 직무를 내려놓고 일반 유저로 이용할 수 있도록 임시로 권한을 제거하는 모드입니다.
+     * バケーションモードは、管理者が一時的に職務を離れて一般ユーザーとして利用できるように権限を一時的に解除するモードです。
      */
     "vacationModeDescription": string;
     /**
@@ -3421,6 +3421,76 @@ export interface Locale extends ILocale {
      * ユーザープロフィールでモデレーションノートを非表示にします。
      */
     "hideModerationNoteDescription": string;
+    /**
+     * プライベートモード
+     */
+    "hideSensitiveInformation": string;
+    "_hideSensitiveInformation": {
+        /**
+         * プライベートモードを使用する
+         */
+        "use": string;
+        /**
+         * この機能を有効にすると、他の人が画面を見ている場合や公共の場所でMisskeyを使用している場合などにプライバシーを保護できます。
+         */
+        "about": string;
+        /**
+         * 非表示
+         */
+        "itsHidden": string;
+        /**
+         * 表示されている
+         */
+        "itsNotHidden": string;
+        /**
+         * ダイレクトノート
+         */
+        "directMessages": string;
+        /**
+         * ダイレクトノートを隠す
+         */
+        "directMessagesUse": string;
+        /**
+         * このオプションを有効にすると、ダイレクトノートの内容が基本的に表示されなくなります。
+         */
+        "directMessagesDescription": string;
+        /**
+         * ドライブ
+         */
+        "drive": string;
+        /**
+         * ファイル一覧を隠す
+         */
+        "driveUse": string;
+        /**
+         * このオプションを有効にすると、ドライブのファイル一覧が表示されなくなります。（ドライブ内のファイル添付が難しくなります。）
+         */
+        "driveDescription": string;
+        /**
+         * モデレーションログ
+         */
+        "moderationLog": string;
+        /**
+         * モデレーションログを隠す
+         */
+        "moderationLogUse": string;
+        /**
+         * このオプションを有効にすると、ユーザープロフィールでモデレーターが作成したモデレーションログが表示されなくなります。
+         */
+        "moderationLogDescription": string;
+        /**
+         * 役割
+         */
+        "roles": string;
+        /**
+         * 割り当てられた役割を隠す
+         */
+        "rolesUse": string;
+        /**
+         * このオプションを有効にすると、ユーザープロフィールで全ての役割リストが表示されなくなります。
+         */
+        "rolesDescription": string;
+    };
     /**
      * 開発者
      */
