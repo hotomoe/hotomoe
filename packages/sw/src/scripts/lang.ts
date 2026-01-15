@@ -8,14 +8,14 @@
  */
 import { get, set } from 'idb-keyval';
 import { I18n } from '@@/js/i18n.js';
-import { FETCH_TIMEOUT_MS } from '@/const.js';
 import type { Locale } from '../../../../locales/index.js';
+import { FETCH_TIMEOUT_MS } from '@/const.js';
 
 class SwLang {
 	public cacheName = `mk-cache-${_VERSION_}`;
 
 	public lang: Promise<string> = get('lang').then(async prelang => {
-		if (!prelang) return 'ja-JP';
+		if (!prelang) return 'en-US';
 		return prelang;
 	});
 

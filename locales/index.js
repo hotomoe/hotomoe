@@ -76,12 +76,12 @@ export function build() {
 		.reduce((a, [k, v]) => (a[k] = (() => {
 			const [lang] = k.split('-');
 			switch (k) {
-				case 'ja-JP': return v;
-				case 'ja-KS':
-				case 'en-US': return merge(locales['ja-JP'], v);
+				case 'en-US': return v;
+				case 'ja-JP':
+				case 'ja-KS': return merge(locales['en-US'], v);
 				default: return merge(
-					locales['ja-JP'],
 					locales['en-US'],
+					locales['ja-JP'],
 					locales[`${lang}-${primaries[lang]}`] ?? {},
 					v
 				);

@@ -143,7 +143,7 @@ export class UrlPreviewService {
 
 		return summaly(url, {
 			followRedirects: false,
-			lang: lang ?? 'ja-JP',
+			lang: lang ?? 'en-US',
 			agent: agent,
 			userAgent: meta.urlPreviewUserAgent ?? undefined,
 			operationTimeout: meta.urlPreviewTimeout,
@@ -156,7 +156,7 @@ export class UrlPreviewService {
 		const proxy = meta.urlPreviewSummaryProxyUrl!;
 		const queryStr = query({
 			url: url,
-			lang: lang ?? 'ja-JP',
+			lang: lang ?? 'en-US',
 			userAgent: meta.urlPreviewUserAgent ?? undefined,
 			operationTimeout: meta.urlPreviewTimeout,
 			contentLengthLimit: meta.urlPreviewMaximumContentLength,

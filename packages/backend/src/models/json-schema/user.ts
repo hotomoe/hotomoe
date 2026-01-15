@@ -283,7 +283,7 @@ export const packedUserDetailedNotMeOnlySchema = {
 		lang: {
 			type: 'string',
 			nullable: true, optional: false,
-			example: 'ja-JP',
+			example: 'en-US',
 		},
 		fields: {
 			type: 'array',
@@ -624,7 +624,7 @@ export const packedMeDetailedOnlySchema = {
 		postingLang: {
 			type: 'string',
 			nullable: true, optional: false,
-			example: 'ja-JP',
+			example: 'en-US',
 		},
 		viewingLangs: {
 			type: 'array',
