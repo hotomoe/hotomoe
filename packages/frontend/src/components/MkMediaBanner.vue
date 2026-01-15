@@ -52,13 +52,13 @@ const hide = ref(calcHide());
 async function showHiddenContent(ev: MouseEvent) {
 	if (!hide.value) return;
 
+	ev.preventDefault();
+	ev.stopPropagation();
+
 	// hotomoe: sensitive media require double click
 	if (props.media.isSensitive && prefer.s.sensitiveDoubleClickRequired) {
 		return;
 	}
-
-	ev.preventDefault();
-	ev.stopPropagation();
 
 	if (props.media.isSensitive && !$i) {
 		await pleaseLogin();
@@ -87,6 +87,11 @@ async function showHiddenContentDouble(ev: MouseEvent) {
 
 	ev.preventDefault();
 	ev.stopPropagation();
+
+	// sensitiveDoubleClickRequired가 꺼져있으면 더블클릭 무시 (싱글클릭으로 열림)
+	if (props.media.isSensitive && !prefer.s.sensitiveDoubleClickRequired) {
+		return;
+	}
 
 	if (props.media.isSensitive && !$i) {
 		await pleaseLogin();

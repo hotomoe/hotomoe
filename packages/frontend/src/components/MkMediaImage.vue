@@ -186,13 +186,13 @@ async function showHiddenContent(ev: MouseEvent) {
 		return;
 	}
 
+	ev.preventDefault();
+	ev.stopPropagation();
+
 	// hotomoe: sensitive images require double click
 	if (props.image.isSensitive && prefer.s.sensitiveDoubleClickRequired) {
 		return;
 	}
-
-	ev.preventDefault();
-	ev.stopPropagation();
 
 	if (props.image.isSensitive && !$i) {
 		await pleaseLogin();
@@ -223,6 +223,11 @@ async function showHiddenContentDouble(ev: MouseEvent) {
 
 	ev.preventDefault();
 	ev.stopPropagation();
+
+	// sensitiveDoubleClickRequired가 꺼져있으면 더블클릭 무시 (싱글클릭으로 열림)
+	if (props.image.isSensitive && !prefer.s.sensitiveDoubleClickRequired) {
+		return;
+	}
 
 	if (props.image.isSensitive && !$i) {
 		await pleaseLogin();
