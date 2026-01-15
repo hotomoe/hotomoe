@@ -6682,6 +6682,72 @@ export interface Locale extends ILocale {
          */
         "silenceDescription": string;
     };
+    "_initialAccountSetting": {
+        /**
+         * アカウントの作成が完了しました！
+         */
+        "accountCreated": string;
+        /**
+         * さっそくアカウントの初期設定を行いましょう。
+         */
+        "letsStartAccountSetup": string;
+        /**
+         * まずはあなたのプロフィールを設定しましょう。
+         */
+        "letsFillYourProfile": string;
+        /**
+         * プロフィール設定
+         */
+        "profileSetting": string;
+        /**
+         * プライバシー設定
+         */
+        "privacySetting": string;
+        /**
+         * これらの設定は後から変更できます。
+         */
+        "theseSettingsCanEditLater": string;
+        /**
+         * この他にも様々な設定を「設定」ページから行えます。ぜひ後で確認してみてください。
+         */
+        "youCanEditMoreSettingsInSettingsPageLater": string;
+        /**
+         * タイムラインを構築するため、気になるユーザーをフォローしてみましょう。
+         */
+        "followUsers": string;
+        /**
+         * プッシュ通知を有効にすると{name}の通知をお使いのデバイスで受け取ることができます。
+         */
+        "pushNotificationDescription": ParameterizedString<"name">;
+        /**
+         * 初期設定が完了しました！
+         */
+        "initialAccountSettingCompleted": string;
+        /**
+         * {name}をお楽しみください！
+         */
+        "haveFun": ParameterizedString<"name">;
+        /**
+         * このまま{name}(Misskey)の使い方についてのチュートリアルに進みます。
+         */
+        "continueTutorial": ParameterizedString<"name">;
+        /**
+         * チュートリアルを開始
+         */
+        "startTutorial": string;
+        /**
+         * 初期設定をスキップしますか？
+         */
+        "skipAreYouSure": string;
+        /**
+         * 初期設定をあとでやり直しますか？
+         */
+        "laterAreYouSure": string;
+        /**
+         * Botアカウントは管理者を必ず記載する必要があります。以下から管理者のアカウントを選択してください。
+         */
+        "mustBeSetBotOwner": string;
+    };
     "_initialTutorial": {
         /**
          * チュートリアルを見る
