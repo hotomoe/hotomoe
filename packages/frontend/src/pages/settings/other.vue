@@ -28,10 +28,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 							<template #value><span class="_monospace">{{ $i.id }}</span></template>
 						</MkKeyValue>
 
-					<MkKeyValue>
-						<template #key>{{ i18n.ts.registeredDate }}</template>
-						<template #value><MkTime :time="$i.createdAt" mode="detail"/></template>
-					</MkKeyValue>
+						<MkKeyValue>
+							<template #key>{{ i18n.ts.registeredDate }}</template>
+							<template #value><MkTime :time="$i.createdAt" mode="detail"/></template>
+						</MkKeyValue>
 
 						<SearchMarker :keywords="['role', 'policy']">
 							<MkFolder>
@@ -46,10 +46,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 							</MkFolder>
 						</SearchMarker>
 
-					<FormLink to="/settings/account-stats"><template #icon><i class="ti ti-info-circle"/></template>{{ i18n.ts.statistics }}</FormLink>
-				</div>
-			</MkFolder>
-
+						<FormLink to="/settings/account-stats"><template #icon><i class="ti ti-info-circle"/></template>{{ i18n.ts.statistics }}</FormLink>
+					</div>
+				</MkFolder>
 			</SearchMarker>
 
 			<SearchMarker :keywords="['timeline', 'cache']">
@@ -117,25 +116,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkFolder>
 			</SearchMarker>
 
-			<SearchMarker :keywords="['experimental', 'feature', 'flags']">
-				<MkFolder>
-					<template #icon><SearchIcon><i class="ti ti-flask"></i></SearchIcon></template>
-					<template #label><SearchLabel>{{ i18n.ts.experimentalFeatures }}</SearchLabel></template>
-
-					<div class="_gaps_m">
-						<MkSwitch v-model="enableCondensedLine">
-							<template #label>Enable condensed line</template>
-						</MkSwitch>
-						<MkSwitch v-model="skipNoteRender">
-							<template #label>Enable note render skipping</template>
-						</MkSwitch>
-						<MkSwitch v-model="stackingRouterView">
-							<template #label>Enable stacking router view</template>
-						</MkSwitch>
-					</div>
-				</MkFolder>
-			</SearchMarker>
-
 			<SearchMarker :keywords="['developer', 'mode', 'debug']">
 				<MkFolder>
 					<template #icon><SearchIcon><i class="ti ti-code"></i></SearchIcon></template>
@@ -191,18 +171,11 @@ import { migrateOldSettings } from '@/pref-migrate.js';
 const $i = ensureSignin();
 
 const reportError = prefer.model('reportError');
-const enableCondensedLine = prefer.model('enableCondensedLine');
-const skipNoteRender = prefer.model('skipNoteRender');
 const devMode = prefer.model('devMode');
-const stackingRouterView = prefer.model('experimental.stackingRouterView');
 const userLists = ref<Misskey.entities.UserList[]>([]);
 const antennas = ref<Misskey.entities.Antenna[]>([]);
 const selectedListId = ref<string | null>(null);
 const selectedAntennaId = ref<string | null>(null);
-
-watch(skipNoteRender, async () => {
-	await reloadAsk({ reason: i18n.ts.reloadToApplySetting, unison: true });
-});
 
 onMounted(async () => {
 	try {

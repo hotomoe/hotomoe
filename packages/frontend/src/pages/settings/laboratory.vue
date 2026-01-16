@@ -10,8 +10,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<template #label>{{ i18n.ts.misskeyExperimentalFeatures }}</template>
 
 		<div class="_gaps_m">
-			<MkSwitch v-model="enableCondensedLineForAcct">
-				<template #label>Enable condensed line for acct</template>
+			<MkSwitch v-model="enableCondensedLine">
+				<template #label>Enable condensed line</template>
+			</MkSwitch>
+			<MkSwitch v-model="skipNoteRender">
+				<template #label>Enable note render skipping</template>
+			</MkSwitch>
+			<MkSwitch v-model="stackingRouterView">
+				<template #label>Enable stacking router view</template>
 			</MkSwitch>
 		</div>
 	</MkFolder>
@@ -119,7 +125,9 @@ const $i = ensureSignin();
 const isVacation = ref<boolean | undefined>($i.isVacation !== null ? $i.isVacation : undefined);
 
 const hideCounters = prefer.model('hideCounters');
-const enableCondensedLineForAcct = prefer.model('enableCondensedLineForAcct');
+const enableCondensedLine = prefer.model('enableCondensedLine');
+const skipNoteRender = prefer.model('skipNoteRender');
+const stackingRouterView = prefer.model('experimental.stackingRouterView');
 const privateMode = prefer.model('privateMode');
 const hideDirectMessages = prefer.model('hideDirectMessages');
 const hideDriveFileList = prefer.model('hideDriveFileList');
@@ -147,7 +155,14 @@ async function reloadAsk() {
 }
 
 watch([
-	enableCondensedLineForAcct,
+	enableCondensedLine,
+	skipNoteRender,
+	stackingRouterView,
+], async () => {
+	await reloadAsk();
+});
+
+watch([
 	privateMode,
 	hideCounters,
 	hideDirectMessages,
