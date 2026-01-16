@@ -51,12 +51,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<XActiveUsersChart/>
 	</div>
 	<div :class="[$style.footer, $style.panel]">
-		<div :class="$style.sponsors">
-			<div><Mfm text="$[jelly ❤]"/> Sponsored by</div>
-			<a title="Skeb" href="https://skeb.jp/" target="_blank"><img src="https://media.misskeyusercontent.jp/misskey-io/sponsors/skeb.png" alt="Skeb" width="140"></a>
-		</div>
 		<div :class="$style.legalNotice">
-			<div>© {{ new Date().getFullYear() }} MisskeyHQ Inc.</div>
+			<div>© {{ new Date().getFullYear() }} hotomoe.</div>
 			<a href="https://go.misskey.io/legal-notice" target="_blank" rel="noopener"><u>特定商取引法に基づく表記</u></a>
 		</div>
 		<div :class="$style.links">
@@ -75,7 +71,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { ref } from 'vue';
 import * as Misskey from 'misskey-js';
 import { instanceName } from '@@/js/config.js';
-import type { MenuItem } from '@/types/menu.js';
 import XSigninDialog from '@/components/MkSigninDialog.vue';
 import XSignupDialog from '@/components/MkSignupDialog.vue';
 import MkButton from '@/components/MkButton.vue';
