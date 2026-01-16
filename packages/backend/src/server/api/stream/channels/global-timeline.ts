@@ -4,16 +4,22 @@
  */
 
 import { Injectable } from '@nestjs/common';
+import { franc } from 'franc';
 import { bindThis } from '@/decorators.js';
 import type { Packed } from '@/misc/json-schema.js';
 import { MetaService } from '@/core/MetaService.js';
 import { RoleService } from '@/core/RoleService.js';
+import { CacheService } from '@/core/CacheService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { isRenotePacked, isQuotePacked } from '@/misc/is-renote.js';
 import type { JsonObject } from '@/misc/json-value.js';
+import type Logger from '@/logger.js';
+import { LoggerService } from '@/core/LoggerService.js';
 import Channel, { type MiChannelService } from '../channel.js';
 
 class GlobalTimelineChannel extends Channel {
+	private logger: Logger;
+
 	public readonly chName = 'globalTimeline';
 	public static readonly shouldShare = false;
 	public static readonly requireCredential = false as const;
@@ -24,7 +30,10 @@ class GlobalTimelineChannel extends Channel {
 	constructor(
 		private metaService: MetaService,
 		private roleService: RoleService,
+		private cacheService: CacheService,
 		private noteEntityService: NoteEntityService,
+
+		private loggerService: LoggerService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -32,6 +41,7 @@ class GlobalTimelineChannel extends Channel {
 	) {
 		super(id, connection, dimension);
 		//this.onNote = this.onNote.bind(this);
+		this.logger = this.loggerService.getLogger('global-timeline-channel');
 	}
 
 	@bindThis
@@ -45,6 +55,79 @@ class GlobalTimelineChannel extends Channel {
 
 		// Subscribe events
 		this.subscriber.on('notesStream', this.onNote);
+	}
+
+	/**
+	 * 노트의 언어를 기반으로 dimension을 결정합니다.
+	 * 1 - 다른 모든 언어
+	 * 2 - 일본어 (ja)
+	 * 3 - 한국어 (ko)
+	 */
+	@bindThis
+	private async getNoteDimensionByLanguage(note: Packed<'Note'>): Promise<number> {
+		// 리노트(순수 리노트)인 경우 원본 노트의 언어 사용
+		const targetNote = (note.renote && isRenotePacked(note) && !isQuotePacked(note)) ? note.renote : note;
+
+		// 캐시에서 노트 언어 가져오기
+		let noteLang = await this.cacheService.noteLanguageCache.fetch(targetNote.id);
+
+		// 노트 언어가 없으면 사용자의 기본 게시 언어 사용
+		if (!noteLang) {
+			const userLang = await this.cacheService.userLanguageCache.fetch(targetNote.userId);
+			noteLang = userLang?.postingLang ?? null;
+		}
+
+		// 캐시에도 사용자 언어에도 없으면 franc로 텍스트에서 언어 감지
+		if (!noteLang && targetNote.text) {
+			const detected = franc(targetNote.text, { minLength: 3, only: ['jpn', 'kor', 'eng', 'und'] });
+			if (detected !== 'und') {
+				noteLang = detected;
+			}
+		}
+
+		this.logger.info(`Note ${note.id} language: ${noteLang}`);
+
+		if (!noteLang) {
+			return 1; // 언어 정보가 없으면 기본 dimension
+		}
+
+		// 일본어 (ja, ja-JP, jpn 등)
+		if (noteLang === 'ja' || noteLang.startsWith('ja-') || noteLang === 'jpn') {
+			return 2;
+		}
+
+		// 한국어 (ko, ko-KR, kor 등)
+		if (noteLang === 'ko' || noteLang.startsWith('ko-') || noteLang === 'kor') {
+			return 3;
+		}
+
+		// 그 외 모든 언어
+		return 1;
+	}
+
+	/**
+	 * 언어 기반 dimension으로 노트를 필터링합니다.
+	 */
+	@bindThis
+	private async shouldDeliverByLanguageDimension(note: Packed<'Note'>): Promise<boolean> {
+		// dimension이 설정되지 않으면 모든 노트 표시
+		if (this.dimension == null || this.dimension === 0) {
+			this.logger.info(`Note ${note.id}: dimension is 0 or null, showing all notes`);
+			return true;
+		}
+
+		// 멘션이나 visibleUserIds에 현재 사용자가 포함되어 있으면 항상 표시
+		if (this.user) {
+			if (note.mentions?.includes(this.user.id)) return true;
+			if (note.visibleUserIds?.includes(this.user.id)) return true;
+			if (note.reply?.userId === this.user.id) return true;
+			if (note.renote?.userId === this.user.id) return true;
+		}
+
+		const noteDimension = await this.getNoteDimensionByLanguage(note);
+		const shouldDeliver = this.dimension === noteDimension;
+		this.logger.info(`Note ${note.id}: viewer dimension=${this.dimension}, note dimension=${noteDimension}, deliver=${shouldDeliver}`);
+		return shouldDeliver;
 	}
 
 	@bindThis
@@ -83,7 +166,7 @@ class GlobalTimelineChannel extends Channel {
 			}
 		}
 
-		if (!this.shouldDeliverByDimension(note)) return;
+		if (!(await this.shouldDeliverByLanguageDimension(note))) return;
 
 		if (!(await this.noteEntityService.isLanguageVisibleToMe(note, this.user?.id))) return;
 
@@ -131,7 +214,9 @@ export class GlobalTimelineChannelService implements MiChannelService<false> {
 	constructor(
 		private metaService: MetaService,
 		private roleService: RoleService,
+		private cacheService: CacheService,
 		private noteEntityService: NoteEntityService,
+		private loggerService: LoggerService,
 	) {
 	}
 
@@ -140,7 +225,9 @@ export class GlobalTimelineChannelService implements MiChannelService<false> {
 		return new GlobalTimelineChannel(
 			this.metaService,
 			this.roleService,
+			this.cacheService,
 			this.noteEntityService,
+			this.loggerService,
 			id,
 			connection,
 			dimension,
