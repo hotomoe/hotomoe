@@ -5,6 +5,7 @@
 
 import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
+import { prefer } from '@/preferences';
 
 /**
  * 投稿を表す文字列を取得します。
@@ -21,6 +22,10 @@ export const getNoteSummary = (note?: Misskey.entities.Note | null): string => {
 
 	if (note.isHidden) {
 		return `(${i18n.ts.invisibleNote})`;
+	}
+
+	if (note.visibility === 'specified' && prefer.s.privateMode && prefer.s.hideDirectMessages) {
+		return `(${i18n.ts.youAreHidingSensitiveInformation})`;
 	}
 
 	let summary = '';

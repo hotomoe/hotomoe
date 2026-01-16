@@ -5,14 +5,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div
-	v-if="muted === false"
+	v-if="muted === false && isRedacted === false"
 	v-show="!isDeleted"
 	ref="rootEl"
 	v-hotkey="keymap"
 	:class="[$style.root, { [$style.showActionsOnlyHover]: prefer.s.showNoteActionsOnlyHover, [$style.skipRender]: prefer.s.skipNoteRender }]"
 	:tabindex="isDeleted ? '-1' : '0'"
 >
-	<MkNoteSub v-if="appearNote.reply && !renoteCollapsed && (!isRedacted || showRedacted)" :note="appearNote.reply" :class="$style.replyTo"/>
+	<MkNoteSub v-if="appearNote.reply && !renoteCollapsed" :note="appearNote.reply" :class="$style.replyTo"/>
 	<div v-if="pinned" :class="$style.tip"><i class="ti ti-pin"></i> {{ i18n.ts.pinnedNote }}</div>
 	<div v-if="isRenote" :class="$style.renote">
 		<div v-if="note.channel" :class="$style.colorBar" :style="{ background: note.channel.color }"></div>
@@ -45,74 +45,68 @@ SPDX-License-Identifier: AGPL-3.0-only
 	</div>
 	<article v-else :class="$style.article" @contextmenu.stop="onContextmenu">
 		<div v-if="appearNote.channel" :class="$style.colorBar" :style="{ background: appearNote.channel.color }"></div>
-		<div v-if="isRedacted && !showRedacted" :class="[$style.avatar, $style.redactedAvatar]"><i class="ti ti-user-question"></i></div>
-		<MkAvatar v-else :class="[$style.avatar, prefer.s.useStickyIcons ? $style.useSticky : null]" :user="appearNote.user" :link="!mock" :preview="!mock"/>
+		<MkAvatar :class="[$style.avatar, prefer.s.useStickyIcons ? $style.useSticky : null]" :user="appearNote.user" :link="!mock" :preview="!mock"/>
 		<div :class="$style.main">
-			<MkNoteHeader v-if="!isRedacted || showRedacted" :note="appearNote" :mini="true"/>
-			<MkInstanceTicker v-if="showTicker && (!isRedacted || showRedacted)" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
+			<MkNoteHeader :note="appearNote" :mini="true"/>
+			<MkInstanceTicker v-if="showTicker" :host="appearNote.user.host" :instance="appearNote.user.instance"/>
 			<div style="container-type: inline-size;">
-				<div v-if="isRedacted && !showRedacted" :class="[$style.text, $style.redactedText]">
-					<button class="_button" style="opacity: 0.7; cursor: pointer;" @click="showRedacted = true">({{ i18n.ts.hiddenBecauseOfPrivateMode }})</button>
-				</div>
-				<template v-else>
-					<p v-if="appearNote.cw != null" :class="$style.cw">
+				<p v-if="appearNote.cw != null" :class="$style.cw">
+					<Mfm
+						v-if="appearNote.cw != ''"
+						:text="appearNote.cw"
+						:author="appearNote.user"
+						:nyaize="'respect'"
+						:enableEmojiMenu="true"
+						:enableEmojiMenuReaction="true"
+					/>
+					<MkCwButton v-model="showContent" :text="appearNote.text" :renote="appearNote.renote" :files="appearNote.files" :poll="appearNote.poll" style="margin: 4px 0;"/>
+				</p>
+				<div v-show="appearNote.cw == null || showContent" :class="[{ [$style.contentCollapsed]: collapsed }]">
+					<div :class="$style.text">
+						<span v-if="appearNote.isHidden" style="opacity: 0.5">({{ i18n.ts.private }})</span>
+						<MkA v-if="appearNote.replyId" :class="$style.replyIcon" :to="`/notes/${appearNote.replyId}`"><i class="ti ti-arrow-back-up"></i></MkA>
 						<Mfm
-							v-if="appearNote.cw != ''"
-							:text="appearNote.cw"
+							v-if="appearNote.text"
+							:parsedNodes="parsed"
+							:text="appearNote.text"
 							:author="appearNote.user"
 							:nyaize="'respect'"
+							:emojiUrls="appearNote.emojis"
 							:enableEmojiMenu="true"
 							:enableEmojiMenuReaction="true"
+							class="_selectable"
 						/>
-						<MkCwButton v-model="showContent" :text="appearNote.text" :renote="appearNote.renote" :files="appearNote.files" :poll="appearNote.poll" style="margin: 4px 0;"/>
-					</p>
-					<div v-show="appearNote.cw == null || showContent" :class="[{ [$style.contentCollapsed]: collapsed }]">
-						<div :class="$style.text">
-							<span v-if="appearNote.isHidden" style="opacity: 0.5">({{ i18n.ts.private }})</span>
-							<MkA v-if="appearNote.replyId" :class="$style.replyIcon" :to="`/notes/${appearNote.replyId}`"><i class="ti ti-arrow-back-up"></i></MkA>
-							<Mfm
-								v-if="appearNote.text"
-								:parsedNodes="parsed"
-								:text="appearNote.text"
-								:author="appearNote.user"
-								:nyaize="'respect'"
-								:emojiUrls="appearNote.emojis"
-								:enableEmojiMenu="true"
-								:enableEmojiMenuReaction="true"
-								class="_selectable"
-							/>
-							<div v-if="translating || translation" :class="$style.translation">
-								<MkLoading v-if="translating" mini/>
-								<div v-else-if="translation">
-									<b>{{ i18n.tsx.translatedFrom({ x: translation.sourceLang }) }}: </b>
-									<Mfm :text="translation.text" :author="appearNote.user" :nyaize="'respect'" :emojiUrls="appearNote.emojis" class="_selectable"/>
-								</div>
+						<div v-if="translating || translation" :class="$style.translation">
+							<MkLoading v-if="translating" mini/>
+							<div v-else-if="translation">
+								<b>{{ i18n.tsx.translatedFrom({ x: translation.sourceLang }) }}: </b>
+								<Mfm :text="translation.text" :author="appearNote.user" :nyaize="'respect'" :emojiUrls="appearNote.emojis" class="_selectable"/>
 							</div>
 						</div>
-						<div v-if="appearNote.files && appearNote.files.length > 0">
-							<MkMediaList ref="galleryEl" :mediaList="appearNote.files" :user="appearNote.user"/>
-						</div>
-						<MkPoll v-if="appearNote.poll" :noteId="appearNote.id" :poll="appearNote.poll" :author="appearNote.user" :emojiUrls="appearNote.emojis" :class="$style.poll"/>
-						<div v-if="isEnabledUrlPreview">
-							<MkUrlPreview v-for="url in urls" :key="url" :url="url" :compact="true" :detail="false" :class="$style.urlPreview"/>
-						</div>
-						<div v-if="appearNote.renote" :class="$style.quote"><MkNoteSimple :note="appearNote.renote" :class="$style.quoteNote"/></div>
-						<button v-if="isLong && collapsed" :class="$style.collapsed" class="_button" @click="collapsed = false">
-							<span :class="$style.collapsedLabel">{{ i18n.ts.showMore }}</span>
-						</button>
-						<button v-else-if="isLong && !collapsed" :class="$style.showLess" class="_button" @click="collapsed = true">
-							<span :class="$style.showLessLabel">{{ i18n.ts.showLess }}</span>
-						</button>
 					</div>
-					<MkA v-if="appearNote.channel && !inChannel" :class="$style.channel" :to="`/channels/${appearNote.channel.id}`"><i class="ti ti-device-tv"></i> {{ appearNote.channel.name }}</MkA>
-				</template>
+					<div v-if="appearNote.files && appearNote.files.length > 0">
+						<MkMediaList ref="galleryEl" :mediaList="appearNote.files" :user="appearNote.user"/>
+					</div>
+					<MkPoll v-if="appearNote.poll" :noteId="appearNote.id" :poll="appearNote.poll" :author="appearNote.user" :emojiUrls="appearNote.emojis" :class="$style.poll"/>
+					<div v-if="isEnabledUrlPreview">
+						<MkUrlPreview v-for="url in urls" :key="url" :url="url" :compact="true" :detail="false" :class="$style.urlPreview"/>
+					</div>
+					<div v-if="appearNote.renote" :class="$style.quote"><MkNoteSimple :note="appearNote.renote" :class="$style.quoteNote"/></div>
+					<button v-if="isLong && collapsed" :class="$style.collapsed" class="_button" @click="collapsed = false">
+						<span :class="$style.collapsedLabel">{{ i18n.ts.showMore }}</span>
+					</button>
+					<button v-else-if="isLong && !collapsed" :class="$style.showLess" class="_button" @click="collapsed = true">
+						<span :class="$style.showLessLabel">{{ i18n.ts.showLess }}</span>
+					</button>
+				</div>
+				<MkA v-if="appearNote.channel && !inChannel" :class="$style.channel" :to="`/channels/${appearNote.channel.id}`"><i class="ti ti-device-tv"></i> {{ appearNote.channel.name }}</MkA>
 			</div>
-			<MkReactionsViewer v-if="appearNote.reactionAcceptance !== 'likeOnly' && (!isRedacted || showRedacted)" style="margin-top: 6px;" :note="appearNote" :maxNumber="16" @mockUpdateMyReaction="emitUpdReaction">
+			<MkReactionsViewer v-if="appearNote.reactionAcceptance !== 'likeOnly'" style="margin-top: 6px;" :note="appearNote" :maxNumber="16" @mockUpdateMyReaction="emitUpdReaction">
 				<template #more>
 					<MkButton class="_button" link :to="`/notes/${appearNote.id}/reactions`" :class="[$style.reactionOmitted, { [$style.small]: prefer.s.reactionsDisplaySize === 'small', [$style.large]: prefer.s.reactionsDisplaySize === 'large' }]">{{ i18n.ts.more }}</MkButton>
 				</template>
 			</MkReactionsViewer>
-			<footer v-if="!isRedacted || showRedacted" :class="$style.footer">
+			<footer :class="$style.footer">
 				<button :class="$style.footerButton" class="_button" @click="reply()">
 					<i class="ti ti-arrow-back-up"></i>
 					<p v-if="prefer.s.showRepliesCount && appearNote.repliesCount > 0" :class="$style.footerButtonCount">{{ number(appearNote.repliesCount) }}</p>
@@ -151,7 +145,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</article>
 </div>
-<div v-else :class="$style.muted" :style="hideMutedNotes ? 'display: none' : undefined" @click="muted = false">
+<div v-else-if="isRedacted && !muted" :class="$style.muted" @click="isRedacted = false">
+	<I18n :src="i18n.ts.youAreHidingSensitiveInformation" tag="small"/>
+</div>
+<div v-else :class="$style.muted" :style="hideMutedNotes ? 'display: none' : undefined" @click="muted = false; isRedacted = false">
 	<I18n v-if="muted === 'sensitiveMute'" :src="i18n.ts.userSaysSomethingSensitive" tag="small">
 		<template #name>
 			<MkA v-user-preview="appearNote.userId" :to="userPage(appearNote.user)">
@@ -235,7 +232,6 @@ import { getAppearNote } from '@/utility/get-appear-note.js';
 import { prefer } from '@/preferences.js';
 import { getPluginHandlers } from '@/plugin.js';
 import { DI } from '@/di.js';
-import { store } from '@/store';
 
 const props = withDefaults(defineProps<{
 	note: Misskey.entities.Note;
@@ -302,8 +298,7 @@ const muted = ref(checkMute(appearNote.value, $i?.mutedWords ?? []));
 const showSoftWordMutedWord = computed(() => prefer.s.showSoftWordMutedWord);
 const translation = ref<Misskey.entities.NotesTranslateResponse | null>(null);
 const translating = ref(false);
-const isRedacted = computed(() => prefer.s.privateMode && prefer.s.hideDirectMessages && appearNote.value.visibility === 'specified');
-const showRedacted = ref(false);
+const isRedacted = ref<boolean>(prefer.s.privateMode && prefer.s.hideDirectMessages && appearNote.value.visibility === 'specified');
 const showTicker = (prefer.s.instanceTicker === 'always') || (prefer.s.instanceTicker === 'remote' && appearNote.value.user.instance);
 const canRenote = computed(() => ['public', 'home'].includes(appearNote.value.visibility) || (appearNote.value.visibility === 'followers' && appearNote.value.userId === $i?.id));
 const renoteCollapsed = ref(
