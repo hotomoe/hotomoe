@@ -961,6 +961,10 @@ export interface Locale extends ILocale {
      */
     "sensitiveMediaThisInstance": string;
     /**
+     * サーバーをメディアサイレンス
+     */
+    "mediaSilenceThisInstance": string;
+    /**
      * 操作
      */
     "operations": string;
@@ -1044,6 +1048,14 @@ export interface Locale extends ILocale {
      * サイレンスしたいサーバーのホストを改行で区切って設定します。サイレンスされたサーバーに所属するアカウントはすべて「サイレンス」として扱われ、フォローがすべてリクエストになります。ブロックしたインスタンスには影響しません。
      */
     "silencedInstancesDescription": string;
+    /**
+     * メディアサイレンスしたサーバー
+     */
+    "mediaSilencedInstances": string;
+    /**
+     * メディアサイレンスしたいサーバーのホストを改行で区切って設定します。メディアサイレンスされたサーバーに所属するアカウントのメディアはすべてセンシティブとして扱われ、カスタム絵文字を使用できなくなります。ブロックしたインスタンスには影響しません。
+     */
+    "mediaSilencedInstancesDescription": string;
     /**
      * センシティブなメディアを含むサーバー
      */
@@ -5334,6 +5346,10 @@ export interface Locale extends ILocale {
      * ソースコードが公開されているリポジトリがある場合、そのURLを記入します。Misskeyを現状のまま（ソースコードにいかなる変更も加えずに）使用している場合は https://github.com/misskey-dev/misskey と記入します。
      */
     "repositoryUrlDescription": string;
+    /**
+     * リポジトリを公開していない場合は、代わりにtarballを提供する必要があります。詳しくは.config/example.ymlを参照してください。
+     */
+    "repositoryUrlOrTarballRequired": string;
     /**
      * フィードバック
      */
@@ -9726,6 +9742,10 @@ export interface Locale extends ILocale {
          * 設定方法でお困りの際は、{link}を参照してください。
          */
         "detailedGuide": ParameterizedString<"link">;
+        /**
+         * こちらに詳しい説明があります
+         */
+        "moreDetailedGuideHere": string;
     };
     "_permissions": {
         /**
@@ -11559,6 +11579,36 @@ export interface Locale extends ILocale {
              */
             "reportAutoResolved": string;
         };
+        "_systemEvents": {
+            /**
+             * ユーザーから通報があったとき
+             */
+            "abuseReport": string;
+            /**
+             * ユーザーからの通報を処理したとき
+             */
+            "abuseReportResolved": string;
+            /**
+             * ユーザーが作成されたとき
+             */
+            "userCreated": string;
+            /**
+             * モデレーターが一定期間非アクティブになったとき
+             */
+            "inactiveModeratorsWarning": string;
+            /**
+             * モデレーターが一定期間非アクティブだったため、システムにより招待制へと変更されたとき
+             */
+            "inactiveModeratorsInvitationOnlyChanged": string;
+        };
+        /**
+         * Webhookを削除しますか？
+         */
+        "deleteConfirm": string;
+        /**
+         * スイッチの右にあるボタンをクリックするとダミーのデータを使用したテスト用Webhookを送信できます。
+         */
+        "testRemarks": string;
     };
     "_abuse": {
         "_resolver": {
