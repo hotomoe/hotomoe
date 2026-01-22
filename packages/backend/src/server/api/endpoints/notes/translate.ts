@@ -102,7 +102,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			const res = await this.httpRequestService.send(endpoint, {
 				method: 'POST',
 				headers: {
-					'Authorization': `DeepL-Auth-Key ${this.serverSettings.deeplAuthKey}`,
+					'Authorization': `DeepL-Auth-Key ${instance.deeplAuthKey}`,
 					'Content-Type': 'application/x-www-form-urlencoded',
 					Accept: 'application/json, */*',
 				},
