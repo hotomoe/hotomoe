@@ -40,6 +40,7 @@ export type RolePolicies = {
 	gtlAvailable: boolean;
 	ltlAvailable: boolean;
 	canPublicNote: boolean;
+	canIgnoreSensitiveWords: boolean;
 	canScheduleNote: boolean;
 	scheduleNoteLimit: number;
 	scheduleNoteMaxDays: number;
@@ -93,6 +94,7 @@ export const DEFAULT_POLICIES: RolePolicies = {
 	gtlAvailable: true,
 	ltlAvailable: true,
 	canPublicNote: true,
+	canIgnoreSensitiveWords: false,
 	canScheduleNote: true,
 	scheduleNoteLimit: 10,
 	scheduleNoteMaxDays: 365,
@@ -449,6 +451,7 @@ export class RoleService implements OnApplicationShutdown, OnModuleInit {
 			gtlAvailable: calc('gtlAvailable', vs => vs.some(v => v === true)),
 			ltlAvailable: calc('ltlAvailable', vs => vs.some(v => v === true)),
 			canPublicNote: calc('canPublicNote', vs => vs.some(v => v === true)),
+			canIgnoreSensitiveWords: calc('canIgnoreSensitiveWords', vs => vs.some(v => v === true)),
 			canScheduleNote: calc('canScheduleNote', vs => vs.some(v => v === true)),
 			scheduleNoteLimit: calc('scheduleNoteLimit', vs => Math.max(...vs)),
 			scheduleNoteMaxDays: calc('scheduleNoteMaxDays', vs => Math.max(...vs)),

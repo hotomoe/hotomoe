@@ -8301,6 +8301,10 @@ export interface Locale extends ILocale {
              */
             "canPublicNote": string;
             /**
+             * センシティブワードの制限を無視
+             */
+            "canIgnoreSensitiveWords": string;
+            /**
              * 予約投稿の許可
              */
             "canScheduleNote": string;

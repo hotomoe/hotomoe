@@ -84,6 +84,7 @@ export const ROLE_POLICIES = [
 	'gtlAvailable',
 	'ltlAvailable',
 	'canPublicNote',
+	'canIgnoreSensitiveWords',
 	'canScheduleNote',
 	'scheduleNoteLimit',
 	'scheduleNoteMaxDays',

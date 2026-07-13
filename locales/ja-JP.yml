@@ -2144,6 +2144,7 @@ _role:
     gtlAvailable: "グローバルタイムラインの閲覧"
     ltlAvailable: "ローカルタイムラインの閲覧"
     canPublicNote: "パブリック投稿の許可"
+    canIgnoreSensitiveWords: "センシティブワードの制限を無視"
     canScheduleNote: "予約投稿の許可"
     scheduleNoteLimit: "予約投稿の最大数"
     scheduleNoteMaxDays: "予約投稿の最大日数"
