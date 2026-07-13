@@ -1424,7 +1424,6 @@ deleteNotWash: "삭제해도 모든 것이 없었던 일이 되는 것은 아닙
 keepOriginalFilename: "원본 파일 이름을 유지"
 keepOriginalFilenameDescription: "이 설정을 끄면 업로드를 할 때 파일 이름이 자동으로 무작위 문자열로 바뀝니다."
 noDescription: "설명문이 없습니다"
-alwaysConfirmFollow: "팔로우일 때 항상 확인하기"
 inquiry: "문의하기"
 tryAgain: "다시 시도해 주세요."
 confirmWhenRevealingSensitiveMedia: "민감한 미디어를 열 때 두 번 확인"
