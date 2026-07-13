@@ -136,13 +136,14 @@ export class SearchService {
 		} else if (this.opensearch) {
 			this.opensearchNoteIndex = `${config.opensearch!.index}`;
 			this.opensearchIdField = `${config.host}_id`;
-			this.opensearch.indices.exists({
+			const opensearch = this.opensearch;
+			opensearch.indices.exists({
 				index: this.opensearchNoteIndex,
 			}).then((indexExists) => {
-				if (!indexExists) {
-					this.opensearch?.indices.create(
-						{
-							index: this.opensearchNoteIndex + `-${new Date().toISOString().slice(0, 7).replace(/-/g, '')}`,
+				if (!indexExists.body) {
+					opensearch.indices.create({
+						index: this.opensearchNoteIndex + `-${new Date().toISOString().slice(0, 7).replace(/-/g, '')}`,
+						body: {
 							mappings: {
 								properties: {
 									text: { type: 'text' },
@@ -173,7 +174,7 @@ export class SearchService {
 								},
 							},
 						},
-					).catch((error) => {
+					}).catch((error) => {
 						this.logger.error(error);
 					});
 				}
