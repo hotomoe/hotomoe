@@ -2149,6 +2149,7 @@ _role:
     gtlAvailable: "Can view the global timeline"
     ltlAvailable: "Can view the local timeline"
     canPublicNote: "Can send public notes"
+    canIgnoreSensitiveWords: "Ignore sensitive word restrictions"
     canScheduleNote: "Can schedule notes"
     scheduleNoteLimit: "Maximum number of scheduled notes"
     scheduleNoteMaxDays: "Maximum number of days that note can be scheduled"

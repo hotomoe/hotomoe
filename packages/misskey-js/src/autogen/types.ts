@@ -10756,6 +10756,7 @@ export type components = {
             gtlAvailable: boolean;
             ltlAvailable: boolean;
             canPublicNote: boolean;
+            canIgnoreSensitiveWords: boolean;
             canScheduleNote: boolean;
             scheduleNoteLimit: number;
             scheduleNoteMaxDays: number;
@@ -17793,7 +17794,7 @@ export interface operations {
                     policies: {
                         id?: string | null;
                         /** @enum {string} */
-                        policy: 'gtlAvailable' | 'ltlAvailable' | 'canPublicNote' | 'canScheduleNote' | 'scheduleNoteLimit' | 'scheduleNoteMaxDays' | 'canInitiateConversation' | 'canCreateContent' | 'canUpdateContent' | 'canDeleteContent' | 'canPurgeAccount' | 'canUpdateAvatar' | 'canUpdateBanner' | 'mentionLimit' | 'canInvite' | 'inviteLimit' | 'inviteLimitCycle' | 'inviteExpirationTime' | 'canManageCustomEmojis' | 'canManageAvatarDecorations' | 'canSearchNotes' | 'canUseTranslator' | 'canUseDriveFileInSoundSettings' | 'canUseReaction' | 'canHideAds' | 'driveCapacityMb' | 'maxFileSizeMb' | 'alwaysMarkNsfw' | 'canUpdateBioMedia' | 'skipNsfwDetection' | 'pinLimit' | 'antennaLimit' | 'antennaNotesLimit' | 'wordMuteLimit' | 'webhookLimit' | 'clipLimit' | 'noteEachClipsLimit' | 'userListLimit' | 'userEachUserListsLimit' | 'rateLimitFactor' | 'avatarDecorationLimit' | 'canUseAccountRemoval' | 'canImportAntennas' | 'canImportBlocking' | 'canImportFollowing' | 'canImportMuting' | 'canImportUserLists' | 'mutualLinkSectionLimit' | 'mutualLinkLimit' | 'chatAvailability';
+                        policy: 'gtlAvailable' | 'ltlAvailable' | 'canPublicNote' | 'canIgnoreSensitiveWords' | 'canScheduleNote' | 'scheduleNoteLimit' | 'scheduleNoteMaxDays' | 'canInitiateConversation' | 'canCreateContent' | 'canUpdateContent' | 'canDeleteContent' | 'canPurgeAccount' | 'canUpdateAvatar' | 'canUpdateBanner' | 'mentionLimit' | 'canInvite' | 'inviteLimit' | 'inviteLimitCycle' | 'inviteExpirationTime' | 'canManageCustomEmojis' | 'canManageAvatarDecorations' | 'canSearchNotes' | 'canUseTranslator' | 'canUseDriveFileInSoundSettings' | 'canUseReaction' | 'canHideAds' | 'driveCapacityMb' | 'maxFileSizeMb' | 'alwaysMarkNsfw' | 'canUpdateBioMedia' | 'skipNsfwDetection' | 'pinLimit' | 'antennaLimit' | 'antennaNotesLimit' | 'wordMuteLimit' | 'webhookLimit' | 'clipLimit' | 'noteEachClipsLimit' | 'userListLimit' | 'userEachUserListsLimit' | 'rateLimitFactor' | 'avatarDecorationLimit' | 'canUseAccountRemoval' | 'canImportAntennas' | 'canImportBlocking' | 'canImportFollowing' | 'canImportMuting' | 'canImportUserLists' | 'mutualLinkSectionLimit' | 'mutualLinkLimit' | 'chatAvailability';
                         /**
                          * @default set
                          * @enum {string}

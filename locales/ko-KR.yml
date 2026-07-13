@@ -2131,6 +2131,7 @@ _role:
     gtlAvailable: "글로벌 타임라인 보이기"
     ltlAvailable: "로컬 타임라인 보이기"
     canPublicNote: "공개 노트 허용"
+    canIgnoreSensitiveWords: "민감한 단어 제한 무시"
     canScheduleNote: "노트 예약 허용"
     scheduleNoteLimit: "노트 예약 한도"
     scheduleNoteMaxDays: "노트 예약 최대 일수"

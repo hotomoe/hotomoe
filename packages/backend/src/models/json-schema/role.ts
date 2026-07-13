@@ -180,6 +180,10 @@ export const packedRolePoliciesSchema = {
 			type: 'boolean',
 			optional: false, nullable: false,
 		},
+		canIgnoreSensitiveWords: {
+			type: 'boolean',
+			optional: false, nullable: false,
+		},
 		canScheduleNote: {
 			type: 'boolean',
 			optional: false, nullable: false,

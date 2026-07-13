@@ -258,7 +258,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		if (data.visibility === 'public' && data.channel == null) {
 			const sensitiveWords = meta.sensitiveWords;
-			if (this.utilityService.isKeyWordIncluded(data.cw ?? this.utilityService.concatNoteContentsForKeyWordCheck({ text: data.text, pollChoices: data.poll?.choices }), sensitiveWords)) {
+			if (!policies.canIgnoreSensitiveWords && this.utilityService.isKeyWordIncluded(data.cw ?? this.utilityService.concatNoteContentsForKeyWordCheck({ text: data.text, pollChoices: data.poll?.choices }), sensitiveWords)) {
 				data.visibility = 'home';
 				this.logger.warn('Visibility changed to home because sensitive words are included', { userId: user.id, note: data });
 			} else if (!policies.canPublicNote) {
