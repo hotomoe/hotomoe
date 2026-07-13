@@ -148,6 +148,16 @@ export const meta = {
 					nullable: false,
 				},
 			},
+			visibilityRestrictedHosts: {
+				type: 'array',
+				optional: true,
+				nullable: false,
+				items: {
+					type: 'string',
+					optional: false,
+					nullable: false,
+				},
+			},
 			pinnedUsers: {
 				type: 'array',
 				optional: false, nullable: false,
@@ -635,6 +645,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				blockedRemoteCustomEmojis: instance.blockedRemoteCustomEmojis,
 				silencedHosts: instance.silencedHosts,
 				sensitiveMediaHosts: instance.sensitiveMediaHosts,
+				visibilityRestrictedHosts: instance.visibilityRestrictedHosts,
 				sensitiveWords: instance.sensitiveWords,
 				prohibitedWords: instance.prohibitedWords,
 				preservedUsernames: instance.preservedUsernames,

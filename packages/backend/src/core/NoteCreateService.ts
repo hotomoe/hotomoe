@@ -281,8 +281,9 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 
 		const inSilencedInstance = this.utilityService.isItemListedIn(user.host, meta.silencedHosts);
+		const inVisibilityRestrictedInstance = this.utilityService.isItemListedIn(user.host, meta.visibilityRestrictedHosts);
 
-		if (data.visibility === 'public' && inSilencedInstance && user.host !== null) {
+		if (data.visibility === 'public' && (inSilencedInstance || inVisibilityRestrictedInstance) && user.host !== null) {
 			data.visibility = 'home';
 		}
 

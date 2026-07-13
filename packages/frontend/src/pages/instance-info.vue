@@ -46,6 +46,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<MkSwitch v-model="isBlocked" :disabled="!meta || !instance" @update:modelValue="toggleBlock">{{ i18n.ts.blockThisInstance }}</MkSwitch>
 					<MkSwitch v-model="isSilenced" :disabled="!meta || !instance" @update:modelValue="toggleSilenced">{{ i18n.ts.silenceThisInstance }}</MkSwitch>
 					<MkSwitch v-model="isSensitiveMedia" :disabled="!meta || !instance" @update:modelValue="toggleSensitiveMedia">{{ i18n.ts.sensitiveMediaThisInstance }}</MkSwitch>
+					<MkSwitch v-model="isVisibilityRestricted" :disabled="!meta || !instance" @update:modelValue="toggleVisibilityRestricted">{{ i18n.ts.restrictVisibilityThisInstance }}</MkSwitch>
 					<MkButton :disabled="!meta || !instance" @click="refreshMetadata"><i class="ti ti-refresh"></i> {{ i18n.ts.refreshMetadata }}</MkButton>
 					<MkButton :disabled="!meta || !instance" danger @click="removeAllFollowings"><i class="ti ti-users-minus"></i> {{ i18n.ts.removeAllFollowings }}</MkButton>
 					<MkTextarea v-model="moderationNote" manualSave>
@@ -169,6 +170,7 @@ const suspensionState = ref<'none' | 'manuallySuspended' | 'goneSuspended' | 'au
 const isBlocked = ref(false);
 const isSilenced = ref(false);
 const isSensitiveMedia = ref(false);
+const isVisibilityRestricted = ref(false);
 const faviconUrl = ref<string | null>(null);
 const moderationNote = ref('');
 
@@ -210,6 +212,7 @@ async function fetch(): Promise<void> {
 	isBlocked.value = instance.value?.isBlocked ?? false;
 	isSilenced.value = instance.value?.isSilenced ?? false;
 	isSensitiveMedia.value = instance.value?.isSensitiveMedia ?? false;
+	isVisibilityRestricted.value = instance.value?.isVisibilityRestricted ?? false;
 	faviconUrl.value = getProxiedImageUrlNullable(instance.value?.faviconUrl, 'preview') ?? getProxiedImageUrlNullable(instance.value?.iconUrl, 'preview');
 	moderationNote.value = instance.value?.moderationNote;
 }
@@ -243,6 +246,17 @@ async function toggleSensitiveMedia(): Promise<void> {
 	const sensitiveMediaHosts = meta.value.sensitiveMediaHosts ?? [];
 	await misskeyApi('admin/update-meta', {
 		sensitiveMediaHosts: isSensitiveMedia.value ? sensitiveMediaHosts.concat([host]) : sensitiveMediaHosts.filter(x => x !== host),
+	});
+}
+
+async function toggleVisibilityRestricted(): Promise<void> {
+	if (!iAmAdmin) return;
+	if (!meta.value) throw new Error('No meta?');
+	if (!instance.value) throw new Error('No instance?');
+	const { host } = instance.value;
+	const visibilityRestrictedHosts = meta.value.visibilityRestrictedHosts ?? [];
+	await misskeyApi('admin/update-meta', {
+		visibilityRestrictedHosts: isVisibilityRestricted.value ? visibilityRestrictedHosts.concat([host]) : visibilityRestrictedHosts.filter(x => x !== host),
 	});
 }
 

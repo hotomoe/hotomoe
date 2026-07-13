@@ -119,6 +119,11 @@ export class MiMeta {
 	public sensitiveMediaHosts: string[];
 
 	@Column('varchar', {
+		length: 1024, array: true, default: '{}',
+	})
+	public visibilityRestrictedHosts: string[];
+
+	@Column('varchar', {
 		length: 1024,
 		nullable: true,
 	})
