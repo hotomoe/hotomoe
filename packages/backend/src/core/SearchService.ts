@@ -20,7 +20,7 @@ import { IdService } from '@/core/IdService.js';
 import type Logger from '@/logger.js';
 import { UserEntityService } from './entities/UserEntityService.js';
 import type { Index, MeiliSearch } from 'meilisearch';
-import type { Client as ElasticSearch } from '@elastic/elasticsearch';
+import type { Client as OpenSearch } from '@opensearch-project/opensearch';
 
 type K = string;
 type V = string | number | boolean;
@@ -69,7 +69,8 @@ function compileQuery(q: Q): string {
 export class SearchService {
 	private readonly meilisearchIndexScope: 'local' | 'global' | string[] = 'local';
 	private meilisearchNoteIndex: Index | null = null;
-	private elasticsearchNoteIndex: string | null = null;
+	private readonly opensearchNoteIndex: string;
+	private readonly opensearchIdField: string;
 	private logger: Logger;
 
 	constructor(
@@ -79,8 +80,8 @@ export class SearchService {
 		@Inject(DI.meilisearch)
 		private meilisearch: MeiliSearch | null,
 
-		@Inject(DI.elasticsearch)
-		private elasticsearch: ElasticSearch | null,
+		@Inject(DI.opensearch)
+		private opensearch: OpenSearch | null,
 
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -120,15 +121,17 @@ export class SearchService {
 					maxTotalHits: 10000,
 				},
 			});*/
-		} else if (this.elasticsearch) {
-			this.elasticsearchNoteIndex = `${config.elasticsearch!.index}---notes`;
-			this.elasticsearch.indices.exists({
-				index: this.elasticsearchNoteIndex,
-			}).then((indexExists: boolean) => {
+		} else if (this.opensearch) {
+			this.opensearchNoteIndex = `${config.opensearch!.index}`;
+			this.opensearchIdField = `${config.host}_id`;
+			/* 外部からindexさせるのでこの処理は不要
+			this.opensearch.indices.exists({
+				index: this.opensearchNoteIndex,
+			}).then((indexExists) => {
 				if (!indexExists) {
-					this.elasticsearch?.indices.create(
+					this.opensearch?.indices.create(
 						{
-							index: this.elasticsearchNoteIndex + `-${new Date().toISOString().slice(0, 7).replace(/-/g, '')}`,
+							index: this.opensearchNoteIndex + `-${new Date().toISOString().slice(0, 7).replace(/-/g, '')}`,
 							mappings: {
 								properties: {
 									text: { type: 'text' },
@@ -148,40 +151,32 @@ export class SearchService {
 												type: 'kuromoji_tokenizer',
 												mode: 'search',
 											},
-											nori: {
-												type: 'nori_tokenizer',
-												decompound_mode: 'mixed',
-												discard_punctuation: false,
-											},
 										},
 										analyzer: {
 											kuromoji_analyzer: {
 												type: 'custom',
 												tokenizer: 'kuromoji',
 											},
-											nori_analyzer: {
-												type: 'custom',
-												tokenizer: 'nori',
-											},
 										},
 									},
 								},
 							},
 						},
-					).catch((error: any) => {
+					).catch((error) => {
 						this.logger.error(error);
 					});
 				}
-			}).catch((error: any) => {
+			}).catch((error) => {
 				this.logger.error('Error while checking if index exists', error);
 			});
+			*/
 		}
 	}
 
 	@bindThis
 	public async indexNote(note: MiNote): Promise<void> {
 		if (note.text == null && note.cw == null) return;
-		//		if (!['home', 'public'].includes(note.visibility)) return;
+		// if (!['home', 'public'].includes(note.visibility)) return;
 
 		const createdAt = this.idService.parse(note.id).date;
 		if (this.meilisearch) {
@@ -212,7 +207,8 @@ export class SearchService {
 			}], {
 				primaryKey: 'id',
 			});
-		}	else if (this.elasticsearch) {
+		}	else if (this.opensearch) {
+			/* 外部からindexさせるのでこの処理は不要
 			const body = {
 				createdAt: createdAt.getTime(),
 				userId: note.userId,
@@ -222,13 +218,14 @@ export class SearchService {
 				text: note.text,
 				tags: note.tags,
 			};
-			await this.elasticsearch.index({
-				index: `${this.elasticsearchNoteIndex}-${createdAt.toISOString().slice(0, 7).replace(/-/g, '')}`,
+			await this.opensearch.index({
+				index: `${this.opensearchNoteIndex}-${createdAt.toISOString().slice(0, 7).replace(/-/g, '')}`,
 				id: note.id,
-				document: body,
-			}).catch((error: any) => {
+				body: body,
+			}).catch((error) => {
 				this.logger.error(error);
 			});
+			*/
 		}
 	}
 
@@ -237,14 +234,16 @@ export class SearchService {
 		// if (!['home', 'public'].includes(note.visibility)) return;
 
 		if (this.meilisearch) {
-			await this.meilisearchNoteIndex?.deleteDocument(note.id);
-		} else if (this.elasticsearch) {
-			await this.elasticsearch.delete({
-				index: `${this.elasticsearchNoteIndex}-${this.idService.parse(note.id).date.toISOString().slice(0, 7).replace(/-/g, '')}`,
+			this.meilisearchNoteIndex!.deleteDocument(note.id);
+		} else if (this.opensearch) {
+			/* 外部からindexさせるのでこの処理は不要
+			await this.opensearch.delete({
+				index: `${this.opensearchNoteIndex}-${this.idService.parse(note.id).date.toISOString().slice(0, 7).replace(/-/g, '')}`,
 				id: note.id,
 			}).catch((error) => {
 				this.logger.error(error);
 			});
+			*/
 		}
 	}
 
@@ -252,11 +251,13 @@ export class SearchService {
 	public async unindexAllNotes(): Promise<void> {
 		if (this.meilisearch) {
 			await this.meilisearchNoteIndex?.deleteAllDocuments();
-		} else if (this.elasticsearch) {
-			await this.elasticsearch.deleteByQuery({
-				index: this.elasticsearchNoteIndex + '*' as string,
-				query: {
-					match_all: {},
+		} else if (this.opensearch) {
+			await this.opensearch.deleteByQuery({
+				index: this.opensearchNoteIndex + '*' as string,
+				body: {
+					query: {
+						match_all: {},
+					},
 				},
 			}).catch((error) => {
 				this.logger.error(error);
@@ -321,7 +322,6 @@ export class SearchService {
 				limit: pagination.limit,
 			});
 			if (res.hits.length === 0) return [];
-
 			const notes = await this.notesRepository.findBy({
 				id: In(res.hits.map(x => x.id)),
 			});
@@ -330,7 +330,7 @@ export class SearchService {
 			const dataFilter = data.filter(d => d.result);
 			const filteredNotes = dataFilter.map(d => d.note);
 			return filteredNotes.sort((a, b) => a.id > b.id ? -1 : 1);
-		} else if (this.elasticsearch) {
+		} else if (this.opensearch) {
 			const esFilter: any = {
 				bool: {
 					must: [],
@@ -343,7 +343,7 @@ export class SearchService {
 			if (opts.channelId) esFilter.bool.must.push({ term: { channelId: opts.channelId } });
 			if (opts.host) {
 				if (opts.host === '.') {
-					esFilter.bool.must.push({ bool: { must_not: [{ exists: { field: 'userHost' } }] } });
+					esFilter.bool.must.push({ term: { userHost: this.config.host } });
 				} else {
 					esFilter.bool.must.push({ term: { userHost: opts.host } });
 				}
@@ -355,25 +355,26 @@ export class SearchService {
 						should: [
 							{ wildcard: { 'text': { value: q } } },
 							{ simple_query_string: { fields: ['text'], 'query': q, default_operator: 'and' } },
-							{ wildcard: { 'cw': { value: q } } },
-							{ simple_query_string: { fields: ['cw'], 'query': q, default_operator: 'and' } },
 						],
 						minimum_should_match: 1,
 					},
 				});
 			}
 
-			const res = await (this.elasticsearch.search)({
-				index: this.elasticsearchNoteIndex + '*' as string,
+			const res = await (this.opensearch.search)({
+				index: this.opensearchNoteIndex + '*' as string,
 				body: {
 					query: esFilter,
 					sort: [{ createdAt: { order: 'desc' } }],
+					_source: ['id', 'createdAt', this.opensearchIdField],
+					size: pagination.limit,
 				},
-				_source: ['id', 'createdAt'],
-				size: pagination.limit,
 			});
 
-			const noteIds = res.hits.hits.map((hit: any) => hit._id);
+			const noteIds = res.body.hits.hits.map((hit) => {
+				const source = hit._source as Record<string, unknown>;
+				return (source[this.opensearchIdField] as string) || null;
+			}).filter((id): id is string => id !== null);
 			if (noteIds.length === 0) return [];
 			const notes = await this.notesRepository.findBy({
 				id: In(noteIds),
@@ -409,10 +410,8 @@ export class SearchService {
 			}
 
 			this.queryService.generateVisibilityQuery(query, me);
-			if (me) {
-				this.queryService.generateMutedUserQuery(query, me);
-				this.queryService.generateBlockedUserQuery(query, me);
-			}
+			if (me) this.queryService.generateMutedUserQuery(query, me);
+			if (me) this.queryService.generateBlockedUserQuery(query, me);
 
 			return await query.limit(pagination.limit).getMany();
 		}

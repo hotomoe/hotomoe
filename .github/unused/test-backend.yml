@@ -14,6 +14,9 @@ on:
       # for permissions
       - packages/misskey-js/**
 
+permissions:
+  contents: read
+
 jobs:
   unit:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         ports:
           - 54312:5432
         env:
@@ -35,13 +38,7 @@ jobs:
         options: --ulimit "memlock=-1"
         env:
           DFLY_version_check: false
-          DFLY_tcp_backlog: 2048
           DFLY_default_lua_flags: allow-undeclared-keys
-          DFLY_pipeline_squash: 0
-          DFLY_multi_exec_squash: false
-          DFLY_conn_io_threads: 4
-          DFLY_epoll_file_threads: 4
-          DFLY_proactor_threads: 4
         ports:
           - 56312:6379
 
@@ -54,10 +51,26 @@ jobs:
       uses: pnpm/action-setup@v4
       with:
         run_install: false
+    - name: Restore FFmpeg binary cache
+      uses: actions/cache/restore@v4
+      with:
+        path: /opt/hostedtoolcache/ffmpeg
+        key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-latest
+        restore-keys: |
+          ffmpeg-${{ runner.os }}-${{ runner.arch }}-
     - name: Install FFmpeg
       uses: FedericoCarboni/setup-ffmpeg@v3
+      id: setup-ffmpeg
+      with:
+        ffmpeg-version: 7.0.2
+    - name: Save FFmpeg binary cache
+      if: steps.setup-ffmpeg.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: /opt/hostedtoolcache/ffmpeg
+        key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-ffmpeg.outputs.ffmpeg-version }}
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.2.0
+      uses: actions/setup-node@v4.4.0
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
@@ -85,7 +98,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15
+        image: postgres:17
         ports:
           - 54312:5432
         env:
@@ -96,13 +109,7 @@ jobs:
         options: --ulimit "memlock=-1"
         env:
           DFLY_version_check: false
-          DFLY_tcp_backlog: 2048
           DFLY_default_lua_flags: allow-undeclared-keys
-          DFLY_pipeline_squash: 0
-          DFLY_multi_exec_squash: false
-          DFLY_conn_io_threads: 4
-          DFLY_epoll_file_threads: 4
-          DFLY_proactor_threads: 4
         ports:
           - 56312:6379
 
@@ -116,7 +123,7 @@ jobs:
         with:
           run_install: false
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4.2.0
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
