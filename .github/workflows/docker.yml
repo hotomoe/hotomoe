@@ -6,6 +6,7 @@ on:
       - hotomoe
     tags:
       - '**-hotomoe.*'
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -20,7 +21,8 @@ jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
     runs-on: ubuntu-latest
-    if: github.repository == 'hotomoe/hotomoe'
+    # fork PR은 GITHUB_TOKEN에 packages:write가 없으므로 같은 리포의 PR만 push
+    if: github.repository == 'hotomoe/hotomoe' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Check out the repo
         uses: actions/checkout@v6
@@ -49,7 +51,7 @@ jobs:
           set -euo pipefail
 
           ref_type="${{ github.ref_type }}"
-          ref_name="$(echo ${{ github.ref_name }} | sed -e 's/\//-/g')"
+          ref_name="$(echo ${{ github.head_ref || github.ref_name }} | sed -e 's/\//-/g')"
 
           branch_name="hotomoe"
           case "${ref_type}" in
@@ -72,6 +74,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+            type=ref,event=pr
             type=raw,value=latest,enable={{is_default_branch}}
       - name: Build and Push to GitHub Container Registry
         id: build
