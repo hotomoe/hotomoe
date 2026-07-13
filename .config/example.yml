@@ -332,6 +332,10 @@ proxyRemoteFiles: true
 # Sign to ActivityPub GET request (default: true)
 signToActivityPubGet: true
 
+# Whether moderators/admins are required to have 2FA enabled
+# to call moderation APIs (hotomoe security policy). Default: true
+#requireModerator2fa: true
+
 # For security reasons, uploading attachments from the intranet is prohibited,
 # but exceptions can be made from the following settings. Default value is "undefined".
 # Read changelog to learn more (Improvements of 12.90.0 (2021/09/04)).

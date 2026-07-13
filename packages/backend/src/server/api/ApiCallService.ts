@@ -503,20 +503,20 @@ export class ApiCallService implements OnApplicationShutdown {
 			});
 		}
 
-		if (ep.meta.requireModerator || ep.meta.requireAdmin) {
-			const isRootUser = meta.rootUserId === user!.id;
+		if ((ep.meta.requireModerator || ep.meta.requireAdmin) && (meta.rootUserId !== user!.id)) {
 			const myRoles = await this.roleService.getUserRoles(user!.id);
-			const isModerator = myRoles.some(r => r.isModerator || r.isAdministrator) || isRootUser;
-			const isAdmin = myRoles.some(r => r.isAdministrator) || isRootUser;
-			const userProfile = await this.userEntityService.pack(user!.id, user, { schema: 'MeDetailed' });
-			const isMFAEnabled = userProfile.twoFactorEnabled;
-			if (!isMFAEnabled) {
-				throw new ApiError({
-					message: 'You need to enable 2FA to access this endpoint.',
-					code: 'REQUIRES_MFA_ENABLED',
-					kind: 'permission',
-					id: 'abce13fe-1d9f-4e85-8f00-4a5251155470',
-				});
+			const isModerator = myRoles.some(r => r.isModerator || r.isAdministrator);
+			const isAdmin = myRoles.some(r => r.isAdministrator);
+			if (this.config.requireModerator2fa) {
+				const userProfile = await this.userEntityService.pack(user!.id, user, { schema: 'MeDetailed' });
+				if (!userProfile.twoFactorEnabled) {
+					throw new ApiError({
+						message: 'You need to enable 2FA to access this endpoint.',
+						code: 'REQUIRES_MFA_ENABLED',
+						kind: 'permission',
+						id: 'abce13fe-1d9f-4e85-8f00-4a5251155470',
+					});
+				}
 			}
 			if (user?.isVacation) {
 				throw new ApiError({

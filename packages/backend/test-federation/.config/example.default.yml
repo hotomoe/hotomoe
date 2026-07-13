@@ -22,3 +22,6 @@ signToActivityPubGet: true
 allowedPrivateNetworks:
   - 127.0.0.1/32
   - 172.20.0.0/16
+
+# hotomoe: disable moderator 2FA requirement for automated tests
+requireModerator2fa: false

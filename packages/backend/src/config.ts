@@ -138,6 +138,7 @@ type Source = {
 
 	remapDriveFileUrlForActivityPub?: { target: string; replacement: string }[];
 	signToActivityPubGet?: boolean;
+	requireModerator2fa?: boolean;
 
 	perChannelMaxNoteCacheCount?: number;
 	perUserNotificationsMaxCount?: number;
@@ -229,6 +230,7 @@ export type Config = {
 	proxyRemoteFiles: boolean | undefined;
 	remapDriveFileUrlForActivityPub: { target: string; replacement: string }[] | undefined;
 	signToActivityPubGet: boolean | undefined;
+	requireModerator2fa: boolean;
 	logging?: {
 		sql?: {
 			disableQueryTruncation?: boolean,
@@ -392,6 +394,7 @@ export function loadConfig(): Config {
 		proxyRemoteFiles: config.proxyRemoteFiles,
 		remapDriveFileUrlForActivityPub: config.remapDriveFileUrlForActivityPub,
 		signToActivityPubGet: config.signToActivityPubGet ?? true,
+		requireModerator2fa: config.requireModerator2fa ?? true,
 		mediaProxy: externalMediaProxy ?? internalMediaProxy,
 		externalMediaProxyEnabled: externalMediaProxy !== null && externalMediaProxy !== internalMediaProxy,
 		videoThumbnailGenerator: config.videoThumbnailGenerator ?
