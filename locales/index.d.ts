@@ -6939,11 +6939,11 @@ export interface Locale extends ILocale {
         };
         "_profileSettings": {
             /**
-             * プライバシー設定
+             * プロフィールを設定しましょう！
              */
             "title": string;
             /**
-             * 多くのユーザーが利用しているプライバシー関連の設定項目をリストアップしました。必要に応じて変更してください。
+             * ノートを投稿する前に、あなたのことを紹介するプロフィールを設定しましょう。
              */
             "description": string;
             /**
