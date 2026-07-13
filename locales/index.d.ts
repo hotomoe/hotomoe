@@ -5552,6 +5552,14 @@ export interface Locale extends ILocale {
      */
     "refreshMetadata": string;
     /**
+     * リモートユーザー名を同期
+     */
+    "syncRemoteUsernames": string;
+    /**
+     * すべてのリモートユーザーのユーザー名をリモートサーバーから取得し直し、一致しない場合はリモート側のユーザー名に更新します。ユーザー数によっては時間がかかります。実行しますか？
+     */
+    "syncRemoteUsernamesConfirm": string;
+    /**
      * 相互フォロー解除
      */
     "removeAllFollowings": string;
