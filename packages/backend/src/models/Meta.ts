@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { Entity, Column, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryColumn, ManyToOne } from 'typeorm';
 import { id } from './util/id.js';
 import { MiUser } from './User.js';
 
@@ -14,6 +14,18 @@ export class MiMeta {
 		length: 32,
 	})
 	public id: string;
+
+	@Column({
+		...id(),
+		nullable: true,
+	})
+	public rootUserId: MiUser['id'] | null;
+
+	@ManyToOne(type => MiUser, {
+		onDelete: 'SET NULL',
+		nullable: true,
+	})
+	public rootUser: MiUser | null;
 
 	@Column('varchar', {
 		length: 1024, nullable: true,
@@ -56,6 +68,11 @@ export class MiMeta {
 	})
 	public langs: string[];
 
+	@Column('integer', {
+		default: 10000,
+	})
+	public dimensions: number;
+
 	@Column('varchar', {
 		length: 1024, array: true, default: '{}',
 	})
@@ -79,7 +96,17 @@ export class MiMeta {
 	@Column('varchar', {
 		length: 1024, array: true, default: '{}',
 	})
+	public blockedRemoteCustomEmojis: string[];
+
+	@Column('varchar', {
+		length: 1024, array: true, default: '{}',
+	})
 	public prohibitedWords: string[];
+
+	@Column('varchar', {
+		length: 1024, array: true, default: '{}',
+	})
+	public prohibitedWordsForNameOfUser: string[];
 
 	@Column('varchar', {
 		length: 1024, array: true, default: '{}',
@@ -167,18 +194,6 @@ export class MiMeta {
 	})
 	public cacheRemoteSensitiveFiles: boolean;
 
-	@Column({
-		...id(),
-		nullable: true,
-	})
-	public proxyAccountId: MiUser['id'] | null;
-
-	@ManyToOne(type => MiUser, {
-		onDelete: 'SET NULL',
-	})
-	@JoinColumn()
-	public proxyAccount: MiUser | null;
-
 	@Column('boolean', {
 		default: false,
 	})
@@ -262,6 +277,11 @@ export class MiMeta {
 		nullable: true,
 	})
 	public turnstileSecretKey: string | null;
+
+	@Column('boolean', {
+		default: false,
+	})
+	public enableTestcaptcha: boolean;
 
 	// chaptcha系を追加した際にはnodeinfoのレスポンスに追加するのを忘れないようにすること
 
@@ -391,6 +411,12 @@ export class MiMeta {
 		nullable: true,
 	})
 	public privacyPolicyUrl: string | null;
+
+	@Column('varchar', {
+		length: 1024,
+		nullable: true,
+	})
+	public inquiryUrl: string | null;
 
 	@Column('varchar', {
 		length: 8192,
@@ -525,6 +551,11 @@ export class MiMeta {
 	public enableChartsForFederatedInstances: boolean;
 
 	@Column('boolean', {
+		default: true,
+	})
+	public enableStatsForFederatedInstances: boolean;
+
+	@Column('boolean', {
 		default: false,
 	})
 	public enableServerMachineStats: boolean;
@@ -594,6 +625,11 @@ export class MiMeta {
 	})
 	public perUserListTimelineCacheMax: number;
 
+	@Column('boolean', {
+		default: false,
+	})
+	public enableReactionsBuffering: boolean;
+
 	@Column('integer', {
 		default: 0,
 	})
@@ -645,4 +681,17 @@ export class MiMeta {
 		nullable: true,
 	})
 	public urlPreviewUserAgent: string | null;
+
+	@Column('varchar', {
+		length: 128,
+		default: 'all',
+	})
+	public federation: 'all' | 'specified' | 'none';
+
+	@Column('varchar', {
+		length: 1024,
+		array: true,
+		default: '{}',
+	})
+	public federationHosts: string[];
 }

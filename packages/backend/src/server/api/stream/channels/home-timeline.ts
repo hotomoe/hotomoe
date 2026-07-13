@@ -4,11 +4,13 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { Packed } from '@/misc/json-schema.js';
-import { RoleService } from '@/core/RoleService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteStreamingHidingService } from '../NoteStreamingHidingService.js';
+import { bindThis } from '@/decorators.js';
+import { RoleService } from '@/core/RoleService.js';
 import { isRenotePacked, isQuotePacked } from '@/misc/is-renote.js';
+import type { JsonObject } from '@/misc/json-value.js';
 import Channel, { type MiChannelService } from '../channel.js';
 
 class HomeTimelineChannel extends Channel {
@@ -21,28 +23,32 @@ class HomeTimelineChannel extends Channel {
 	private minimize: boolean;
 
 	constructor(
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
-
+		private readonly roleService: RoleService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly noteStreamingHidingService: NoteStreamingHidingService,
 		id: string,
 		connection: Channel['connection'],
+		dimension?: number | null,
 	) {
-		super(id, connection);
+		super(id, connection, dimension);
 		//this.onNote = this.onNote.bind(this);
 	}
 
 	@bindThis
-	public async init(params: any) {
-		this.withRenotes = params.withRenotes ?? true;
-		this.withFiles = params.withFiles ?? false;
-		this.minimize = params.minimize ?? false;
+	public async init(params: JsonObject) {
+		this.withRenotes = !!(params.withRenotes ?? true);
+		this.withFiles = !!(params.withFiles ?? false);
+		this.minimize = !!(params.minimize ?? false);
 
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
 	@bindThis
 	private async onNote(note: Packed<'Note'>) {
-		const isMe = this.user!.id === note.userId;
+		const user = this.user;
+		if (!user) return;
+
+		const isMe = user.id === note.userId;
 
 		if (note.channelId) {
 			if (!this.followingChannels.has(note.channelId)) return;
@@ -55,23 +61,13 @@ class HomeTimelineChannel extends Channel {
 		if (this.withFiles && (note.fileIds == null || note.fileIds.length === 0)) return;
 		if (this.withFiles && (note.files === undefined || note.files.length === 0)) return;
 
-		if (note.visibility === 'followers') {
-			if (!isMe && !Object.hasOwn(this.following, note.userId)) return;
-		} else if (note.visibility === 'specified') {
-			if (!isMe && !note.visibleUserIds!.includes(this.user!.id)) return;
-		}
+		if (!this.isNoteVisibleForMe(note)) return;
 
 		if (note.reply) {
 			const reply = note.reply;
 			if (this.following[note.userId]?.withReplies) {
-				// 自分のフォローしていないユーザーの visibility: followers な投稿への返信は弾く
-				if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId)) return;
-				// 自分の見ることができないユーザーの visibility: specified な投稿への返信は弾く
-				if (reply.visibility === 'specified' && !reply.visibleUserIds!.includes(this.user!.id)) return;
-			} else {
-				// 「チャンネル接続主への返信」でもなければ、「チャンネル接続主が行った返信」でもなければ、「投稿者の投稿者自身への返信」でもない場合
-				if (reply.userId !== this.user!.id && !isMe && reply.userId !== note.userId) return;
-			}
+				if (!this.isNoteVisibleForMe(reply)) return;
+			} else if (reply.userId !== user.id && !isMe && reply.userId !== note.userId) return;
 		}
 
 		// 純粋なリノート（引用リノートでないリノート）の場合
@@ -79,21 +75,34 @@ class HomeTimelineChannel extends Channel {
 			if (!this.withRenotes) return;
 			if (note.renote.reply) {
 				const reply = note.renote.reply;
-				// 自分のフォローしていないユーザーの visibility: followers な投稿への返信のリノートは弾く
-				if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId)) return;
+				if (!this.isNoteVisibleForMe(reply)) return;
 			}
 		}
+
+		if (!this.shouldDeliverByDimension(note)) return;
+
+		if (!(await this.noteEntityService.isLanguageVisibleToMe(note, user.id))) return;
 
 		if (this.isNoteMutedOrBlocked(note)) return;
 
-		if (this.user && isRenotePacked(note) && !isQuotePacked(note)) {
+		const { shouldSkip } = await this.noteStreamingHidingService.processHiding(note, user.id);
+		if (shouldSkip) return;
+
+		let noteToSend = note;
+		if (isRenotePacked(note) && !isQuotePacked(note)) {
 			if (note.renote && Object.keys(note.renote.reactions).length > 0) {
-				const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, this.user.id);
-				note.renote.myReaction = myRenoteReaction;
+				const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, user.id);
+				noteToSend = {
+					...note,
+					renote: {
+						...note.renote,
+						myReaction: myRenoteReaction,
+					},
+				};
 			}
 		}
 
-		if (this.user && (note.visibleUserIds?.includes(this.user.id) ?? note.mentions?.includes(this.user.id))) {
+		if (note.visibleUserIds?.includes(user.id) ?? note.mentions?.includes(user.id)) {
 			this.connection.cacheNote(note);
 		}
 
@@ -101,14 +110,14 @@ class HomeTimelineChannel extends Channel {
 			const badgeRoles = this.iAmModerator ? await this.roleService.getUserBadgeRoles(note.userId, false) : undefined;
 
 			this.send('note', {
-				id: note.id, myReaction: note.myReaction,
-				poll: note.poll?.choices ? { choices: note.poll.choices } : undefined,
-				reply: note.reply?.myReaction ? { myReaction: note.reply.myReaction } : undefined,
-				renote: note.renote?.myReaction ? { myReaction: note.renote.myReaction } : undefined,
+				id: noteToSend.id, myReaction: noteToSend.myReaction,
+				poll: noteToSend.poll?.choices ? { choices: noteToSend.poll.choices } : undefined,
+				reply: noteToSend.reply?.myReaction ? { myReaction: noteToSend.reply.myReaction } : undefined,
+				renote: noteToSend.renote?.myReaction ? { myReaction: noteToSend.renote.myReaction } : undefined,
 				...(badgeRoles?.length ? { user: { badgeRoles } } : {}),
 			});
 		} else {
-			this.send('note', note);
+			this.send('note', noteToSend);
 		}
 	}
 
@@ -126,18 +135,21 @@ export class HomeTimelineChannelService implements MiChannelService<true> {
 	public readonly kind = HomeTimelineChannel.kind;
 
 	constructor(
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
+		private readonly roleService: RoleService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly noteStreamingHidingService: NoteStreamingHidingService,
 	) {
 	}
 
 	@bindThis
-	public create(id: string, connection: Channel['connection']): HomeTimelineChannel {
+	public create(id: string, connection: Channel['connection'], dimension?: number | null): HomeTimelineChannel {
 		return new HomeTimelineChannel(
 			this.roleService,
 			this.noteEntityService,
+			this.noteStreamingHidingService,
 			id,
 			connection,
+			dimension,
 		);
 	}
 }

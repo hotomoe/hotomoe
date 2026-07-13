@@ -8,10 +8,12 @@
 		"noUnusedLocals": true,
 		"noFallthroughCasesInSwitch": true,
 		"declaration": false,
-		"sourceMap": false,
-		"target": "es2022",
-		"module": "nodenext",
-		"moduleResolution": "nodenext",
+		"sourceMap": true,
+		"sourceRoot": "/",
+		"inlineSources": true,
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "bundler",
 		"removeComments": false,
 		"noLib": false,
 		"strict": true,
@@ -21,15 +23,15 @@
 		"isolatedModules": true,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@@/*": ["../frontend-shared/*"]
 		},
 		"typeRoots": [
-			"./node_modules/@types",
-			"./src/@types"
+			"./src/@types",
+			"./node_modules/@types"
 		],
 		"lib": [
-			"esnext",
-			"webworker"
+			"esnext"
 		]
 	},
 	"compileOnSave": false,

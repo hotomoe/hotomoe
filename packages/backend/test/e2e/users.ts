@@ -7,15 +7,15 @@ process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { inspect } from 'node:util';
-import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { api, failedApiCall, post, role, signup, successfulApiCall, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
+import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 
 describe('ユーザー', () => {
 	// エンティティとしてのユーザーを主眼においたテストを記述する
 	// (Userを返すエンドポイントとUserエンティティを書き換えるエンドポイントをテストする)
 
-	const stripUndefined = <T extends { [key: string]: any }, >(orig: T): Partial<T> => {
+	const stripUndefined = <T extends { [key: string]: any } >(orig: T): Partial<T> => {
 		return Object.entries({ ...orig })
 			.filter(([, value]) => value !== undefined)
 			.reduce((obj: Partial<T>, [key, value]) => {
@@ -86,9 +86,8 @@ describe('ユーザー', () => {
 			publicReactions: user.publicReactions,
 			followingVisibility: user.followingVisibility,
 			followersVisibility: user.followersVisibility,
-			twoFactorEnabled: user.twoFactorEnabled,
-			usePasswordLessLogin: user.usePasswordLessLogin,
-			securityKeys: user.securityKeys,
+			chatScope: user.chatScope,
+			canChat: user.canChat,
 			roles: user.roles,
 			memo: user.memo,
 		});
@@ -108,6 +107,7 @@ describe('ユーザー', () => {
 			isRenoteMuted: user.isRenoteMuted ?? false,
 			notify: user.notify ?? 'none',
 			withReplies: user.withReplies ?? false,
+			followedMessage: user.isFollowing ? (user.followedMessage ?? null) : undefined,
 		});
 	};
 
@@ -117,6 +117,7 @@ describe('ユーザー', () => {
 			...userDetailedNotMe(user),
 			avatarId: user.avatarId,
 			bannerId: user.bannerId,
+			followedMessage: user.followedMessage,
 			isModerator: user.isModerator,
 			isAdmin: user.isAdmin,
 			isRoot: user.isRoot,
@@ -130,6 +131,10 @@ describe('ユーザー', () => {
 			preventAiLearning: user.preventAiLearning,
 			isExplorable: user.isExplorable,
 			isDeleted: user.isDeleted,
+			postingLang: user.postingLang,
+			viewingLangs: user.viewingLangs,
+			showMediaInAllLanguages: user.showMediaInAllLanguages,
+			showHashtagsInAllLanguages: user.showHashtagsInAllLanguages,
 			twoFactorBackupCodesStock: user.twoFactorBackupCodesStock,
 			hideOnlineStatus: user.hideOnlineStatus,
 			hasUnreadSpecifiedNotes: user.hasUnreadSpecifiedNotes,
@@ -137,6 +142,7 @@ describe('ユーザー', () => {
 			hasUnreadAnnouncement: user.hasUnreadAnnouncement,
 			hasUnreadAntenna: user.hasUnreadAntenna,
 			hasUnreadChannel: user.hasUnreadChannel,
+			hasUnreadChatMessages: user.hasUnreadChatMessages,
 			hasUnreadNotification: user.hasUnreadNotification,
 			unreadNotificationsCount: user.unreadNotificationsCount,
 			hasPendingReceivedFollowRequest: user.hasPendingReceivedFollowRequest,
@@ -150,6 +156,9 @@ describe('ユーザー', () => {
 			achievements: user.achievements,
 			loggedInDays: user.loggedInDays,
 			policies: user.policies,
+			twoFactorEnabled: user.twoFactorEnabled,
+			usePasswordLessLogin: user.usePasswordLessLogin,
+			securityKeys: user.securityKeys,
 			...(security ? {
 				email: user.email,
 				emailVerified: user.emailVerified,
@@ -345,15 +354,16 @@ describe('ユーザー', () => {
 		assert.strictEqual(response.publicReactions, true);
 		assert.strictEqual(response.followingVisibility, 'public');
 		assert.strictEqual(response.followersVisibility, 'public');
-		assert.strictEqual(response.twoFactorEnabled, false);
-		assert.strictEqual(response.usePasswordLessLogin, false);
-		assert.strictEqual(response.securityKeys, false);
+		assert.strictEqual(response.chatScope, 'mutual');
+		// FIXME Chat機能が使用できるようになった暁には復活させる
+		// assert.strictEqual(response.canChat, true);
 		assert.deepStrictEqual(response.roles, []);
 		assert.strictEqual(response.memo, null);
 
 		// MeDetailedOnly
 		assert.strictEqual(response.avatarId, null);
 		assert.strictEqual(response.bannerId, null);
+		assert.strictEqual(response.followedMessage, null);
 		assert.strictEqual(response.isModerator, false);
 		assert.strictEqual(response.isAdmin, false);
 		assert.strictEqual(response.injectFeaturedNote, true);
@@ -373,6 +383,7 @@ describe('ユーザー', () => {
 		assert.strictEqual(response.hasUnreadAnnouncement, false);
 		assert.strictEqual(response.hasUnreadAntenna, false);
 		assert.strictEqual(response.hasUnreadChannel, false);
+		assert.strictEqual(response.hasUnreadChatMessages, false);
 		assert.strictEqual(response.hasUnreadNotification, false);
 		assert.strictEqual(response.unreadNotificationsCount, 0);
 		assert.strictEqual(response.hasPendingReceivedFollowRequest, false);
@@ -386,6 +397,9 @@ describe('ユーザー', () => {
 		assert.deepStrictEqual(response.achievements, []);
 		assert.deepStrictEqual(response.loggedInDays, 0);
 		assert.deepStrictEqual(response.policies, DEFAULT_POLICIES);
+		assert.strictEqual(response.twoFactorEnabled, false);
+		assert.strictEqual(response.usePasswordLessLogin, false);
+		assert.strictEqual(response.securityKeys, false);
 		assert.notStrictEqual(response.email, undefined);
 		assert.strictEqual(response.emailVerified, false);
 		assert.deepStrictEqual(response.securityKeysList, []);
@@ -417,6 +431,8 @@ describe('ユーザー', () => {
 		{ parameters: () => ({ description: 'x'.repeat(1500) }) },
 		{ parameters: () => ({ description: 'x' }) },
 		{ parameters: () => ({ description: 'My description' }) },
+		{ parameters: () => ({ followedMessage: null }) },
+		{ parameters: () => ({ followedMessage: 'Thank you' }) },
 		{ parameters: () => ({ location: null }) },
 		{ parameters: () => ({ location: 'x'.repeat(50) }) },
 		{ parameters: () => ({ location: 'x' }) },
@@ -617,6 +633,9 @@ describe('ユーザー', () => {
 		{ label: 'Moderatorになっている', user: () => userModerator, me: () => userModerator, selector: (user: misskey.entities.MeDetailed) => user.isModerator },
 		// @ts-expect-error UserDetailedNotMe doesn't include isModerator
 		{ label: '自分以外から見たときはModeratorか判定できない', user: () => userModerator, selector: (user: misskey.entities.UserDetailedNotMe) => user.isModerator, expected: () => undefined },
+		{ label: '自分から見た場合に二要素認証関連のプロパティがセットされている', user: () => alice, me: () => alice, selector: (user: misskey.entities.MeDetailed) => user.twoFactorEnabled, expected: () => false },
+		{ label: '自分以外から見た場合に二要素認証関連のプロパティがセットされていない', user: () => alice, me: () => bob, selector: (user: misskey.entities.UserDetailedNotMe) => user.twoFactorEnabled, expected: () => undefined },
+		{ label: 'モデレーターから見た場合に二要素認証関連のプロパティがセットされている', user: () => alice, me: () => userModerator, selector: (user: misskey.entities.UserDetailedNotMe) => user.twoFactorEnabled, expected: () => false },
 		{ label: 'サイレンスになっている', user: () => userSilenced, selector: (user: misskey.entities.UserDetailed) => user.isSilenced },
 		// FIXME: 落ちる
 		//{ label: 'サスペンドになっている', user: () => userSuspended, selector: (user: misskey.entities.UserDetailed) => user.isSuspended },
@@ -668,6 +687,16 @@ describe('ユーザー', () => {
 				displayOrder: roleBadge.displayOrder,
 			}]);
 		}
+		assert.deepStrictEqual(response.roles, [{
+			id: roleBadge.id,
+			name: roleBadge.name,
+			color: roleBadge.color,
+			iconUrl: roleBadge.iconUrl,
+			description: roleBadge.description,
+			isModerator: roleBadge.isModerator,
+			isAdministrator: roleBadge.isAdministrator,
+			displayOrder: roleBadge.displayOrder,
+		}]);
 		assert.deepStrictEqual(response.roles, [{
 			id: roleBadge.id,
 			name: roleBadge.name,
@@ -733,7 +762,7 @@ describe('ユーザー', () => {
 	});
 	test.each([
 		{ label: '「見つけやすくする」がOFFのユーザーが含まれる', user: () => userNotExplorable },
-		{ label: 'ミュートユーザーが含まれる', user: () => userMutedByAlice },
+		{ label: 'ミュートユーザーが含まれない', user: () => userMutedByAlice, excluded: true },
 		{ label: 'ブロックされているユーザーが含まれる', user: () => userBlockedByAlice },
 		{ label: 'ブロックしてきているユーザーが含まれる', user: () => userBlockingAlice },
 		{ label: '承認制ユーザーが含まれる', user: () => userLocking },

@@ -5,19 +5,24 @@
 
 import * as WebSocket from 'ws';
 import type { MiUser } from '@/models/User.js';
+import type { MiMeta } from '@/models/_.js';
 import type { MiAccessToken } from '@/models/AccessToken.js';
 import type { Packed } from '@/misc/json-schema.js';
-import type { NoteReadService } from '@/core/NoteReadService.js';
 import type { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { MiFollowing, MiUserProfile } from '@/models/_.js';
 import type { StreamEventEmitter, GlobalEvents } from '@/core/GlobalEventService.js';
 import { ChannelFollowingService } from '@/core/ChannelFollowingService.js';
+import { isJsonObject } from '@/misc/json-value.js';
+import type { JsonObject, JsonValue } from '@/misc/json-value.js';
 import { RoleService } from '@/core/RoleService.js';
+import { normalizeDimension } from '@/misc/dimension.js';
 import type { ChannelsService } from './ChannelsService.js';
 import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
+
+const MAX_CHANNELS_PER_CONNECTION = 32;
 
 /**
  * Main stream connection
@@ -28,8 +33,8 @@ export default class Connection {
 	public token?: MiAccessToken;
 	private wsConnection: WebSocket.WebSocket;
 	public subscriber: StreamEventEmitter;
-	private channels: Channel[] = [];
-	private subscribingNotes: any = {};
+	private channels: Map<string, Channel> = new Map();
+	private subscribingNotes: Partial<Record<string, number>> = {};
 	private cachedNotes: Packed<'Note'>[] = [];
 	public userProfile: MiUserProfile | null = null;
 	public isModerator = false;
@@ -43,17 +48,21 @@ export default class Connection {
 
 	constructor(
 		private channelsService: ChannelsService,
-		private noteReadService: NoteReadService,
 		private notificationService: NotificationService,
 		private cacheService: CacheService,
 		private roleService: RoleService,
 		private channelFollowingService: ChannelFollowingService,
+		private meta: MiMeta,
 
 		user: MiUser | null | undefined,
 		token: MiAccessToken | null | undefined,
 	) {
 		if (user) this.user = user;
 		if (token) this.token = token;
+	}
+
+	public normalizeDimension(value: number | null | undefined): number | null {
+		return normalizeDimension(value, this.meta.dimensions ?? 1);
 	}
 
 	@bindThis
@@ -105,7 +114,7 @@ export default class Connection {
 	 */
 	@bindThis
 	private async onWsConnectionMessage(data: WebSocket.RawData) {
-		let obj: Record<string, any>;
+		let obj: JsonObject;
 
 		try {
 			obj = JSON.parse(data.toString());
@@ -119,7 +128,7 @@ export default class Connection {
 			case 'readNotification': this.onReadNotification(body); break;
 			case 'subNote': this.onSubscribeNote(body); break;
 			case 's': this.onSubscribeNote(body); break; // alias
-			case 'sr': this.onSubscribeNote(body); this.readNote(body); break;
+			case 'sr': this.onSubscribeNote(body); break;
 			case 'unsubNote': this.onUnsubscribeNote(body); break;
 			case 'un': this.onUnsubscribeNote(body); break; // alias
 			case 'connect': this.onChannelConnectRequested(body); break;
@@ -155,19 +164,7 @@ export default class Connection {
 	}
 
 	@bindThis
-	private readNote(body: any) {
-		const id = body.id;
-
-		const note = this.cachedNotes.find(n => n.id === id);
-		if (note == null) return;
-
-		if (this.user && (note.userId !== this.user.id)) {
-			this.noteReadService.read(this.user.id, [note]);
-		}
-	}
-
-	@bindThis
-	private onReadNotification(payload: any) {
+	private onReadNotification(payload: JsonValue | undefined) {
 		this.notificationService.readAllNotification(this.user!.id);
 	}
 
@@ -175,16 +172,15 @@ export default class Connection {
 	 * 投稿購読要求時
 	 */
 	@bindThis
-	private onSubscribeNote(payload: any) {
-		if (!payload.id) return;
+	private onSubscribeNote(payload: JsonValue | undefined) {
+		if (!isJsonObject(payload)) return;
+		if (!payload.id || typeof payload.id !== 'string') return;
 
-		if (this.subscribingNotes[payload.id] == null) {
-			this.subscribingNotes[payload.id] = 0;
-		}
+		const current = this.subscribingNotes[payload.id] ?? 0;
+		const updated = current + 1;
+		this.subscribingNotes[payload.id] = updated;
 
-		this.subscribingNotes[payload.id]++;
-
-		if (this.subscribingNotes[payload.id] === 1) {
+		if (updated === 1) {
 			this.subscriber.on(`noteStream:${payload.id}`, this.onNoteStreamMessage);
 		}
 	}
@@ -193,11 +189,15 @@ export default class Connection {
 	 * 投稿購読解除要求時
 	 */
 	@bindThis
-	private onUnsubscribeNote(payload: any) {
-		if (!payload.id) return;
+	private onUnsubscribeNote(payload: JsonValue | undefined) {
+		if (!isJsonObject(payload)) return;
+		if (!payload.id || typeof payload.id !== 'string') return;
 
-		this.subscribingNotes[payload.id]--;
-		if (this.subscribingNotes[payload.id] <= 0) {
+		const current = this.subscribingNotes[payload.id];
+		if (current == null) return;
+		const updated = current - 1;
+		this.subscribingNotes[payload.id] = updated;
+		if (updated <= 0) {
 			delete this.subscribingNotes[payload.id];
 			this.subscriber.off(`noteStream:${payload.id}`, this.onNoteStreamMessage);
 		}
@@ -205,6 +205,19 @@ export default class Connection {
 
 	@bindThis
 	private async onNoteStreamMessage(data: GlobalEvents['note']['payload']) {
+		// 自分自身ではないかつ
+		if (data.body.userId !== this.user?.id) {
+			// 公開範囲が指名で自分が含まれてない
+			if (data.body.visibility === 'specified' && (this.user == null || (!data.body.visibleUserIds.includes(this.user.id) && !(data.body.mentions?.includes(this.user.id) ?? false)))) {
+				return;
+			}
+
+			// 公開範囲がフォロワーで自分がフォロワーでない
+			if (data.body.visibility === 'followers' && (this.user == null || (!Object.hasOwn(this.following, data.body.userId) && data.body.replyUserId !== this.user.id && !(data.body.mentions?.includes(this.user.id) ?? false)))) {
+				return;
+			}
+		}
+
 		this.sendMessageToWs('noteUpdated', {
 			id: data.body.id,
 			type: data.type,
@@ -216,17 +229,24 @@ export default class Connection {
 	 * チャンネル接続要求時
 	 */
 	@bindThis
-	private onChannelConnectRequested(payload: any) {
+	private onChannelConnectRequested(payload: JsonValue | undefined) {
+		if (!isJsonObject(payload)) return;
 		const { channel, id, params, pong } = payload;
-		this.connectChannel(id, params, channel, pong);
+		if (typeof id !== 'string') return;
+		if (typeof channel !== 'string') return;
+		if (typeof pong !== 'boolean' && typeof pong !== 'undefined' && pong !== null) return;
+		if (typeof params !== 'undefined' && !isJsonObject(params)) return;
+		this.connectChannel(id, params, channel, pong ?? undefined);
 	}
 
 	/**
 	 * チャンネル切断要求時
 	 */
 	@bindThis
-	private onChannelDisconnectRequested(payload: any) {
+	private onChannelDisconnectRequested(payload: JsonValue | undefined) {
+		if (!isJsonObject(payload)) return;
 		const { id } = payload;
+		if (typeof id !== 'string') return;
 		this.disconnectChannel(id);
 	}
 
@@ -234,7 +254,7 @@ export default class Connection {
 	 * クライアントにメッセージ送信
 	 */
 	@bindThis
-	public sendMessageToWs(type: string, payload: any) {
+	public sendMessageToWs(type: string, payload: JsonObject) {
 		this.wsConnection.send(JSON.stringify({
 			type: type,
 			body: payload,
@@ -245,7 +265,15 @@ export default class Connection {
 	 * チャンネルに接続
 	 */
 	@bindThis
-	public connectChannel(id: string, params: any, channel: string, pong = false) {
+	public async connectChannel(id: string, params: JsonObject | undefined, channel: string, pong = false) {
+		if (this.channels.has(id)) {
+			this.disconnectChannel(id);
+		}
+
+		if (this.channels.size >= MAX_CHANNELS_PER_CONNECTION) {
+			return;
+		}
+
 		const channelService = this.channelsService.getChannelService(channel);
 
 		if (channelService.requireCredential && this.user == null) {
@@ -258,13 +286,23 @@ export default class Connection {
 		}
 
 		// 共有可能チャンネルに接続しようとしていて、かつそのチャンネルに既に接続していたら無意味なので無視
-		if (channelService.shouldShare && this.channels.some(c => c.chName === channel)) {
-			return;
+		if (channelService.shouldShare) {
+			for (const c of this.channels.values()) {
+				if (c.chName === channel) {
+					return;
+				}
+			}
 		}
 
-		const ch: Channel = channelService.create(id, this);
-		this.channels.push(ch);
-		ch.init(params ?? {});
+		const dimension = typeof params?.dimension === 'number' ? params.dimension : null;
+		const ch: Channel = channelService.create(id, this, this.normalizeDimension(dimension) ?? 0);
+		this.channels.set(ch.id, ch);
+		const valid = await ch.init(params ?? {});
+		if (typeof valid === 'boolean' && !valid) {
+			// 初期化処理の結果、接続拒否されたので切断
+			this.disconnectChannel(id);
+			return;
+		}
 
 		if (pong) {
 			this.sendMessageToWs('connected', {
@@ -279,11 +317,11 @@ export default class Connection {
 	 */
 	@bindThis
 	public disconnectChannel(id: string) {
-		const channel = this.channels.find(c => c.id === id);
+		const channel = this.channels.get(id);
 
 		if (channel) {
 			if (channel.dispose) channel.dispose();
-			this.channels = this.channels.filter(c => c.id !== id);
+			this.channels.delete(id);
 		}
 	}
 
@@ -292,8 +330,13 @@ export default class Connection {
 	 * @param data メッセージ
 	 */
 	@bindThis
-	private onChannelMessageRequested(data: any) {
-		const channel = this.channels.find(c => c.id === data.id);
+	private onChannelMessageRequested(data: JsonValue | undefined) {
+		if (!isJsonObject(data)) return;
+		if (typeof data.id !== 'string') return;
+		if (typeof data.type !== 'string') return;
+		if (typeof data.body === 'undefined') return;
+
+		const channel = this.channels.get(data.id);
 		if (channel != null && channel.onMessage != null) {
 			channel.onMessage(data.type, data.body);
 		}
@@ -305,7 +348,7 @@ export default class Connection {
 	@bindThis
 	public dispose() {
 		if (this.fetchIntervalId) clearInterval(this.fetchIntervalId);
-		for (const c of this.channels.filter(c => c.dispose)) {
+		for (const c of this.channels.values()) {
 			if (c.dispose) c.dispose();
 		}
 	}

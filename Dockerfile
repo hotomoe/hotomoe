@@ -10,11 +10,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 	; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache \
 	&& apt-get update \
 	&& apt-get install -yqq --no-install-recommends \
-	build-essential
+	build-essential libpq-dev
 
 WORKDIR /misskey
 
 COPY --link pnpm-lock.yaml ./
+COPY --link patches ./patches
 RUN npm install -g pnpm@10
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 	pnpm fetch --ignore-scripts
@@ -22,7 +23,9 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 COPY --link ["pnpm-workspace.yaml", "package.json", "./"]
 COPY --link ["scripts", "./scripts"]
 COPY --link ["packages/backend/package.json", "./packages/backend/"]
+COPY --link ["packages/frontend-shared/package.json", "./packages/frontend-shared/"]
 COPY --link ["packages/frontend/package.json", "./packages/frontend/"]
+COPY --link ["packages/frontend-embed/package.json", "./packages/frontend-embed/"]
 COPY --link ["packages/sw/package.json", "./packages/sw/"]
 COPY --link ["packages/misskey-js/package.json", "./packages/misskey-js/"]
 COPY --link ["packages/misskey-reversi/package.json", "./packages/misskey-reversi/"]
@@ -41,11 +44,12 @@ FROM --platform=$TARGETPLATFORM node:22 AS target-builder
 
 RUN apt-get update \
 	&& apt-get install -yqq --no-install-recommends \
-	build-essential
+	build-essential libpq-dev
 
 WORKDIR /misskey
 
 COPY --link pnpm-lock.yaml ./
+COPY --link patches ./patches
 RUN npm install -g pnpm@10 && mkdir -p /root/.local/share/pnpm/.tools
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
 	pnpm fetch --ignore-scripts
@@ -67,8 +71,8 @@ ARG GID="991"
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-	curl ffmpeg libjemalloc-dev libjemalloc2 tini \
-	&& ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so \
+	curl ffmpeg libmimalloc-dev libmimalloc2.0 tini \
+	&& ln -s /usr/lib/$(uname -m)-linux-gnu/libmimalloc.so.2 /usr/local/lib/libmimalloc.so \
 	&& groupadd -g "${GID}" misskey \
 	&& useradd -l -u "${UID}" -g "${GID}" -m -d /misskey misskey \
 	&& find / -type d -path /sys -prune -o -type d -path /proc -prune -o -type f -perm /u+s -ignore_readdir_race -exec chmod u-s {} \; \
@@ -79,6 +83,7 @@ RUN apt-get update \
 WORKDIR /misskey
 
 COPY --chown=misskey:misskey pnpm-lock.yaml ./
+COPY --chown=misskey:misskey patches ./patches
 RUN npm install -g pnpm@10
 
 COPY --chown=misskey:misskey --from=target-builder /root/.local/share/pnpm/.tools ./.local/share/pnpm/.tools
@@ -96,8 +101,8 @@ COPY --chown=misskey:misskey --from=native-builder /misskey/fluent-emojis /missk
 COPY --chown=misskey:misskey . ./
 
 USER misskey
-ENV LD_PRELOAD=/usr/local/lib/libjemalloc.so
-ENV MALLOC_CONF=background_thread:true,metadata_thp:auto,dirty_decay_ms:30000,muzzy_decay_ms:30000
+ENV LD_PRELOAD=/usr/local/lib/libmimalloc.so
+ENV MIMALLOC_LARGE_OS_PAGES=0
 ENV TF_CPP_MIN_LOG_LEVEL=2
 ENV NODE_ENV=production
 HEALTHCHECK --interval=5s --retries=20 CMD ["/bin/bash", "/misskey/healthcheck.sh"]

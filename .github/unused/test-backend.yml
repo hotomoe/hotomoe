@@ -4,21 +4,32 @@ on:
   push:
     branches:
       - hotomoe
+      - next
+      - beta
+      - io
+      - host
     paths:
       - packages/backend/**
       # for permissions
       - packages/misskey-js/**
+      - pnpm-lock.yaml
+      - .github/workflows/test-backend.yml
+      - .github/misskey/test.yml
   pull_request:
     paths:
       - packages/backend/**
       # for permissions
       - packages/misskey-js/**
+      - pnpm-lock.yaml
+      - .github/workflows/test-backend.yml
+      - .github/misskey/test.yml
 
 permissions:
   contents: read
 
 jobs:
   unit:
+    name: Unit tests (backend)
     runs-on: ubuntu-latest
 
     strategy:
@@ -43,16 +54,16 @@ jobs:
           - 56312:6379
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
         submodules: true
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v5
       with:
         run_install: false
     - name: Restore FFmpeg binary cache
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       with:
         path: /opt/hostedtoolcache/ffmpeg
         key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-latest
@@ -65,12 +76,12 @@ jobs:
         ffmpeg-version: 7.0.2
     - name: Save FFmpeg binary cache
       if: steps.setup-ffmpeg.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         path: /opt/hostedtoolcache/ffmpeg
         key: ffmpeg-${{ runner.os }}-${{ runner.arch }}-${{ steps.setup-ffmpeg.outputs.ffmpeg-version }}
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
@@ -90,6 +101,7 @@ jobs:
         files: ./packages/backend/coverage/coverage-final.json
 
   e2e:
+    name: E2E tests (backend)
     runs-on: ubuntu-latest
 
     strategy:
@@ -114,16 +126,16 @@ jobs:
           - 56312:6379
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: true
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           run_install: false
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'

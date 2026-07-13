@@ -7,17 +7,26 @@ on:
   push:
     branches:
       - hotomoe
+      - next
+      - beta
+      - io
+      - host
     paths:
       - packages/misskey-js/**
+      - pnpm-lock.yaml
+      - .github/workflows/test-misskey-js.yml
   pull_request:
     paths:
       - packages/misskey-js/**
+      - pnpm-lock.yaml
+      - .github/workflows/test-misskey-js.yml
 
 permissions:
   contents: read
 
 jobs:
   test:
+    name: Unit tests (misskey.js)
 
     runs-on: ubuntu-latest
 
@@ -28,18 +37,18 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           submodules: true
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           run_install: false
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'

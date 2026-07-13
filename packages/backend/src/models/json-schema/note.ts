@@ -46,6 +46,12 @@ export const packedNoteSchema = {
 			format: 'id',
 			example: 'xxxxxxxxxx',
 		},
+		replyUserId: {
+			type: 'string',
+			optional: true, nullable: true,
+			format: 'id',
+			example: 'xxxxxxxxxx',
+		},
 		renoteId: {
 			type: 'string',
 			optional: true, nullable: true,
@@ -201,9 +207,14 @@ export const packedNoteSchema = {
 			type: 'boolean',
 			optional: true, nullable: false,
 		},
+		dimension: {
+			type: 'integer',
+			optional: true, nullable: true,
+		},
 		reactionAcceptance: {
 			type: 'string',
 			optional: false, nullable: true,
+			enum: ['likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote', null],
 		},
 		reactionEmojis: {
 			type: 'object',

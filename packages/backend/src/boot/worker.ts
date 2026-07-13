@@ -4,13 +4,41 @@
  */
 
 import cluster from 'node:cluster';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { envOption } from '@/env.js';
+import { loadConfig } from '@/config.js';
 import { jobQueue, server } from './common.js';
+
+const _filename = fileURLToPath(import.meta.url);
+const _dirname = dirname(_filename);
+
+const meta = JSON.parse(fs.readFileSync(`${_dirname}/../../../../built/meta.json`, 'utf-8'));
 
 /**
  * Init worker process
  */
 export async function workerMain() {
+	const config = loadConfig();
+
+	if (config.sentryForBackend) {
+		Sentry.init({
+			release: meta.version,
+			integrations: [
+				...(config.sentryForBackend.enableNodeProfiling ? [nodeProfilingIntegration()] : []),
+			],
+
+			tracesSampleRate: 1,
+			profileSessionSampleRate: 1,
+			maxBreadcrumbs: 0,
+
+			...config.sentryForBackend.options,
+		});
+	}
+
 	if (envOption.onlyServer) {
 		await server();
 	} else if (envOption.onlyQueue) {

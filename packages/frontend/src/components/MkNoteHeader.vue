@@ -17,19 +17,23 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<MkRoleBadgeIcon v-for="(role, i) in note.user.badgeRoles" :key="i" v-tooltip="role.name" :userId="note.user.id" :role="role" :class="$style.badgeRole"/>
 	</div>
 	<div :class="$style.info">
+		<span v-if="note.dimension" style="opacity: 0.75;" :title="i18n.tsx.dimensionWithNumber({ dimension: note.dimension })">
+			<span>{{ note.dimension }}</span>
+			<i class="ti ti-cube" style="margin-left: 0.25em;"></i>
+		</span>
 		<div v-if="mock">
 			<MkTime :time="note.createdAt" colored/>
 		</div>
 		<MkA v-else :to="notePage(note)">
 			<MkTime :time="note.createdAt" colored/>
 		</MkA>
-		<span v-if="note.visibility !== 'public'" style="margin-left: 0.5em;" :title="i18n.ts._visibility[note.visibility]">
+		<span v-if="note.visibility !== 'public'" :title="i18n.ts._visibility[note.visibility]">
 			<i v-if="note.visibility === 'home'" class="ti ti-home"></i>
 			<i v-else-if="note.visibility === 'followers'" class="ti ti-lock"></i>
 			<i v-else-if="note.visibility === 'specified'" ref="specified" class="ti ti-mail"></i>
 		</span>
-		<span v-if="note.localOnly" style="margin-left: 0.5em;" :title="i18n.ts._visibility['disableFederation']"><i class="ti ti-rocket-off"></i></span>
-		<span v-if="note.channel" style="margin-left: 0.5em;" :title="note.channel.name"><i class="ti ti-device-tv"></i></span>
+		<span v-if="note.localOnly" :title="i18n.ts._visibility['disableFederation']"><i class="ti ti-rocket-off"></i></span>
+		<span v-if="note.channel" :title="note.channel.name"><i class="ti ti-device-tv"></i></span>
 	</div>
 </header>
 </template>
@@ -40,13 +44,14 @@ import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
 import { notePage } from '@/filters/note.js';
 import { userPage } from '@/filters/user.js';
+import { DI } from '@/di.js';
 import MkRoleBadgeIcon from '@/components/MkRoleBadgeIcon.vue';
 
 defineProps<{
 	note: Misskey.entities.Note;
 }>();
 
-const mock = inject<boolean>('mock', false);
+const mock = inject(DI.mock, false);
 </script>
 
 <style lang="scss" module>
@@ -78,7 +83,7 @@ const mock = inject<boolean>('mock', false);
 	margin: 0 .5em 0 0;
 	padding: 1px 6px;
 	font-size: 80%;
-	border: solid 0.5px var(--divider);
+	border: solid 0.5px var(--MI_THEME-divider);
 	border-radius: 3px;
 }
 
@@ -92,6 +97,8 @@ const mock = inject<boolean>('mock', false);
 .info {
 	flex-shrink: 0;
 	margin-left: auto;
+	display: inline-flex;
+	gap: 0.5em;
 	font-size: 0.9em;
 }
 

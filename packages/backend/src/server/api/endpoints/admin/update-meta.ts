@@ -6,8 +6,10 @@
 import { Injectable } from '@nestjs/common';
 import type { MiMeta } from '@/models/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { LoggerService } from '@/core/LoggerService.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { MetaService } from '@/core/MetaService.js';
+import { QueueService } from '@/core/QueueService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -37,6 +39,11 @@ export const paramDef = {
 			},
 		},
 		sensitiveWords: {
+			type: 'array', nullable: true, items: {
+				type: 'string',
+			},
+		},
+		blockedRemoteCustomEmojis: {
 			type: 'array', nullable: true, items: {
 				type: 'string',
 			},
@@ -84,7 +91,6 @@ export const paramDef = {
 		sensitiveMediaDetectionSensitivity: { type: 'string', enum: ['medium', 'low', 'high', 'veryLow', 'veryHigh'] },
 		setSensitiveFlagAutomatically: { type: 'boolean' },
 		enableSensitiveMediaDetectionForVideos: { type: 'boolean' },
-		proxyAccountId: { type: 'string', format: 'misskey:id', nullable: true },
 		maintainerName: { type: 'string', nullable: true },
 		maintainerEmail: { type: 'string', nullable: true },
 		langs: {
@@ -92,6 +98,7 @@ export const paramDef = {
 				type: 'string',
 			},
 		},
+		dimensions: { type: 'integer', minimum: 1 },
 		deeplAuthKey: { type: 'string', nullable: true },
 		deeplIsPro: { type: 'boolean' },
 		enableEmail: { type: 'boolean' },
@@ -112,7 +119,7 @@ export const paramDef = {
 		useObjectStorage: { type: 'boolean' },
 		objectStorageBaseUrl: { type: 'string', nullable: true },
 		objectStorageBucket: { type: 'string', nullable: true },
-		objectStoragePrefix: { type: 'string', nullable: true },
+		objectStoragePrefix: { type: 'string', pattern: /^[a-zA-Z0-9-._]*$/.source, nullable: true },
 		objectStorageEndpoint: { type: 'string', nullable: true },
 		objectStorageRegion: { type: 'string', nullable: true },
 		objectStoragePort: { type: 'integer', nullable: true },
@@ -181,6 +188,21 @@ export const paramDef = {
 		urlPreviewRequireContentLength: { type: 'boolean' },
 		urlPreviewUserAgent: { type: 'string', nullable: true },
 		urlPreviewSummaryProxyUrl: { type: 'string', nullable: true },
+		prohibitedWordsForNameOfUser: {
+			type: 'array', nullable: true, items: {
+				type: 'string',
+			},
+		},
+		federation: {
+			type: 'string',
+			enum: ['all', 'none', 'specified'],
+		},
+		federationHosts: {
+			type: 'array',
+			items: {
+				type: 'string',
+			},
+		},
 	},
 	required: [],
 } as const;
@@ -190,8 +212,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 	constructor(
 		private metaService: MetaService,
 		private moderationLogService: ModerationLogService,
+		private queueService: QueueService,
+		private loggerService: LoggerService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
+			const logger = this.loggerService.getLogger('api:admin:update-meta');
 			const set = {} as Partial<MiMeta>;
 
 			if (typeof ps.disableRegistration === 'boolean') {
@@ -212,6 +237,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (Array.isArray(ps.sensitiveWords)) {
 				set.sensitiveWords = ps.sensitiveWords.filter(Boolean);
+			}
+
+			if (Array.isArray(ps.blockedRemoteCustomEmojis)) {
+				set.blockedRemoteCustomEmojis = ps.blockedRemoteCustomEmojis.filter(Boolean);
 			}
 
 			if (Array.isArray(ps.prohibitedWords)) {
@@ -400,10 +429,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				set.enableSensitiveMediaDetectionForVideos = ps.enableSensitiveMediaDetectionForVideos;
 			}
 
-			if (ps.proxyAccountId !== undefined) {
-				set.proxyAccountId = ps.proxyAccountId;
-			}
-
 			if (ps.maintainerName !== undefined) {
 				set.maintainerName = ps.maintainerName;
 			}
@@ -414,6 +439,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			if (Array.isArray(ps.langs)) {
 				set.langs = ps.langs.filter(Boolean);
+			}
+
+			if (typeof ps.dimensions === 'number') {
+				set.dimensions = ps.dimensions;
 			}
 
 			if (ps.enableEmail !== undefined) {
@@ -666,11 +695,36 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				set.urlPreviewSummaryProxyUrl = value === '' ? null : value;
 			}
 
+			if (Array.isArray(ps.prohibitedWordsForNameOfUser)) {
+				set.prohibitedWordsForNameOfUser = ps.prohibitedWordsForNameOfUser.filter(Boolean);
+			}
+
+			if (ps.federation !== undefined) {
+				set.federation = ps.federation;
+			}
+
+			if (Array.isArray(ps.federationHosts)) {
+				set.federationHosts = ps.federationHosts.filter(Boolean).map(x => x.toLowerCase());
+			}
+
 			const before = await this.metaService.fetch(true);
+
+			const shouldCleanupBlockedRemoteCustomEmojis = Array.isArray(ps.blockedRemoteCustomEmojis);
 
 			await this.metaService.update(set);
 
 			const after = await this.metaService.fetch(true);
+
+			if (shouldCleanupBlockedRemoteCustomEmojis) {
+				try {
+					const job = await this.queueService.createCleanBlockedRemoteCustomEmojisJob(after.blockedRemoteCustomEmojis ?? []);
+					if (job === null) {
+						logger.info('Cleanup job for blocked remote custom emojis already exists in queue, skipping duplicate');
+					}
+				} catch (err) {
+					logger.error('Failed to enqueue cleanup job for blocked remote custom emojis', { error: err });
+				}
+			}
 
 			this.moderationLogService.log(me, 'updateServerSettings', {
 				before,

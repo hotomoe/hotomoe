@@ -4,7 +4,12 @@ on:
   push:
     branches:
       - hotomoe
+      - next
+      - beta
+      - io
+      - host
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,6 +19,7 @@ env:
 
 jobs:
   production:
+    name: Production build
     runs-on: ubuntu-latest
 
     strategy:
@@ -21,16 +27,16 @@ jobs:
         node-version: [22.x]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         fetch-depth: 0
         submodules: true
     - name: Install pnpm
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@v5
       with:
         run_install: false
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4.4.0
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
@@ -41,3 +47,16 @@ jobs:
       run: cp .github/misskey/test.yml .config/default.yml
     - name: Build
       run: pnpm build
+    - name: Run Snyk to check for vulnerabilities
+      uses: snyk/actions/node@master
+      continue-on-error: true
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --all-projects --severity-threshold=medium --sarif-file-output=snyk.sarif
+    - name: Upload result to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v4
+      continue-on-error: true
+      with:
+        category: Snyk Node.js Vulnerability Scan Result
+        sarif_file: snyk.sarif

@@ -40,18 +40,30 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.instancesRepository.findOneBy({ host: this.utilityService.normalizeHost(ps.host) });
+			const normalizedHost = this.utilityService.normalizeHost(ps.host);
+
+			if (ps.isSuspended == null && ps.moderationNote == null) {
+				await this.federatedInstanceService.invalidate(normalizedHost);
+				return;
+			}
+
+			const instance = await this.instancesRepository.findOneBy({ host: normalizedHost });
 
 			if (instance == null) {
 				throw new Error('instance not found');
 			}
 
+			const isSuspendedBefore = instance.suspensionState !== 'none';
+			const suspensionState = (ps.isSuspended != null && isSuspendedBefore !== ps.isSuspended)
+				? (ps.isSuspended ? 'manuallySuspended' : 'none')
+				: undefined;
+
 			await this.federatedInstanceService.update(instance.id, {
-				isSuspended: ps.isSuspended,
+				suspensionState,
 				moderationNote: ps.moderationNote,
 			});
 
-			if (ps.isSuspended != null && instance.isSuspended !== ps.isSuspended) {
+			if (ps.isSuspended != null && isSuspendedBefore !== ps.isSuspended) {
 				if (ps.isSuspended) {
 					this.moderationLogService.log(me, 'suspendRemoteInstance', {
 						id: instance.id,

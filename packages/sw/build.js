@@ -8,10 +8,10 @@
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 import locales from '../../locales/index.js';
-import meta from '../../package.json' with { type: "json" };
+import meta from '../../package.json' with { type: 'json' };
 const watch = process.argv[2]?.includes('watch');
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
 console.log('Starting SW building...');
 
@@ -19,6 +19,8 @@ console.log('Starting SW building...');
 const buildOptions = {
 	absWorkingDir: __dirname,
 	bundle: true,
+	sourcemap: true,
+	sourceRoot: '/',
 	define: {
 		_DEV_: JSON.stringify(process.env.NODE_ENV !== 'production'),
 		_ENV_: JSON.stringify(process.env.NODE_ENV ?? ''), // `NODE_ENV`が`undefined`なとき`JSON.stringify`が`undefined`を返してエラーになってしまうので`??`を使っている

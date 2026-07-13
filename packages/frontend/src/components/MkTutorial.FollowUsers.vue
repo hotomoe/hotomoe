@@ -38,7 +38,8 @@ import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
 import MkFolder from '@/components/MkFolder.vue';
 import XUser from '@/components/MkTutorial.FollowUsers.UserCard.vue';
-import MkPagination, { type Paging } from '@/components/MkPagination.vue';
+import MkPagination from '@/components/MkPagination.vue';
+import type { Paging } from '@/components/MkPagination.vue';
 
 const pinnedUsers: Paging = {
 	endpoint: 'pinned-users',
@@ -57,3 +58,12 @@ const popularUsers: Paging = {
 	},
 };
 </script>
+
+<style lang="scss" module>
+.users {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+	grid-gap: var(--MI-margin);
+	justify-content: center;
+}
+</style>

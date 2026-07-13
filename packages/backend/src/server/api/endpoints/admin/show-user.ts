@@ -31,6 +31,10 @@ export const meta = {
 				type: 'boolean',
 				optional: false, nullable: false,
 			},
+			followedMessage: {
+				type: 'string',
+				optional: false, nullable: true,
+			},
 			autoAcceptFollowed: {
 				type: 'boolean',
 				optional: false, nullable: false,
@@ -102,6 +106,7 @@ export const meta = {
 					receiveFollowRequest: { optional: true, ...notificationRecieveConfig },
 					followRequestAccepted: { optional: true, ...notificationRecieveConfig },
 					roleAssigned: { optional: true, ...notificationRecieveConfig },
+					chatRoomInvitationReceived: { optional: true, ...notificationRecieveConfig },
 					achievementEarned: { optional: true, ...notificationRecieveConfig },
 					app: { optional: true, ...notificationRecieveConfig },
 					test: { optional: true, ...notificationRecieveConfig },
@@ -180,7 +185,23 @@ export const meta = {
 						memo: {
 							type: 'string',
 							optional: false, nullable: true,
-						}
+						},
+					},
+				},
+			},
+			inlinePolicies: {
+				type: 'array',
+				optional: false, nullable: false,
+				items: {
+					type: 'object',
+					properties: {
+						id: { type: 'string', optional: false, nullable: false },
+						createdAt: { type: 'string', optional: false, nullable: false },
+						updatedAt: { type: 'string', optional: false, nullable: false },
+						policy: { type: 'string', optional: false, nullable: false },
+						operation: { type: 'string', optional: false, nullable: false },
+						value: { oneOf: [{ type: 'boolean' }, { type: 'number' }, { type: 'string' }, { type: 'null' }], optional: false, nullable: true },
+						memo: { type: 'string', optional: false, nullable: true },
 					},
 				},
 			},
@@ -236,10 +257,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const roleAssigns = await this.roleService.getUserAssigns(user.id);
 			const roles = await this.roleService.getUserRoles(user.id);
+			const inlinePolicies = await this.roleService.getUserInlinePolicies(user.id);
 
 			return {
 				email: profile.email,
 				emailVerified: profile.emailVerified,
+				followedMessage: profile.followedMessage,
 				autoAcceptFollowed: profile.autoAcceptFollowed,
 				noCrawle: profile.noCrawle,
 				preventAiLearning: profile.preventAiLearning,
@@ -267,6 +290,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					expiresAt: a.expiresAt ? a.expiresAt.toISOString() : null,
 					roleId: a.roleId,
 					memo: a.memo,
+				})),
+				inlinePolicies: inlinePolicies.map(policy => ({
+					id: policy.id,
+					createdAt: policy.createdAt.toISOString(),
+					updatedAt: policy.updatedAt.toISOString(),
+					policy: policy.policy,
+					operation: policy.operation,
+					value: policy.value ?? null,
+					memo: policy.memo,
 				})),
 			};
 		});

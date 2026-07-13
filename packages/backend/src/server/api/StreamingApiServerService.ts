@@ -8,8 +8,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import * as WebSocket from 'ws';
 import { DI } from '@/di-symbols.js';
-import type { UsersRepository, MiAccessToken } from '@/models/_.js';
-import { NoteReadService } from '@/core/NoteReadService.js';
+import type { UsersRepository, MiAccessToken, MiMeta } from '@/models/_.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
@@ -35,8 +34,10 @@ export class StreamingApiServerService {
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
 
+		@Inject(DI.meta)
+		private meta: MiMeta,
+
 		private cacheService: CacheService,
-		private noteReadService: NoteReadService,
 		private authenticateService: AuthenticateService,
 		private channelsService: ChannelsService,
 		private notificationService: NotificationService,
@@ -98,11 +99,11 @@ export class StreamingApiServerService {
 
 			const stream = new MainStreamConnection(
 				this.channelsService,
-				this.noteReadService,
 				this.notificationService,
 				this.cacheService,
 				this.roleService,
 				this.channelFollowingService,
+				this.meta,
 				user, app,
 			);
 

@@ -5,24 +5,23 @@
 
 import { computed, reactive } from 'vue';
 import * as Misskey from 'misskey-js';
-import { misskeyApiGet } from '@/scripts/misskey-api.js';
+import { DEFAULT_INFO_IMAGE_URL, DEFAULT_NOT_FOUND_IMAGE_URL, DEFAULT_SERVER_ERROR_IMAGE_URL } from '@@/js/const.js';
+import { misskeyApiGet } from '@/utility/misskey-api.js';
 import { miLocalStorage } from '@/local-storage.js';
-import { DEFAULT_INFO_IMAGE_URL, DEFAULT_NOT_FOUND_IMAGE_URL, DEFAULT_SERVER_ERROR_IMAGE_URL } from '@/const.js';
 
 // TODO: 他のタブと永続化されたstateを同期
 
 //#region loader
-const providedMetaEl = document.getElementById('misskey_meta');
+const providedMetaEl = window.document.getElementById('misskey_meta');
 
 let cachedMeta = miLocalStorage.getItem('instance') ? JSON.parse(miLocalStorage.getItem('instance')!) : null;
-let cachedAt = miLocalStorage.getItem('instanceCachedAt') ? parseInt(miLocalStorage.getItem('instanceCachedAt')!) : 0;
+const cachedAt = miLocalStorage.getItem('instanceCachedAt') ? parseInt(miLocalStorage.getItem('instanceCachedAt')!) : 0;
 const providedMeta = providedMetaEl?.textContent ? JSON.parse(providedMetaEl.textContent) : null;
 const providedAt = providedMetaEl?.dataset.generatedAt ? parseInt(providedMetaEl.dataset.generatedAt) : 0;
 if (providedAt > cachedAt) {
 	miLocalStorage.setItem('instance', JSON.stringify(providedMeta));
 	miLocalStorage.setItem('instanceCachedAt', providedAt.toString());
 	cachedMeta = providedMeta;
-	cachedAt = providedAt;
 }
 //#endregion
 
