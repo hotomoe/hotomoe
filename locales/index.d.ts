@@ -961,6 +961,10 @@ export interface Locale extends ILocale {
      */
     "sensitiveMediaThisInstance": string;
     /**
+     * このサーバーの公開投稿をホームに制限
+     */
+    "restrictVisibilityThisInstance": string;
+    /**
      * 操作
      */
     "operations": string;

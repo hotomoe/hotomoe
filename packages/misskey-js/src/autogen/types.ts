@@ -10550,6 +10550,7 @@ export type components = {
             maintainerEmail: string | null;
             isSilenced: boolean;
             isSensitiveMedia: boolean;
+            isVisibilityRestricted: boolean;
             /** Format: url */
             iconUrl: string | null;
             /** Format: url */
@@ -16133,6 +16134,7 @@ export interface operations {
                         translatorAvailable: boolean;
                         silencedHosts?: string[];
                         sensitiveMediaHosts?: string[];
+                        visibilityRestrictedHosts?: string[];
                         pinnedUsers: string[];
                         hiddenTags: string[];
                         blockedHosts: string[];
@@ -19908,6 +19910,7 @@ export interface operations {
                     notesPerOneAd?: number;
                     silencedHosts?: string[] | null;
                     sensitiveMediaHosts?: string[] | null;
+                    visibilityRestrictedHosts?: string[] | null;
                     wellKnownWebsites?: string[] | null;
                     urlPreviewDenyList?: string[] | null;
                     featuredGameChannels?: string[] | null;

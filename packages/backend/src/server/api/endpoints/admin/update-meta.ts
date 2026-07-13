@@ -163,6 +163,11 @@ export const paramDef = {
 				type: 'string',
 			},
 		},
+		visibilityRestrictedHosts: {
+			type: 'array', nullable: true, items: {
+				type: 'string',
+			},
+		},
 		wellKnownWebsites: {
 			type: 'array', nullable: true, items: {
 				type: 'string',
@@ -259,6 +264,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			if (Array.isArray(ps.sensitiveMediaHosts)) {
 				let lastValue = '';
 				set.sensitiveMediaHosts = ps.sensitiveMediaHosts.sort().filter((h) => {
+					const lv = lastValue;
+					lastValue = h;
+					return h !== '' && h !== lv && !set.blockedHosts?.includes(h);
+				}).map(x => x.toLowerCase());
+			}
+
+			if (Array.isArray(ps.visibilityRestrictedHosts)) {
+				let lastValue = '';
+				set.visibilityRestrictedHosts = ps.visibilityRestrictedHosts.sort().filter((h) => {
 					const lv = lastValue;
 					lastValue = h;
 					return h !== '' && h !== lv && !set.blockedHosts?.includes(h);
