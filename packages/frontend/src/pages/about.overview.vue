@@ -9,7 +9,6 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<div style="overflow: clip;">
 			<img v-if="kawaiiMode" src="/client-assets/kawaii/hotomoe-kawaii.png" alt="" :class="$style.bannerIconAlt"/>
 			<img v-else :src="instance.iconUrl ?? instance.faviconUrl ?? '/favicon.ico'" alt="" :class="$style.bannerIcon"/>
-			<Mfm v-if="kawaiiMode" text="Logo by @hcho3@hoto.moe" :class="$style.iconCredit"/>
 			<div :class="$style.bannerName">
 				<b>{{ instance.name ?? host }}</b>
 			</div>
@@ -168,13 +167,6 @@ const initStats = () => misskeyApi('stats', {});
 	color: #fff;
 	text-shadow: 0 0 8px #000;
 	background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-}
-
-.iconCredit {
-	margin: 0 auto;
-	width: max-content;
-	position: relative;
-	z-index: 1;
 }
 
 .rules {

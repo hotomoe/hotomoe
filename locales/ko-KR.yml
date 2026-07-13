@@ -1380,6 +1380,8 @@ prohibitSkippingInitialTutorial: "튜토리얼을 건너뛸 수 없도록 하기
 prohibitSkippingInitialTutorialDescription: "신규 가입한 사용자에게 표시되는 튜토리얼을 건너뛸 수 없도록 합니다. 튜토리얼을 완료하지 않거나 튜토리얼 페이지를 우회하는 경우에도 강제로 리디렉션됩니다."
 onboarding: "온보딩"
 refreshMetadata: "서버 정보를 갱신하기"
+syncRemoteUsernames: "리모트 유저명 동기화"
+syncRemoteUsernamesConfirm: "모든 리모트 유저의 유저명을 리모트 서버에서 다시 가져와, 일치하지 않는 경우 리모트 쪽 유저명으로 갱신합니다. 유저 수에 따라 시간이 걸릴 수 있습니다. 실행할까요?"
 removeAllFollowings: "모든 팔로우 관계를 제거하기"
 areYouSureToRemoveAllFollowings: "정말로 {host}와의 모든 팔로우 관계를 제거하시겠습니까? 실행한 후에는 되돌릴 수 없습니다. 상대 인스턴스가 폐쇄됐다고 판단되는 경우에만 실행하세요."
 mutualLink: "서로링크"

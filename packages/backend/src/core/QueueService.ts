@@ -231,6 +231,14 @@ export class QueueService {
 	}
 
 	@bindThis
+	public createSyncRemoteUsernamesJob() {
+		return this.dbQueue.add('syncRemoteUsernames', {}, {
+			removeOnComplete: true,
+			removeOnFail: true,
+		});
+	}
+
+	@bindThis
 	public createExportCustomEmojisJob(user: ThinUser) {
 		return this.dbQueue.add('exportCustomEmojis', {
 			user: { id: user.id },

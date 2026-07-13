@@ -1382,6 +1382,8 @@ prohibitSkippingInitialTutorial: "チュートリアルをスキップできな�
 prohibitSkippingInitialTutorialDescription: "新規登録したユーザーに表示されるチュートリアルをスキップできないようにします。チュートリアルを完了しなかったりチュートリアルページを回避したりした場合でも、強制的にリダイレクトされます。"
 onboarding: "オンボーディング"
 refreshMetadata: "サーバー情報を更新"
+syncRemoteUsernames: "リモートユーザー名を同期"
+syncRemoteUsernamesConfirm: "すべてのリモートユーザーのユーザー名をリモートサーバーから取得し直し、一致しない場合はリモート側のユーザー名に更新します。ユーザー数によっては時間がかかります。実行しますか？"
 removeAllFollowings: "相互フォロー解除"
 areYouSureToRemoveAllFollowings: "本当に{host}とのすべてのフォロー関係を削除しますか？ 実行後は元に戻せません。 相手インスタンスが閉鎖されたと判断した場合のみ実行してください。"
 mutualLink: "相互リンク"
