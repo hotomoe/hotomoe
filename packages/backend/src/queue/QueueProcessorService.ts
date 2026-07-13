@@ -15,6 +15,7 @@ import { SendEmailProcessorService } from '@/queue/processors/SendEmailProcessor
 import { UserWebhookDeliverProcessorService } from './processors/UserWebhookDeliverProcessorService.js';
 import { SystemWebhookDeliverProcessorService } from './processors/SystemWebhookDeliverProcessorService.js';
 import { ReindexNotesProcessorService } from './processors/ReindexNotesProcessorService.js';
+import { SyncRemoteUsernamesProcessorService } from './processors/SyncRemoteUsernamesProcessorService.js';
 import { EndedPollNotificationProcessorService } from './processors/EndedPollNotificationProcessorService.js';
 import { DeliverProcessorService } from './processors/DeliverProcessorService.js';
 import { InboxProcessorService } from './processors/InboxProcessorService.js';
@@ -103,6 +104,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		private inboxProcessorService: InboxProcessorService,
 		private deleteDriveFilesProcessorService: DeleteDriveFilesProcessorService,
 		private reindexNotesProcessorService: ReindexNotesProcessorService,
+		private syncRemoteUsernamesProcessorService: SyncRemoteUsernamesProcessorService,
 		private exportCustomEmojisProcessorService: ExportCustomEmojisProcessorService,
 		private exportNotesProcessorService: ExportNotesProcessorService,
 		private exportClipsProcessorService: ExportClipsProcessorService,
@@ -237,6 +239,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 						return this.deleteDriveFilesProcessorService.process(job);
 					case 'reindexNotes':
 						return this.reindexNotesProcessorService.process(job);
+					case 'syncRemoteUsernames':
+						return this.syncRemoteUsernamesProcessorService.process(job);
 					case 'exportCustomEmojis':
 						return this.exportCustomEmojisProcessorService.process(job);
 					case 'exportNotes':

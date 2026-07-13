@@ -64,6 +64,7 @@ import MkInstanceCardMini from '@/components/MkInstanceCardMini.vue';
 import FormSplit from '@/components/form/split.vue';
 import { i18n } from '@/i18n.js';
 import { definePage } from '@/page.js';
+import * as os from '@/os.js';
 
 const host = ref('');
 const state = ref('federating');
@@ -104,7 +105,22 @@ function getStatus(instance: Misskey.entities.FederationInstance) {
 	return 'Alive';
 }
 
-const headerActions = computed(() => []);
+async function syncRemoteUsernames() {
+	const { canceled } = await os.confirm({
+		type: 'warning',
+		text: i18n.ts.syncRemoteUsernamesConfirm,
+	});
+	if (canceled) return;
+
+	await os.apiWithDialog('admin/federation/sync-remote-usernames', {});
+}
+
+const headerActions = computed(() => [{
+	asFullButton: true,
+	icon: 'ti ti-user-check',
+	text: i18n.ts.syncRemoteUsernames,
+	handler: syncRemoteUsernames,
+}]);
 
 const headerTabs = computed(() => []);
 
