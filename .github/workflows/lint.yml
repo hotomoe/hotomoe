@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - hotomoe
-      - next
-      - beta
-      - io
-      - host
     paths:
       - packages/backend/**
       - packages/frontend/**

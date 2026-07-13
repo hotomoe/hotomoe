@@ -3,15 +3,9 @@ name: Upload Sentry sourcemaps
 on:
   push:
     branches:
-      - main
-      - next
-      - beta
-      - io
-      - host
+      - hotomoe
     tags:
-      - '**-mhq.*'
-      - '**-io.*'
-      - '**-host.*'
+      - '**-hotomoe.*'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +14,7 @@ permissions:
 jobs:
   upload:
     runs-on: ubuntu-latest
-    if: github.repository == 'MisskeyIO/misskey'
+    if: github.repository == 'hotomoe/hotomoe'
 
     strategy:
       matrix:

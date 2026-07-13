@@ -3,11 +3,7 @@ name: Test (docker build)
 on:
   push:
     branches:
-      - main
-      - next
-      - beta
-      - io
-      - host
+      - hotomoe
   pull_request:
 
 permissions:
@@ -17,7 +13,7 @@ permissions:
 jobs:
   docker:
     runs-on: ubuntu-latest
-    if: github.repository == 'MisskeyIO/misskey'
+    if: github.repository == 'hotomoe/hotomoe'
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -43,7 +39,7 @@ jobs:
           ref_type="${{ github.ref_type }}"
           ref_name="$(echo ${{ github.base_ref || github.ref_name }} | sed -e 's/\//-/g')"
 
-          branch_name="main"
+          branch_name="hotomoe"
           case "${ref_type}" in
             branch)
               branch_name="${ref_name}"
@@ -63,7 +59,7 @@ jobs:
           context: .
           push: false
           provenance: false
-          cache-from: type=registry,ref=ghcr.io/misskeyio/misskey:buildcache-${{ env.BRANCH_NAME }}
+          cache-from: type=registry,ref=ghcr.io/hotomoe/hotomoe:buildcache-${{ env.BRANCH_NAME }}
       - name: Remove docker build cache
         shell: bash
         run: |

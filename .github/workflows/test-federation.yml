@@ -3,11 +3,7 @@ name: Test (federation)
 on:
   push:
     branches:
-      - main
-      - next
-      - beta
-      - io
-      - host
+      - hotomoe
     paths:
       - packages/backend/**
       - packages/misskey-js/**

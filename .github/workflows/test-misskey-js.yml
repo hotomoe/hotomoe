@@ -7,10 +7,6 @@ on:
   push:
     branches:
       - hotomoe
-      - next
-      - beta
-      - io
-      - host
     paths:
       - packages/misskey-js/**
       - pnpm-lock.yaml

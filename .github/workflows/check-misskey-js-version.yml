@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - hotomoe
-      - next
-      - beta
-      - io
-      - host
     paths:
       - packages/misskey-js/package.json
       - package.json
