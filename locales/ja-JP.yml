@@ -1755,8 +1755,8 @@ _initialTutorial:
     theseSettingsCanEditLater: "これらの設定は後から変更できます。"
     youCanEditMoreSettingsInSettingsPageLater: "この他にも様々な設定を「設定」ページから行えます。ぜひ後で確認してみてください。"
   _profileSettings:
-    title: "プライバシー設定"
-    description: "多くのユーザーが利用しているプライバシー関連の設定項目をリストアップしました。必要に応じて変更してください。"
+    title: "プロフィールを設定しましょう！"
+    description: "ノートを投稿する前に、あなたのことを紹介するプロフィールを設定しましょう。"
     theseSettingsCanEditLater: "これらの設定は後から変更できます。"
     youCanEditMoreSettingsInSettingsPageLater: "この他にも様々な設定を「設定」ページから行えます。ぜひ後で確認してみてください。"
     mustBeSetBotOwner: "Botアカウントは管理者を必ず記載する必要があります。以下から管理者のアカウントを選択してください。"
