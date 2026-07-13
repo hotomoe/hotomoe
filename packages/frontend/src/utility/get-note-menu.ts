@@ -205,6 +205,23 @@ export function getNoteMenu(props: {
 
 	const cleanups = [] as (() => void)[];
 
+	async function changeVisibility(): Promise<void> {
+		const { canceled, result } = await os.select({
+			title: i18n.ts.changeNoteVisibility,
+			items: [
+				...(appearNote.visibility === 'public' ? [{ value: 'home' as const, text: i18n.ts._visibility.home }] : []),
+				{ value: 'followers' as const, text: i18n.ts._visibility.followers },
+			],
+			default: null,
+		});
+		if (canceled || result == null) return;
+
+		await os.apiWithDialog('notes/update-visibility', {
+			noteId: appearNote.id,
+			visibility: result,
+		});
+	}
+
 	function del(): void {
 		os.confirm({
 			type: 'warning',
@@ -484,6 +501,14 @@ function delEdit(): void {
 					icon: 'ti ti-edit',
 					text: i18n.ts.deleteAndEdit,
 					action: delEdit,
+				});
+			}
+			if (['public', 'home'].includes(appearNote.visibility)) {
+				menuItems.push({
+					icon: 'ti ti-eye-off',
+					text: i18n.ts.changeNoteVisibility,
+					danger: appearNote.userId !== $i.id,
+					action: changeVisibility,
 				});
 			}
 			menuItems.push({

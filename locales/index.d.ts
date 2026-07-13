@@ -5552,6 +5552,10 @@ export interface Locale extends ILocale {
      */
     "refreshMetadata": string;
     /**
+     * 公開範囲を変更
+     */
+    "changeNoteVisibility": string;
+    /**
      * リモートユーザー名を同期
      */
     "syncRemoteUsernames": string;
@@ -11647,6 +11651,10 @@ export interface Locale extends ILocale {
          * ノートを削除
          */
         "deleteNote": string;
+        /**
+         * ノートの公開範囲を変更
+         */
+        "updateNoteVisibility": string;
         /**
          * 全体のお知らせを作成
          */
