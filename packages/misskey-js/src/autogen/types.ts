@@ -645,6 +645,29 @@ export type paths = {
         patch?: never;
         trace?: never;
     };
+    '/admin/dispose-cache': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * admin/dispose-cache
+         * @description No description provided.
+         *
+         *     **Internal Endpoint**: This endpoint is an API for the misskey mainframe and is not intended for use by third parties.
+         *     **Credential required**: *Yes*
+         */
+        post: operations['admin___dispose-cache'];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     '/admin/drive/clean-remote-files': {
         parameters: {
             query?: never;
@@ -1077,6 +1100,7 @@ export type paths = {
          * admin/federation/refresh-remote-instance-metadata
          * @description No description provided.
          *
+         *     **Internal Endpoint**: This endpoint is an API for the misskey mainframe and is not intended for use by third parties.
          *     **Credential required**: *Yes* / **Permission**: *write:admin:federation*
          */
         post: operations['admin___federation___refresh-remote-instance-metadata'];
@@ -1099,6 +1123,7 @@ export type paths = {
          * admin/federation/remove-all-following
          * @description No description provided.
          *
+         *     **Internal Endpoint**: This endpoint is an API for the misskey mainframe and is not intended for use by third parties.
          *     **Credential required**: *Yes* / **Permission**: *write:admin:federation*
          */
         post: operations['admin___federation___remove-all-following'];
@@ -1520,6 +1545,29 @@ export type paths = {
          *     **Credential required**: *Yes* / **Permission**: *write:admin:regenerate-user-token*
          */
         post: operations['admin___regenerate-user-token'];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    '/admin/reindex-search': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * admin/reindex-search
+         * @description No description provided.
+         *
+         *     **Internal Endpoint**: This endpoint is an API for the misskey mainframe and is not intended for use by third parties.
+         *     **Credential required**: *Yes* / **Permission**: *write:admin:search*
+         */
+        post: operations['admin___reindex-search'];
         delete?: never;
         options?: never;
         head?: never;
@@ -4385,7 +4433,7 @@ export type paths = {
          * federation/instances
          * @description No description provided.
          *
-         *     **Credential required**: *No*
+         *     **Credential required**: *Yes* / **Permission**: *read:admin:server-info*
          */
         get: operations['get___federation___instances'];
         put?: never;
@@ -4393,7 +4441,7 @@ export type paths = {
          * federation/instances
          * @description No description provided.
          *
-         *     **Credential required**: *No*
+         *     **Credential required**: *Yes* / **Permission**: *read:admin:server-info*
          */
         post: operations['federation___instances'];
         delete?: never;
@@ -4415,7 +4463,7 @@ export type paths = {
          * federation/show-instance
          * @description No description provided.
          *
-         *     **Credential required**: *No*
+         *     **Credential required**: *Yes* / **Permission**: *read:admin:server-info*
          */
         post: operations['federation___show-instance'];
         delete?: never;
@@ -9440,6 +9488,8 @@ export type components = {
             followedMessage: string | null;
             isModerator: boolean | null;
             isAdmin: boolean | null;
+            isRoot: boolean | null;
+            isVacation: boolean | null;
             injectFeaturedNote: boolean;
             receiveAnnouncementEmail: boolean;
             alwaysMarkNsfw: boolean;
@@ -10721,6 +10771,7 @@ export type components = {
             userEachUserListsLimit: number;
             rateLimitFactor: number;
             avatarDecorationLimit: number;
+            canUseAccountRemoval: boolean;
             canImportAntennas: boolean;
             canImportBlocking: boolean;
             canImportFollowing: boolean;
@@ -10824,6 +10875,7 @@ export type components = {
             defaultLightTheme: string | null;
             disableRegistration: boolean;
             emailRequiredForSignup: boolean;
+            canSkipInitialTutorial: boolean;
             enableHcaptcha: boolean;
             hcaptchaSiteKey: string | null;
             enableMcaptcha: boolean;
@@ -13456,6 +13508,69 @@ export interface operations {
             };
         };
     };
+    'admin___dispose-cache': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK (without any results) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
     'admin___drive___clean-remote-files': {
         parameters: {
             query?: never;
@@ -15883,6 +15998,7 @@ export interface operations {
                         cacheRemoteFiles: boolean;
                         cacheRemoteSensitiveFiles: boolean;
                         emailRequiredForSignup: boolean;
+                        canSkipInitialTutorial: boolean;
                         enableHcaptcha: boolean;
                         hcaptchaSiteKey: string | null;
                         enableMcaptcha: boolean;
@@ -16488,6 +16604,69 @@ export interface operations {
                 };
             };
         };
+        responses: {
+            /** @description OK (without any results) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Client error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Authentication error */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Forbidden error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description I'm Ai */
+            418: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    'application/json': components['schemas']['Error'];
+                };
+            };
+        };
+    };
+    'admin___reindex-search': {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description OK (without any results) */
             204: {
@@ -17528,7 +17707,7 @@ export interface operations {
                     policies: {
                         id?: string | null;
                         /** @enum {string} */
-                        policy: 'gtlAvailable' | 'ltlAvailable' | 'canPublicNote' | 'canScheduleNote' | 'scheduleNoteLimit' | 'scheduleNoteMaxDays' | 'canInitiateConversation' | 'canCreateContent' | 'canUpdateContent' | 'canDeleteContent' | 'canPurgeAccount' | 'canUpdateAvatar' | 'canUpdateBanner' | 'mentionLimit' | 'canInvite' | 'inviteLimit' | 'inviteLimitCycle' | 'inviteExpirationTime' | 'canManageCustomEmojis' | 'canManageAvatarDecorations' | 'canSearchNotes' | 'canUseTranslator' | 'canUseDriveFileInSoundSettings' | 'canUseReaction' | 'canHideAds' | 'driveCapacityMb' | 'maxFileSizeMb' | 'alwaysMarkNsfw' | 'canUpdateBioMedia' | 'skipNsfwDetection' | 'pinLimit' | 'antennaLimit' | 'antennaNotesLimit' | 'wordMuteLimit' | 'webhookLimit' | 'clipLimit' | 'noteEachClipsLimit' | 'userListLimit' | 'userEachUserListsLimit' | 'rateLimitFactor' | 'avatarDecorationLimit' | 'canImportAntennas' | 'canImportBlocking' | 'canImportFollowing' | 'canImportMuting' | 'canImportUserLists' | 'mutualLinkSectionLimit' | 'mutualLinkLimit' | 'chatAvailability';
+                        policy: 'gtlAvailable' | 'ltlAvailable' | 'canPublicNote' | 'canScheduleNote' | 'scheduleNoteLimit' | 'scheduleNoteMaxDays' | 'canInitiateConversation' | 'canCreateContent' | 'canUpdateContent' | 'canDeleteContent' | 'canPurgeAccount' | 'canUpdateAvatar' | 'canUpdateBanner' | 'mentionLimit' | 'canInvite' | 'inviteLimit' | 'inviteLimitCycle' | 'inviteExpirationTime' | 'canManageCustomEmojis' | 'canManageAvatarDecorations' | 'canSearchNotes' | 'canUseTranslator' | 'canUseDriveFileInSoundSettings' | 'canUseReaction' | 'canHideAds' | 'driveCapacityMb' | 'maxFileSizeMb' | 'alwaysMarkNsfw' | 'canUpdateBioMedia' | 'skipNsfwDetection' | 'pinLimit' | 'antennaLimit' | 'antennaNotesLimit' | 'wordMuteLimit' | 'webhookLimit' | 'clipLimit' | 'noteEachClipsLimit' | 'userListLimit' | 'userEachUserListsLimit' | 'rateLimitFactor' | 'avatarDecorationLimit' | 'canUseAccountRemoval' | 'canImportAntennas' | 'canImportBlocking' | 'canImportFollowing' | 'canImportMuting' | 'canImportUserLists' | 'mutualLinkSectionLimit' | 'mutualLinkLimit' | 'chatAvailability';
                         /**
                          * @default set
                          * @enum {string}
@@ -19541,6 +19720,7 @@ export interface operations {
                     cacheRemoteFiles?: boolean;
                     cacheRemoteSensitiveFiles?: boolean;
                     emailRequiredForSignup?: boolean;
+                    canSkipInitialTutorial?: boolean;
                     enableHcaptcha?: boolean;
                     hcaptchaSiteKey?: string | null;
                     hcaptchaSecretKey?: string | null;
@@ -35275,6 +35455,7 @@ export interface operations {
                     makeNotesHiddenBefore?: number | null;
                     isBot?: boolean;
                     isCat?: boolean;
+                    isVacation?: boolean;
                     injectFeaturedNote?: boolean;
                     receiveAnnouncementEmail?: boolean;
                     alwaysMarkNsfw?: boolean;
