@@ -55,7 +55,6 @@ const headerTabs = computed(() => {
 		icon: 'ti ti-icons',
 	});
 
-
 	items.push({
 		key: 'charts',
 		title: i18n.ts.charts,

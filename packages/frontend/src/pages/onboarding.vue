@@ -143,7 +143,7 @@ function pageChangeHandler(to: number) {
 }
 
 // See: @/_boot_/common.ts L123 for details
-const query = new URLSearchParams(location.search);
+const query = new URLSearchParams(window.location.search);
 const originalPath = query.get('redirected_from');
 
 async function cancel() {
@@ -158,7 +158,7 @@ async function cancel() {
 	if (confirm.canceled) return;
 
 	store.set('accountSetupWizard', -1);
-	location.href = '/';
+	window.location.href = '/';
 }
 
 // #region デフォルトオープニング画面のアニメーション
@@ -209,17 +209,17 @@ onMounted(() => {
 		reactionPicker.init(),
 		instanceIconElImageLoaded(),
 	]).then(() => {
-		setTimeout(() => {
+		window.setTimeout(() => {
 			// 待たないとアニメーションが正しく動かない場合がある
 			animationPhase.value = 1;
 
-			setTimeout(() => {
+			window.setTimeout(() => {
 				animationPhase.value = 2;
 
-				setTimeout(() => {
+				window.setTimeout(() => {
 					animationPhase.value = 3;
 
-					setTimeout(() => {
+					window.setTimeout(() => {
 						animationPhase.value = 4;
 						confetti({
 							spread: 70,

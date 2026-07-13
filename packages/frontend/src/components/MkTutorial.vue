@@ -169,7 +169,6 @@ const emit = defineEmits<{
 // テストの場合は全インタラクションをスキップする
 const isTest = (import.meta.env.MODE === 'test');
 
-// eslint-disable-next-line vue/no-setup-props-destructure
 const page = ref(props.initialPage ?? 0);
 
 watch(page, (to) => {

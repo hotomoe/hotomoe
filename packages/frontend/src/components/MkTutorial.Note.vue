@@ -83,7 +83,7 @@ function addReaction(emoji) {
 	exampleNote.myReaction = emoji;
 
 	// 通知音も鳴らしたいのでちょっと遅らせる
-	setTimeout(() => {
+	window.setTimeout(() => {
 		doNotification(emoji);
 	}, 200);
 }

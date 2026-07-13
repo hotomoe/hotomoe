@@ -58,7 +58,6 @@ export function openInstanceMenu(ev: MouseEvent) {
 		to: '/about#emojis',
 	});
 
-
 	menuItems.push({
 		type: 'link',
 		text: i18n.ts.charts,

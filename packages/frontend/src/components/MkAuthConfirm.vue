@@ -258,7 +258,7 @@ function showUI(state: 'success' | 'denied' | 'failed') {
 }
 
 function goToMisskey(): void {
-	location.href = '/';
+	window.location.href = '/';
 }
 
 defineExpose({
