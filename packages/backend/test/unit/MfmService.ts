@@ -5,21 +5,13 @@
 
 import * as assert from 'assert';
 import * as mfm from 'mfm-js';
-import { Test } from '@nestjs/testing';
 
-import { CoreModule } from '@/core/CoreModule.js';
 import { MfmService } from '@/core/MfmService.js';
-import { GlobalModule } from '@/GlobalModule.js';
 
 describe('MfmService', () => {
-	let mfmService: MfmService;
-
-	beforeAll(async () => {
-		const app = await Test.createTestingModule({
-			imports: [GlobalModule, CoreModule],
-		}).compile();
-		mfmService = app.get<MfmService>(MfmService);
-	});
+	const mfmService = new MfmService({
+		url: 'https://example.com',
+	} as any);
 
 	describe('toHtml', () => {
 		test('br', () => {
@@ -44,6 +36,17 @@ describe('MfmService', () => {
 			const input = '```\n<p>Hello, world!</p>\n```';
 			const output = '<p><pre><code>&lt;p&gt;Hello, world!&lt;/p&gt;</code></pre></p>';
 			assert.equal(mfmService.toHtml(mfm.parse(input)), output);
+		});
+
+		test('additionalAppenders', () => {
+			const input = 'foo';
+			const output = '<p>foo<span class="x">bar</span></p>';
+			assert.equal(mfmService.toHtml(mfm.parse(input), [], [(doc, body) => {
+				const span = doc.createElement('span');
+				span.className = 'x';
+				span.textContent = 'bar';
+				body.appendChild(span);
+			}]), output);
 		});
 	});
 
@@ -106,6 +109,24 @@ describe('MfmService', () => {
 
 		test('link without both', () => {
 			assert.deepStrictEqual(mfmService.fromHtml('<p>a <a></a> d</p>'), 'a  d');
+		});
+
+		test('ruby', () => {
+			assert.deepStrictEqual(mfmService.fromHtml('<p>a <ruby>Misskey<rp>(</rp><rt>ミスキー</rt><rp>)</rp></ruby> b</p>'), 'a $[ruby Misskey ミスキー] b');
+			assert.deepStrictEqual(mfmService.fromHtml('<p>a <ruby>Misskey<rp>(</rp><rt>ミスキー</rt><rp>)</rp>Misskey<rp>(</rp><rt>ミスキー</rt><rp>)</rp></ruby> b</p>'), 'a $[ruby Misskey ミスキー]$[ruby Misskey ミスキー] b');
+		});
+
+		test('ruby with spaces', () => {
+			assert.deepStrictEqual(mfmService.fromHtml('<p>a <ruby>Miss key<rp>(</rp><rt>ミスキー</rt><rp>)</rp> b</ruby> c</p>'), 'a Miss key(ミスキー) b c');
+			assert.deepStrictEqual(mfmService.fromHtml('<p>a <ruby>Misskey<rp>(</rp><rt>ミス キー</rt><rp>)</rp> b</ruby> c</p>'), 'a Misskey(ミス キー) b c');
+			assert.deepStrictEqual(
+				mfmService.fromHtml('<p>a <ruby>Misskey<rp>(</rp><rt>ミスキー</rt><rp>)</rp>Misskey<rp>(</rp><rt>ミス キー</rt><rp>)</rp>Misskey<rp>(</rp><rt>ミスキー</rt><rp>)</rp></ruby> b</p>'),
+				'a Misskey(ミスキー)Misskey(ミス キー)Misskey(ミスキー) b',
+			);
+		});
+
+		test('ruby with other inline tags', () => {
+			assert.deepStrictEqual(mfmService.fromHtml('<p>a <ruby><strong>Misskey</strong><rp>(</rp><rt>ミスキー</rt><rp>)</rp> b</ruby> c</p>'), 'a **Misskey**(ミスキー) b c');
 		});
 
 		test('mention', () => {

@@ -37,7 +37,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkInput>
 			</section>
 			<section v-else-if="expiration === 'after'">
-				<MkInput v-model="after" small type="number" class="input">
+				<MkInput v-model="after" small type="number" min="1" class="input">
 					<template #label>{{ i18n.ts._poll.duration }}</template>
 				</MkInput>
 				<MkSelect v-model="unit" small>
@@ -58,8 +58,8 @@ import MkInput from './MkInput.vue';
 import MkSelect from './MkSelect.vue';
 import MkSwitch from './MkSwitch.vue';
 import MkButton from './MkButton.vue';
-import { formatDateTimeString } from '@/scripts/format-time-string.js';
-import { addTime } from '@/scripts/time.js';
+import { formatDateTimeString } from '@/utility/format-time-string.js';
+import { addTime } from '@/utility/time.js';
 import { i18n } from '@/i18n.js';
 
 export type PollEditorModelValue = {
@@ -116,18 +116,15 @@ function get(): PollEditorModelValue {
 	};
 
 	const calcAfter = () => {
-		let base = Number.parseInt(after.value.toString());
-		switch (unit.value) {
-			// @ts-expect-error fallthrough
-			case 'day': base *= 24;
-			// @ts-expect-error fallthrough
-			case 'hour': base *= 60;
-			// @ts-expect-error fallthrough
-			case 'minute': base *= 60;
-			// eslint-disable-next-line no-fallthrough
-			case 'second': return base *= 1000;
-			default: return null;
-		}
+		const base = Number.parseInt(after.value.toString());
+		const multiplier = {
+			second: 1000,
+			minute: 60 * 1000,
+			hour: 60 * 60 * 1000,
+			day: 24 * 60 * 60 * 1000,
+		}[unit.value];
+
+		return multiplier == null ? null : base * multiplier;
 	};
 
 	return {

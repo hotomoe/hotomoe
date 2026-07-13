@@ -1,5 +1,8 @@
 {
 	"compilerOptions": {
-		"lib": ["esnext", "webworker"],
+		"target": "ES2022",
+		"module": "ES2022",
+		"moduleResolution": "bundler",
+		"lib": ["esnext", "webworker"]
 	}
 }

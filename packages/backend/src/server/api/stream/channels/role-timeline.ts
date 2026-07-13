@@ -8,7 +8,9 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import type { GlobalEvents } from '@/core/GlobalEventService.js';
+import type { JsonObject } from '@/misc/json-value.js';
 import { isRenotePacked, isQuotePacked } from '@/misc/is-renote.js';
+import { NoteStreamingHidingService } from '../NoteStreamingHidingService.js';
 import Channel, { type MiChannelService } from '../channel.js';
 
 class RoleTimelineChannel extends Channel {
@@ -21,20 +23,24 @@ class RoleTimelineChannel extends Channel {
 	constructor(
 		private roleService: RoleService,
 		private noteEntityService: NoteEntityService,
-
+		private noteStreamingHidingService: NoteStreamingHidingService,
 		id: string,
 		connection: Channel['connection'],
+		dimension?: number | null,
 	) {
-		super(id, connection);
+		super(id, connection, dimension);
 		//this.onNote = this.onNote.bind(this);
 	}
 
 	@bindThis
-	public async init(params: any) {
-		this.roleId = params.roleId as string;
-		this.minimize = params.minimize ?? false;
+	public async init(params: JsonObject) : Promise<boolean> {
+		if (typeof params.roleId !== 'string') return false;
+		this.roleId = params.roleId;
+		this.minimize = !!(params.minimize ?? false);
 
 		this.subscriber.on(`roleTimelineStream:${this.roleId}`, this.onEvent);
+
+		return true;
 	}
 
 	@bindThis
@@ -46,30 +52,47 @@ class RoleTimelineChannel extends Channel {
 				return;
 			}
 			if (note.visibility !== 'public') return;
+			if (note.user.requireSigninToViewContents && this.user == null) return;
+			if (note.renote && note.renote.user.requireSigninToViewContents && this.user == null) return;
+			if (note.reply && note.reply.user.requireSigninToViewContents && this.user == null) return;
+			if (!this.isNoteVisibleForMe(note)) return;
 
 			if (note.reply) {
 				const reply = note.reply;
-				// 自分のフォローしていないユーザーの visibility: followers な投稿への返信は弾く
-				if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId)) return;
-				// 自分の見ることができないユーザーの visibility: specified な投稿への返信は弾く
-				if (reply.visibility === 'specified' && !reply.visibleUserIds!.includes(this.user!.id)) return;
+				if (!this.isNoteVisibleForMe(reply)) return;
 			}
 
 			// 純粋なリノート（引用リノートでないリノート）の場合
 			if (note.renote && isRenotePacked(note) && !isQuotePacked(note)) {
+				if (!this.isNoteVisibleForMe(note.renote)) return;
+				if (note.renote.user.requireSigninToViewContents && this.user == null) return;
 				if (note.renote.reply) {
 					const reply = note.renote.reply;
-					// 自分のフォローしていないユーザーの visibility: followers な投稿への返信のリノートは弾く
-					if (reply.visibility === 'followers' && !Object.hasOwn(this.following, reply.userId)) return;
+					if (reply.user.requireSigninToViewContents && this.user == null) return;
+					if (!this.isNoteVisibleForMe(reply)) return;
 				}
 			}
 
+			if (!this.shouldDeliverByDimension(note)) return;
+
+			if (!(await this.noteEntityService.isLanguageVisibleToMe(note, this.user?.id))) return;
+
 			if (this.isNoteMutedOrBlocked(note)) return;
 
+			const { shouldSkip } = await this.noteStreamingHidingService.processHiding(note, this.user?.id ?? null);
+			if (shouldSkip) return;
+
+			let noteToSend = note;
 			if (this.user && isRenotePacked(note) && !isQuotePacked(note)) {
 				if (note.renote && Object.keys(note.renote.reactions).length > 0) {
 					const myRenoteReaction = await this.noteEntityService.populateMyReaction(note.renote, this.user.id);
-					note.renote.myReaction = myRenoteReaction;
+					noteToSend = {
+						...note,
+						renote: {
+							...note.renote,
+							myReaction: myRenoteReaction,
+						},
+					};
 				}
 			}
 
@@ -81,14 +104,14 @@ class RoleTimelineChannel extends Channel {
 				const badgeRoles = this.iAmModerator ? await this.roleService.getUserBadgeRoles(note.userId, false) : undefined;
 
 				this.send('note', {
-					id: note.id, myReaction: note.myReaction,
-					poll: note.poll?.choices ? { choices: note.poll.choices } : undefined,
-					reply: note.reply?.myReaction ? { myReaction: note.reply.myReaction } : undefined,
-					renote: note.renote?.myReaction ? { myReaction: note.renote.myReaction } : undefined,
+					id: noteToSend.id, myReaction: noteToSend.myReaction,
+					poll: noteToSend.poll?.choices ? { choices: noteToSend.poll.choices } : undefined,
+					reply: noteToSend.reply?.myReaction ? { myReaction: noteToSend.reply.myReaction } : undefined,
+					renote: noteToSend.renote?.myReaction ? { myReaction: noteToSend.renote.myReaction } : undefined,
 					...(badgeRoles?.length ? { user: { badgeRoles } } : {}),
 				});
 			} else {
-				this.send('note', note);
+				this.send('note', noteToSend);
 			}
 		} else {
 			this.send(data.type, data.body);
@@ -111,16 +134,19 @@ export class RoleTimelineChannelService implements MiChannelService<false> {
 	constructor(
 		private roleService: RoleService,
 		private noteEntityService: NoteEntityService,
+		private readonly noteStreamingHidingService: NoteStreamingHidingService,
 	) {
 	}
 
 	@bindThis
-	public create(id: string, connection: Channel['connection']): RoleTimelineChannel {
+	public create(id: string, connection: Channel['connection'], dimension?: number | null): RoleTimelineChannel {
 		return new RoleTimelineChannel(
 			this.roleService,
 			this.noteEntityService,
+			this.noteStreamingHidingService,
 			id,
 			connection,
+			dimension,
 		);
 	}
 }

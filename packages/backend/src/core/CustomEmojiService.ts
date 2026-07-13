@@ -4,42 +4,85 @@
  */
 
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { In, IsNull } from 'typeorm';
 import * as Redis from 'ioredis';
-import { DI } from '@/di-symbols.js';
-import { IdService } from '@/core/IdService.js';
+import { In, IsNull, MoreThan, Not } from 'typeorm';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { MiDriveFile } from '@/models/DriveFile.js';
-import type { MiEmoji } from '@/models/Emoji.js';
-import type { EmojisRepository, MiRole, MiUser } from '@/models/_.js';
-import { bindThis } from '@/decorators.js';
-import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
-import { UtilityService } from '@/core/UtilityService.js';
-import { query } from '@/misc/prelude/url.js';
-import type { Serialized } from '@/types.js';
+import { LoggerService } from '@/core/LoggerService.js';
+import { IdService } from '@/core/IdService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { UtilityService } from '@/core/UtilityService.js';
+import { bindThis } from '@/decorators.js';
+import { DI } from '@/di-symbols.js';
+import type Logger from '@/logger.js';
+import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
+import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
+import type { EmojisRepository, MiRole, MiUser } from '@/models/_.js';
+import type { MiEmoji } from '@/models/Emoji.js';
+import type { MiMeta } from '@/models/Meta.js';
+import type { Serialized } from '@/types.js';
 
 const parseEmojiStrRegexp = /^([-\w]+)(?:@([\w.-]+))?$/;
 
+export const fetchEmojisHostTypes = [
+	'local',
+	'remote',
+	'all',
+] as const;
+export type FetchEmojisHostTypes = typeof fetchEmojisHostTypes[number];
+export const fetchEmojisSortKeys = [
+	'+id',
+	'-id',
+	'+updatedAt',
+	'-updatedAt',
+	'+name',
+	'-name',
+	'+host',
+	'-host',
+	'+uri',
+	'-uri',
+	'+publicUrl',
+	'-publicUrl',
+	'+type',
+	'-type',
+	'+aliases',
+	'-aliases',
+	'+category',
+	'-category',
+	'+license',
+	'-license',
+	'+isSensitive',
+	'-isSensitive',
+	'+localOnly',
+	'-localOnly',
+	'+roleIdsThatCanBeUsedThisEmojiAsReaction',
+	'-roleIdsThatCanBeUsedThisEmojiAsReaction',
+] as const;
+export type FetchEmojisSortKeys = typeof fetchEmojisSortKeys[number];
+
 @Injectable()
 export class CustomEmojiService implements OnApplicationShutdown {
-	private emojisCache: MemoryKVCache<MiEmoji | null>;
+	public logger: Logger;
 	public localEmojisCache: RedisSingleCache<Map<string, MiEmoji>>;
+	private emojisCache: MemoryKVCache<MiEmoji | null>;
 
 	constructor(
+		@Inject(DI.meta)
+		private meta: MiMeta,
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
-
 		@Inject(DI.emojisRepository)
 		private emojisRepository: EmojisRepository,
 
 		private utilityService: UtilityService,
 		private idService: IdService,
+		private loggerService: LoggerService,
 		private emojiEntityService: EmojiEntityService,
 		private moderationLogService: ModerationLogService,
 		private globalEventService: GlobalEventService,
 	) {
+		this.logger = this.loggerService.getLogger('emoji');
+
 		this.emojisCache = new MemoryKVCache<MiEmoji | null>(1000 * 60 * 60 * 12); // 12h
 
 		this.localEmojisCache = new RedisSingleCache<Map<string, MiEmoji>>(this.redisClient, 'localEmojis', {
@@ -58,7 +101,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async add(data: {
-		driveFile: MiDriveFile;
+		originalUrl: string;
+		publicUrl: string;
+		fileType: string;
 		name: string;
 		category: string | null;
 		aliases: string[];
@@ -71,24 +116,24 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		roleIdsThatCanBeUsedThisEmojiAsReaction: MiRole['id'][];
 		roleIdsThatCanNotBeUsedThisEmojiAsReaction: MiRole['id'][];
 	}, moderator?: MiUser): Promise<MiEmoji> {
-		const emoji = await this.emojisRepository.insert({
+		const emoji = await this.emojisRepository.insertOne({
 			id: this.idService.gen(),
 			updatedAt: new Date(),
 			name: data.name,
 			category: data.category,
 			host: data.host,
 			aliases: data.aliases,
-			originalUrl: data.driveFile.url,
-			publicUrl: data.driveFile.webpublicUrl ?? data.driveFile.url,
-			type: data.driveFile.webpublicType ?? data.driveFile.type,
+			originalUrl: data.originalUrl,
+			publicUrl: data.publicUrl,
+			type: data.fileType,
 			license: data.license,
 			isSensitive: data.isSensitive,
 			localOnly: data.localOnly,
 			requestedBy: data.requestedBy,
-			memo: data.memo,
+			memo: data.memo ?? '',
 			roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction,
 			roleIdsThatCanNotBeUsedThisEmojiAsReaction: data.roleIdsThatCanNotBeUsedThisEmojiAsReaction,
-		}).then(x => this.emojisRepository.findOneByOrFail(x.identifiers[0]));
+		});
 
 		if (data.host == null) {
 			this.localEmojisCache.refresh();
@@ -109,22 +154,38 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(id: MiEmoji['id'], data: {
-		driveFile?: MiDriveFile;
-		name?: string;
-		category?: string | null;
-		aliases?: string[];
-		license?: string | null;
-		isSensitive?: boolean;
-		localOnly?: boolean;
-		requestedBy?: string | null;
-		memo?: string | null;
-		roleIdsThatCanBeUsedThisEmojiAsReaction?: MiRole['id'][];
-		roleIdsThatCanNotBeUsedThisEmojiAsReaction?: MiRole['id'][];
-	}, moderator?: MiUser): Promise<void> {
-		const emoji = await this.emojisRepository.findOneByOrFail({ id: id });
-		const sameNameEmoji = await this.emojisRepository.findOneBy({ name: data.name, host: IsNull() });
-		if (sameNameEmoji != null && sameNameEmoji.id !== id) throw new Error('name already exists');
+	public async update(data: (
+		{ id: MiEmoji['id'], name?: string; } | { name: string; id?: MiEmoji['id'], }
+		) & {
+			originalUrl?: string;
+			publicUrl?: string;
+			fileType?: string;
+			category?: string | null;
+			aliases?: string[];
+			license?: string | null;
+			isSensitive?: boolean;
+			localOnly?: boolean;
+			requestedBy?: string | null;
+			memo?: string | null;
+			roleIdsThatCanBeUsedThisEmojiAsReaction?: MiRole['id'][];
+			roleIdsThatCanNotBeUsedThisEmojiAsReaction?: MiRole['id'][];
+		}, moderator?: MiUser): Promise<
+		null
+		| 'NO_SUCH_EMOJI'
+		| 'SAME_NAME_EMOJI_EXISTS'
+	> {
+		const emoji = data.id
+			? await this.getEmojiById(data.id)
+			: await this.getEmojiByName(data.name!);
+		if (emoji === null) return 'NO_SUCH_EMOJI';
+		const id = emoji.id;
+
+		// IDと絵文字名が両方指定されている場合は絵文字名の変更を行うため重複チェックが必要
+		const doNameUpdate = data.id && data.name && (data.name !== emoji.name);
+		if (doNameUpdate) {
+			const isDuplicate = await this.checkDuplicate(data.name!);
+			if (isDuplicate) return 'SAME_NAME_EMOJI_EXISTS';
+		}
 
 		await this.emojisRepository.update(emoji.id, {
 			updatedAt: new Date(),
@@ -134,9 +195,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			license: data.license,
 			isSensitive: data.isSensitive,
 			localOnly: data.localOnly,
-			originalUrl: data.driveFile != null ? data.driveFile.url : undefined,
-			publicUrl: data.driveFile != null ? (data.driveFile.webpublicUrl ?? data.driveFile.url) : undefined,
-			type: data.driveFile != null ? (data.driveFile.webpublicType ?? data.driveFile.type) : undefined,
+			originalUrl: data.originalUrl,
+			publicUrl: data.publicUrl,
+			type: data.fileType,
 			requestedBy: data.requestedBy ?? undefined,
 			memo: data.memo ?? undefined,
 			roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction ?? undefined,
@@ -147,7 +208,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 		const packed = await this.emojiEntityService.packDetailed(emoji.id);
 
-		if (emoji.name === data.name) {
+		if (!doNameUpdate) {
 			this.globalEventService.publishBroadcastStream('emojiUpdated', {
 				emojis: [packed],
 			});
@@ -169,6 +230,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 				after: updated,
 			});
 		}
+		return null;
 	}
 
 	@bindThis
@@ -280,7 +342,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async deleteBulk(ids: MiEmoji['id'][], moderator?: MiUser) {
+	public async deleteBulk(ids: MiEmoji['id'][], moderator?: MiUser, quiet = false) {
 		const emojis = await this.emojisRepository.findBy({
 			id: In(ids),
 		});
@@ -296,16 +358,91 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			}
 		}
 
-		this.localEmojisCache.refresh();
+		const hasLocalEmoji = emojis.some(e => e.host == null);
+		if (!quiet || hasLocalEmoji) this.localEmojisCache.refresh();
 
-		this.globalEventService.publishBroadcastStream('emojiDeleted', {
-			emojis: await this.emojiEntityService.packDetailedMany(emojis),
-		});
+		if (!quiet) {
+			this.globalEventService.publishBroadcastStream('emojiDeleted', {
+				emojis: await this.emojiEntityService.packDetailedMany(emojis),
+			});
+		}
+	}
+
+	@bindThis
+	public async removeBlockedRemoteCustomEmojis(blockedRemoteCustomEmojis: string[]): Promise<void> {
+		if (blockedRemoteCustomEmojis.length === 0) return;
+		const BATCH_SIZE = 1000;
+		const DELETE_BATCH_SIZE = 100;
+
+		let totalDeletedCount = 0;
+		const cacheKeysToDelete = new Set<string>();
+
+		try {
+			let remoteEmojis: MiEmoji[] = [];
+			let cursor: MiEmoji['id'] | undefined = undefined;
+
+			do {
+				remoteEmojis = await this.emojisRepository.find({
+					select: ['id', 'name', 'host'],
+					where: {
+						host: Not(IsNull()),
+						...(cursor ? { id: MoreThan(cursor) } : {}),
+					},
+					order: {
+						id: 'ASC',
+					},
+					take: BATCH_SIZE,
+				});
+
+				if (remoteEmojis.length === 0) {
+					break;
+				}
+
+				cursor = remoteEmojis.at(-1)?.id;
+
+				const blockedEmojis = remoteEmojis.filter(emoji => this.isBlockedRemoteEmoji(emoji, blockedRemoteCustomEmojis));
+				for (let i = 0; i < blockedEmojis.length; i += DELETE_BATCH_SIZE) {
+					const chunk = blockedEmojis.slice(i, i + DELETE_BATCH_SIZE);
+					const chunkIds = chunk.map(emoji => emoji.id);
+
+					await this.deleteBulk(chunkIds, undefined, true)
+						.then(() => {
+							for (const emoji of chunk) {
+								const normalizedHost = this.utilityService.normalizeHost(emoji.host!);
+								cacheKeysToDelete.add(`${emoji.name} ${normalizedHost}`);
+							}
+							totalDeletedCount += chunk.length;
+						})
+						.catch((error) => {
+							this.logger.error('Failed to delete remote custom emoji', { error });
+							throw error;
+						});
+				}
+			} while (remoteEmojis.length >= BATCH_SIZE);
+		} finally {
+			if (totalDeletedCount > 0) {
+				for (const key of cacheKeysToDelete) {
+					this.emojisCache.delete(key);
+				}
+			}
+		}
+	}
+
+	@bindThis
+	private isBlockedRemoteEmoji(emoji: MiEmoji | { name: string; host: string | null; }, blockedRemoteCustomEmojis?: string[]): boolean {
+		if (emoji.host == null) return false;
+
+		const normalizedHost = this.utilityService.normalizeHost(emoji.host);
+
+		return [
+			`${emoji.name}@${normalizedHost}`,
+			emoji.name,
+		].some(target => this.utilityService.isFilterMatches(target, blockedRemoteCustomEmojis ?? this.meta.blockedRemoteCustomEmojis));
 	}
 
 	@bindThis
 	private normalizeHost(src: string | undefined, noteUserHost: string | null): string | null {
-	// クエリに使うホスト
+		// クエリに使うホスト
 		let host = src === '.' ? null	// .はローカルホスト (ここがマッチするのはリアクションのみ)
 			: src === undefined ? noteUserHost	// ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
 			: this.utilityService.isSelfHost(src) ? null	// 自ホスト指定
@@ -340,6 +477,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		const { name, host } = this.parseEmojiStr(emojiName, noteUserHost);
 		if (name == null) return null;
 		if (host == null) return null;
+		if (this.isBlockedRemoteEmoji({ name, host })) return null;
 
 		const queryOrNull = async () => (await this.emojisRepository.findOneBy({
 			name,
@@ -358,10 +496,11 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	@bindThis
 	public async populateEmojis(emojiNames: string[], noteUserHost: string | null): Promise<Record<string, string>> {
 		const emojis = await Promise.all(emojiNames.map(x => this.populateEmoji(x, noteUserHost)));
-		const res = {} as any;
+		const res = {} as Record<string, string>;
 		for (let i = 0; i < emojiNames.length; i++) {
-			if (emojis[i] != null) {
-				res[emojiNames[i]] = emojis[i];
+			const resolvedEmoji = emojis[i];
+			if (resolvedEmoji != null) {
+				res[emojiNames[i]] = resolvedEmoji;
 			}
 		}
 		return res;
@@ -372,7 +511,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	 */
 	@bindThis
 	public async prefetchEmojis(emojis: { name: string; host: string | null; }[]): Promise<void> {
-		const notCachedEmojis = emojis.filter(emoji => this.emojisCache.get(`${emoji.name} ${emoji.host}`) == null);
+		const notCachedEmojis = emojis
+			.filter(emoji => this.emojisCache.get(`${emoji.name} ${emoji.host}`) == null)
+			.filter(emoji => !this.isBlockedRemoteEmoji(emoji));
 		const emojisQuery: any[] = [];
 		const hosts = new Set(notCachedEmojis.map(e => e.host));
 		for (const host of hosts) {
@@ -408,6 +549,151 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	@bindThis
 	public getEmojiByName(name: string): Promise<MiEmoji | null> {
 		return this.emojisRepository.findOneBy({ name, host: IsNull() });
+	}
+
+	@bindThis
+	public async fetchEmojis(
+		params?: {
+			query?: {
+				updatedAtFrom?: string;
+				updatedAtTo?: string;
+				name?: string;
+				host?: string;
+				uri?: string;
+				publicUrl?: string;
+				type?: string;
+				aliases?: string;
+				category?: string;
+				license?: string;
+				isSensitive?: boolean;
+				localOnly?: boolean;
+				hostType?: FetchEmojisHostTypes;
+				roleIds?: string[];
+			},
+			sinceId?: string;
+			untilId?: string;
+		},
+		opts?: {
+			limit?: number;
+			page?: number;
+			sortKeys?: FetchEmojisSortKeys[]
+		},
+	) {
+		function multipleWordsToQuery(words: string) {
+			return words.split(/\s/).filter(x => x.length > 0).map(x => `%${sqlLikeEscape(x)}%`);
+		}
+
+		const builder = this.emojisRepository.createQueryBuilder('emoji');
+		if (params?.query) {
+			const q = params.query;
+			if (q.updatedAtFrom) {
+				// noIndexScan
+				builder.andWhere('CAST(emoji.updatedAt AS DATE) >= :updateAtFrom', { updateAtFrom: q.updatedAtFrom });
+			}
+			if (q.updatedAtTo) {
+				// noIndexScan
+				builder.andWhere('CAST(emoji.updatedAt AS DATE) <= :updateAtTo', { updateAtTo: q.updatedAtTo });
+			}
+			if (q.name) {
+				builder.andWhere('emoji.name ~~ ANY(ARRAY[:...name])', { name: multipleWordsToQuery(q.name) });
+			}
+
+			switch (true) {
+				case q.hostType === 'local': {
+					builder.andWhere('emoji.host IS NULL');
+					break;
+				}
+				case q.hostType === 'remote': {
+					if (q.host) {
+						// noIndexScan
+						builder.andWhere('emoji.host ~~ ANY(ARRAY[:...host])', { host: multipleWordsToQuery(q.host) });
+					} else {
+						builder.andWhere('emoji.host IS NOT NULL');
+					}
+					break;
+				}
+			}
+
+			if (q.uri) {
+				// noIndexScan
+				builder.andWhere('emoji.uri ~~ ANY(ARRAY[:...uri])', { uri: multipleWordsToQuery(q.uri) });
+			}
+			if (q.publicUrl) {
+				// noIndexScan
+				builder.andWhere('emoji.publicUrl ~~ ANY(ARRAY[:...publicUrl])', { publicUrl: multipleWordsToQuery(q.publicUrl) });
+			}
+			if (q.type) {
+				// noIndexScan
+				builder.andWhere('emoji.type ~~ ANY(ARRAY[:...type])', { type: multipleWordsToQuery(q.type) });
+			}
+			if (q.aliases) {
+				// noIndexScan
+				const subQueryBuilder = builder.subQuery()
+					.select('COUNT(0)', 'count')
+					.from(
+						sq2 => sq2
+							.select('unnest(subEmoji.aliases)', 'alias')
+							.addSelect('subEmoji.id', 'id')
+							.from('emoji', 'subEmoji'),
+						'aliasTable',
+					)
+					.where('"emoji"."id" = "aliasTable"."id"')
+					.andWhere('"aliasTable"."alias" ~~ ANY(ARRAY[:...aliases])', { aliases: multipleWordsToQuery(q.aliases) });
+
+				builder.andWhere(`(${subQueryBuilder.getQuery()}) > 0`);
+			}
+			if (q.category) {
+				builder.andWhere('emoji.category ~~ ANY(ARRAY[:...category])', { category: multipleWordsToQuery(q.category) });
+			}
+			if (q.license) {
+				// noIndexScan
+				builder.andWhere('emoji.license ~~ ANY(ARRAY[:...license])', { license: multipleWordsToQuery(q.license) });
+			}
+			if (q.isSensitive != null) {
+				// noIndexScan
+				builder.andWhere('emoji.isSensitive = :isSensitive', { isSensitive: q.isSensitive });
+			}
+			if (q.localOnly != null) {
+				// noIndexScan
+				builder.andWhere('emoji.localOnly = :localOnly', { localOnly: q.localOnly });
+			}
+			if (q.roleIds && q.roleIds.length > 0) {
+				builder.andWhere('emoji.roleIdsThatCanBeUsedThisEmojiAsReaction && ARRAY[:...roleIds]::VARCHAR[]', { roleIds: q.roleIds });
+			}
+		}
+
+		if (params?.sinceId) {
+			builder.andWhere('emoji.id > :sinceId', { sinceId: params.sinceId });
+		}
+		if (params?.untilId) {
+			builder.andWhere('emoji.id < :untilId', { untilId: params.untilId });
+		}
+
+		if (opts?.sortKeys && opts.sortKeys.length > 0) {
+			for (const sortKey of opts.sortKeys) {
+				const direction = sortKey.startsWith('-') ? 'DESC' : 'ASC';
+				const key = sortKey.replace(/^[+-]/, '');
+				builder.addOrderBy(`emoji.${key}`, direction);
+			}
+		} else {
+			builder.addOrderBy('emoji.id', 'DESC');
+		}
+
+		const limit = opts?.limit ?? 10;
+		if (opts?.page) {
+			builder.skip((opts.page - 1) * limit);
+		}
+
+		builder.take(limit);
+
+		const [emojis, count] = await builder.getManyAndCount();
+
+		return {
+			emojis,
+			count: (count > limit ? emojis.length : count),
+			allCount: count,
+			allPages: Math.ceil(count / limit),
+		};
 	}
 
 	@bindThis

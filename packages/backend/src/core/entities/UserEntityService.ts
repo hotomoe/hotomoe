@@ -28,10 +28,10 @@ import type {
 	FollowingsRepository,
 	FollowRequestsRepository,
 	MiFollowing,
+	MiMeta,
 	MiUserNotePining,
 	MiUserProfile,
 	MutingsRepository,
-	NoteUnreadsRepository,
 	RenoteMutingsRepository,
 	UserMemoRepository,
 	UserNotePiningsRepository,
@@ -45,10 +45,11 @@ import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { IdService } from '@/core/IdService.js';
+import { CacheService } from '@/core/CacheService.js';
 import type { AnnouncementService } from '@/core/AnnouncementService.js';
 import type { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { AvatarDecorationService } from '@/core/AvatarDecorationService.js';
-import { isNotNull } from '@/misc/is-not-null.js';
+import { ChatService } from '@/core/ChatService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
@@ -58,12 +59,14 @@ const ajv = new Ajv();
 
 function isLocalUser(user: MiUser): user is MiLocalUser;
 function isLocalUser<T extends { host: MiUser['host'] }>(user: T): user is (T & { host: null; });
+
 function isLocalUser(user: MiUser | { host: MiUser['host'] }): boolean {
 	return user.host == null;
 }
 
 function isRemoteUser(user: MiUser): user is MiRemoteUser;
 function isRemoteUser<T extends { host: MiUser['host'] }>(user: T): user is (T & { host: string; });
+
 function isRemoteUser(user: MiUser | { host: MiUser['host'] }): boolean {
 	return !isLocalUser(user);
 }
@@ -79,7 +82,7 @@ export type UserRelation = {
 	isBlocked: boolean
 	isMuted: boolean
 	isRenoteMuted: boolean
-}
+};
 
 @Injectable()
 export class UserEntityService implements OnModuleInit {
@@ -92,12 +95,17 @@ export class UserEntityService implements OnModuleInit {
 	private federatedInstanceService: FederatedInstanceService;
 	private idService: IdService;
 	private avatarDecorationService: AvatarDecorationService;
+	private chatService: ChatService;
+	private cacheService: CacheService;
 
 	constructor(
 		private moduleRef: ModuleRef,
 
 		@Inject(DI.config)
 		private config: Config,
+
+		@Inject(DI.meta)
+		private meta: MiMeta,
 
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
@@ -123,9 +131,6 @@ export class UserEntityService implements OnModuleInit {
 		@Inject(DI.renoteMutingsRepository)
 		private renoteMutingsRepository: RenoteMutingsRepository,
 
-		@Inject(DI.noteUnreadsRepository)
-		private noteUnreadsRepository: NoteUnreadsRepository,
-
 		@Inject(DI.userNotePiningsRepository)
 		private userNotePiningsRepository: UserNotePiningsRepository,
 
@@ -147,6 +152,8 @@ export class UserEntityService implements OnModuleInit {
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
 		this.idService = this.moduleRef.get('IdService');
 		this.avatarDecorationService = this.moduleRef.get('AvatarDecorationService');
+		this.chatService = this.moduleRef.get('ChatService');
+		this.cacheService = this.moduleRef.get('CacheService');
 	}
 
 	//#region Validators
@@ -380,7 +387,11 @@ export class UserEntityService implements OnModuleInit {
 
 	@bindThis
 	public getIdenticonUrl(user: MiUser): string {
-		return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
+		if ((user.host == null || user.host === this.config.host) && user.username.includes('.') && this.meta.iconUrl) { // ローカルのシステムアカウントの場合
+			return this.meta.iconUrl;
+		} else {
+			return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
+		}
 	}
 
 	@bindThis
@@ -470,18 +481,19 @@ export class UserEntityService implements OnModuleInit {
 		const policies = isDetailed ? await this.roleService.getUserPolicies(user.id) : null;
 		const isModerator = (isMe || iAmModerator) && isDetailed ? this.roleService.isModerator(user) : null;
 		const isAdmin = (isMe || iAmModerator) && isDetailed ? this.roleService.isAdministrator(user) : null;
-		const isRoot = isMe && isDetailed ? user.isRoot : null;
+		const isRoot = isMe && isDetailed ? (this.meta.rootUserId ? user.id === this.meta.rootUserId : null) : null;
 		const unreadAnnouncements = isMe && isDetailed ? await this.announcementService.getUnreadAnnouncements(user) : null;
 
 		const notificationsInfo = isMe && isDetailed ? await this.getNotificationsInfo(user.id) : null;
+		const languageConfig = isDetailed && (isMe || iAmModerator) ? await this.cacheService.userLanguageCache.fetch(user.id) : null;
 
 		const packed = {
 			id: user.id,
 			name: user.name,
 			username: user.username,
 			host: user.host,
-			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
-			avatarBlurhash: user.avatarBlurhash,
+			avatarUrl: (user.avatarId == null ? null : user.avatarUrl) ?? this.getIdenticonUrl(user),
+			avatarBlurhash: (user.avatarId == null ? null : user.avatarBlurhash),
 			avatarDecorations: user.avatarDecorations.length > 0 ? this.avatarDecorationService.getAll().then(decorations => user.avatarDecorations.filter(ud => decorations.some(d => d.id === ud.id)).map(ud => ({
 				id: ud.id,
 				angle: ud.angle || undefined,
@@ -492,6 +504,9 @@ export class UserEntityService implements OnModuleInit {
 			}))) : [],
 			isBot: user.isBot,
 			isCat: user.isCat,
+			requireSigninToViewContents: user.requireSigninToViewContents === false ? undefined : true,
+			makeNotesFollowersOnlyBefore: user.makeNotesFollowersOnlyBefore ?? undefined,
+			makeNotesHiddenBefore: user.makeNotesHiddenBefore ?? undefined,
 			instance: user.host ? this.federatedInstanceService.federatedInstanceCache.fetch(user.host).then(instance => instance ? {
 				name: instance.name,
 				softwareName: instance.softwareName,
@@ -510,13 +525,13 @@ export class UserEntityService implements OnModuleInit {
 				movedTo: user.movedToUri ? this.apPersonService.resolvePerson(user.movedToUri).then(user => user.id).catch(() => null) : null,
 				alsoKnownAs: user.alsoKnownAs
 					? Promise.all(user.alsoKnownAs.map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
-						.then(xs => xs.length === 0 ? null : xs.filter(isNotNull))
+						.then(xs => xs.length === 0 ? null : xs.filter(x => x != null))
 					: null,
 				createdAt: this.idService.parse(user.id).date.toISOString(),
 				updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
 				lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
-				bannerUrl: user.bannerUrl,
-				bannerBlurhash: user.bannerBlurhash,
+				bannerUrl: user.bannerId == null ? null : user.bannerUrl,
+				bannerBlurhash: user.bannerId == null ? null : user.bannerBlurhash,
 				isLocked: user.isLocked,
 				isSilenced: !policies?.canPublicNote,
 				isLimited: !(policies?.canCreateContent && policies.canUpdateContent && policies.canDeleteContent && policies.canInitiateConversation),
@@ -540,11 +555,8 @@ export class UserEntityService implements OnModuleInit {
 				publicReactions: this.isLocalUser(user) ? profile?.publicReactions : false, // https://github.com/misskey-dev/misskey/issues/12964
 				followersVisibility: profile?.followersVisibility,
 				followingVisibility: profile?.followingVisibility,
-				twoFactorEnabled: profile?.twoFactorEnabled,
-				usePasswordLessLogin: profile?.usePasswordLessLogin,
-				securityKeys: profile?.twoFactorEnabled
-					? this.userSecurityKeysRepository.countBy({ userId: user.id }).then(result => result >= 1)
-					: false,
+				chatScope: user.chatScope,
+				canChat: false, // FIXME Chat機能が使えるようになった暁には修正する
 				roles: this.roleService.getUserRoles(user.id).then(roles => roles
 					.filter(role => role.isPublic || iAmModerator)
 					.sort((a, b) => b.displayOrder - a.displayOrder)
@@ -564,8 +576,17 @@ export class UserEntityService implements OnModuleInit {
 			} : {}),
 
 			...(isDetailed && (isMe || iAmModerator) ? {
+				twoFactorEnabled: profile!.twoFactorEnabled,
+				usePasswordLessLogin: profile!.usePasswordLessLogin,
+				securityKeys: profile!.twoFactorEnabled
+					? this.userSecurityKeysRepository.countBy({ userId: user.id }).then(result => result >= 1)
+					: false,
+			} : {}),
+
+			...(isDetailed && (isMe || iAmModerator) ? {
 				avatarId: user.avatarId,
 				bannerId: user.bannerId,
+				followedMessage: profile!.followedMessage,
 				isModerator: isModerator,
 				isAdmin: isAdmin,
 				isRoot: isRoot,
@@ -582,14 +603,9 @@ export class UserEntityService implements OnModuleInit {
 				isDeleted: user.isDeleted,
 				twoFactorBackupCodesStock: profile?.twoFactorBackupSecret?.length === 20 ? 'full' : (profile?.twoFactorBackupSecret?.length ?? 0) > 0 ? 'partial' : 'none',
 				hideOnlineStatus: user.hideOnlineStatus,
-				hasUnreadSpecifiedNotes: this.noteUnreadsRepository.count({
-					where: { userId: user.id, isSpecified: true },
-					take: 1,
-				}).then(count => count > 0),
-				hasUnreadMentions: this.noteUnreadsRepository.count({
-					where: { userId: user.id, isMentioned: true },
-					take: 1,
-				}).then(count => count > 0),
+				hasUnreadSpecifiedNotes: false, // 後方互換性のため
+				hasUnreadMentions: false, // 後方互換性のため
+				hasUnreadChatMessages: this.chatService.hasUnreadMessages(user.id),
 				hasUnreadAnnouncement: (unreadAnnouncements?.length ?? 0) > 0,
 				unreadAnnouncements,
 				hasUnreadAntenna: this.getHasUnreadAntenna(user.id),
@@ -597,6 +613,10 @@ export class UserEntityService implements OnModuleInit {
 				hasUnreadNotification: notificationsInfo?.hasUnread, // 後方互換性のため
 				hasPendingReceivedFollowRequest: this.getHasPendingReceivedFollowRequest(user.id),
 				unreadNotificationsCount: notificationsInfo?.unreadCount,
+				postingLang: languageConfig?.postingLang ?? null,
+				viewingLangs: languageConfig?.viewingLangs ?? [],
+				showMediaInAllLanguages: languageConfig?.showMediaInAllLanguages ?? true,
+				showHashtagsInAllLanguages: languageConfig?.showHashtagsInAllLanguages ?? true,
 				mutedWords: profile!.mutedWords,
 				mutedInstances: profile!.mutedInstances,
 				mutingNotificationTypes: [], // 後方互換性のため
@@ -635,6 +655,7 @@ export class UserEntityService implements OnModuleInit {
 				isRenoteMuted: relation.isRenoteMuted,
 				notify: relation.following?.notify ?? 'none',
 				withReplies: relation.following?.withReplies ?? false,
+				followedMessage: relation.isFollowing ? profile!.followedMessage : undefined,
 			} : {}),
 		} as Promiseable<Packed<S>>;
 
@@ -700,7 +721,7 @@ export class UserEntityService implements OnModuleInit {
 			}
 		}
 
-		return (await Promise.allSettled(_users.map(u => this.pack(u, me, { ...options, userProfile: profilesMap?.get(u.id), userRelations: userRelations, userMemos: userMemos, pinNotes: pinNotes }))))
+		return (await Promise.allSettled(_users.map(u => this.pack(u, me, { ...options, userProfile: profilesMap.get(u.id), userRelations: userRelations, userMemos: userMemos, pinNotes: pinNotes }))))
 			.filter(result => result.status === 'fulfilled')
 			.map(result => (result as PromiseFulfilledResult<Packed<S>>).value);
 	}

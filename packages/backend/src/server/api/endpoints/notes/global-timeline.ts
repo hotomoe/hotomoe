@@ -46,6 +46,7 @@ export const paramDef = {
 		untilId: { type: 'string', format: 'misskey:id' },
 		sinceDate: { type: 'integer' },
 		untilDate: { type: 'integer' },
+		dimension: { type: 'integer', minimum: 0, nullable: true },
 	},
 	required: [],
 } as const;
@@ -79,8 +80,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				.leftJoinAndSelect('renote.user', 'renoteUser');
 
 			if (me) {
-				this.queryService.generateMutedUserQuery(query, me);
-				this.queryService.generateBlockedUserQuery(query, me);
+				this.queryService.generateMutedUserQueryForNotes(query, me);
+				this.queryService.generateBlockedUserQueryForNotes(query, me);
 				this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
 			}
 
@@ -107,7 +108,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				}
 			});
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return await this.noteEntityService.packMany(
+				timeline,
+				me,
+				{ viewerDimension: ps.dimension ?? 0 },
+			);
 		});
 	}
 }

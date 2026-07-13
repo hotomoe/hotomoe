@@ -9,6 +9,9 @@ import type { AdsRepository } from '@/models/_.js';
 import { DI } from '@/di-symbols.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { ApiError } from '../../../error.js';
+import { DownloadService } from '@/core/DownloadService.js';
+import { FileInfoService } from '@/core/FileInfoService.js';
+import { createTemp } from '@/misc/create-temp.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -39,8 +42,9 @@ export const paramDef = {
 		expiresAt: { type: 'integer' },
 		startsAt: { type: 'integer' },
 		dayOfWeek: { type: 'integer' },
+		isSensitive: { type: 'boolean' },
 	},
-	required: ['id', 'memo', 'url', 'imageUrl', 'place', 'priority', 'ratio', 'expiresAt', 'startsAt', 'dayOfWeek'],
+	required: ['id'],
 } as const;
 
 @Injectable()
@@ -50,11 +54,31 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private adsRepository: AdsRepository,
 
 		private moderationLogService: ModerationLogService,
+		private downloadService: DownloadService,
+		private fileInfoService: FileInfoService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const ad = await this.adsRepository.findOneBy({ id: ps.id });
 
 			if (ad == null) throw new ApiError(meta.errors.noSuchAd);
+
+			let imageBlurhash: string | null | undefined;
+			if (ps.imageUrl != null) {
+				try {
+					const [tmpPath, cleanup] = await createTemp();
+					try {
+						await this.downloadService.downloadUrl(ps.imageUrl, tmpPath);
+						const info = await this.fileInfoService.getFileInfo(tmpPath, {
+							skipSensitiveDetection: true,
+						});
+						imageBlurhash = info.blurhash ?? null;
+					} finally {
+						cleanup();
+					}
+				} catch {
+					imageBlurhash = null;
+				}
+			}
 
 			await this.adsRepository.update(ad.id, {
 				url: ps.url,
@@ -63,9 +87,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				ratio: ps.ratio,
 				memo: ps.memo,
 				imageUrl: ps.imageUrl,
-				expiresAt: new Date(ps.expiresAt),
-				startsAt: new Date(ps.startsAt),
+				imageBlurhash,
+				expiresAt: ps.expiresAt ? new Date(ps.expiresAt) : undefined,
+				startsAt: ps.startsAt ? new Date(ps.startsAt) : undefined,
 				dayOfWeek: ps.dayOfWeek,
+				isSensitive: ps.isSensitive,
 			});
 
 			const updatedAd = await this.adsRepository.findOneByOrFail({ id: ad.id });

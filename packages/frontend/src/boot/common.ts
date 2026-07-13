@@ -3,41 +3,45 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-import { computed, watch, version as vueVersion, App } from 'vue';
+import { watch, version as vueVersion } from 'vue';
 import { compareVersions } from 'compare-versions';
+import { version, lang, apiUrl } from '@@/js/config.js';
+import defaultLightTheme from '@@/themes/l-light.json5';
+import defaultDarkTheme from '@@/themes/d-green-lime.json5';
+import { createGtag, addGtag, consent as gtagConsent } from 'vue-gtag';// FIXME Google Analytics 周りの機能のチェック
+import type { App } from 'vue';
+import type { GtagConsentParams } from '@/types/gtag';
 import widgets from '@/widgets/index.js';
 import directives from '@/directives/index.js';
 import components from '@/components/index.js';
-import { version, lang, updateLocale, locale } from '@/config.js';
-import { applyTheme } from '@/scripts/theme.js';
-import { isDeviceDarkmode } from '@/scripts/is-device-darkmode.js';
-import { updateI18n, i18n } from '@/i18n.js';
-import { $i, iAmAdmin, refreshAccount, login } from '@/account.js';
-import { defaultStore, ColdDeviceStorage } from '@/store.js';
+import { applyTheme } from '@/theme.js';
+import { isDeviceDarkmode } from '@/utility/is-device-darkmode.js';
+import { i18n } from '@/i18n.js';
+import { refreshCurrentAccount, login, updateCurrentAccountPartial } from '@/accounts.js';
+import { store } from '@/store.js';
 import { fetchInstance, instance } from '@/instance.js';
-import { deviceKind } from '@/scripts/device-kind.js';
-import { reloadChannel } from '@/scripts/unison-reload.js';
-import { getUrlWithoutLoginId } from '@/scripts/login-id.js';
-import { getAccountFromId } from '@/scripts/get-account-from-id.js';
+import { deviceKind, updateDeviceKind } from '@/utility/device-kind.js';
+import { reloadChannel } from '@/utility/unison-reload.js';
+import { getUrlWithoutLoginId } from '@/utility/login-id.js';
+import { getAccountFromId } from '@/utility/get-account-from-id.js';
+import { misskeyApi } from '@/utility/misskey-api.js';
 import { deckStore } from '@/ui/deck/deck-store.js';
 import { miLocalStorage } from '@/local-storage.js';
 import { fetchCustomEmojis } from '@/custom-emojis.js';
-import { setupRouter } from '@/router/definition.js';
-import { mainRouter } from '@/router/main.js';
-import VueGtag, { bootstrap as gtagBootstrap, GtagConsent, GtagConsentParams } from 'vue-gtag';
+import { prefer } from '@/preferences.js';
+import { sensitiveContentConsent } from '@/utility/sensitive-content-consent.js';
+import { getDeviceId, setUserProperties } from '@/utility/tracking-user-properties.js';
+import { $i, iAmAdmin } from '@/i.js';
+import { mainRouter } from '@/router.js';
+import { getAutoPostingLang, getDefaultViewingLangs } from '@/utility/posting-language.js';
 
-export async function common(createVue: () => App<Element>) {
+export async function common(createVue: () => Promise<App<Element>>) {
 	console.info(`Misskey v${version}`);
 
 	if (_DEV_) {
 		console.warn('Development mode!!!');
 
 		console.info(`vue ${vueVersion}`);
-
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(window as any).$i = $i;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		(window as any).$store = defaultStore;
 
 		window.addEventListener('error', event => {
 			console.error(event);
@@ -80,57 +84,75 @@ export async function common(createVue: () => App<Element>) {
 	}
 	//#endregion
 
-	//#region Detect language & fetch translations
-	const localeVersion = miLocalStorage.getItem('localeVersion');
-	const localeOutdated = (localeVersion == null || localeVersion !== version || locale == null);
-	if (localeOutdated) {
-		const res = await window.fetch(`/assets/locales/${lang}.${version}.json`);
-		if (res.status === 200) {
-			const newLocale = await res.text();
-			const parsedNewLocale = JSON.parse(newLocale);
-			miLocalStorage.setItem('locale', newLocale);
-			miLocalStorage.setItem('localeVersion', version);
-			updateLocale(parsedNewLocale);
-			updateI18n(parsedNewLocale);
-		}
-	}
-	//#endregion
-
 	// タッチデバイスでCSSの:hoverを機能させる
-	document.addEventListener('touchend', () => {}, { passive: true });
+	window.document.addEventListener('touchend', () => {}, { passive: true });
 
 	// URLに#pswpを含む場合は取り除く
-	if (location.hash === '#pswp') {
-		history.replaceState(null, '', location.href.replace('#pswp', ''));
+	if (window.location.hash === '#pswp') {
+		window.history.replaceState(null, '', window.location.href.replace('#pswp', ''));
+	}
+
+	// URLに#pswpを含む場合は取り除く
+	if (window.location.hash === '#pswp') {
+		window.history.replaceState(null, '', window.location.href.replace('#pswp', ''));
 	}
 
 	// 一斉リロード
 	reloadChannel.addEventListener('message', path => {
-		if (path !== null) location.href = path;
-		else location.reload();
+		if (path !== null) window.location.href = path;
+		else window.location.reload();
 	});
 
 	// If mobile, insert the viewport meta tag
 	if (['smartphone', 'tablet'].includes(deviceKind)) {
-		const viewport = document.getElementsByName('viewport').item(0);
+		const viewport = window.document.getElementsByName('viewport').item(0);
 		viewport.setAttribute('content',
 			`${viewport.getAttribute('content')}, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover`);
 	}
 
 	//#region Set lang attr
-	const html = document.documentElement;
+	const html = window.document.documentElement;
 	html.setAttribute('lang', lang);
 	//#endregion
 
-	await defaultStore.ready;
+	await store.ready;
 	await deckStore.ready;
 
-	// 2024年4月1日JST以降に作成されたアカウントで、チュートリアルを完了していない通常ユーザーの場合、チュートリアルにリダイレクト
-	if (!instance.canSkipInitialTutorial && $i && !iAmAdmin && defaultStore.state.accountSetupWizard !== -1 && !location.pathname.startsWith('/onboarding') && !location.pathname.startsWith('/signup-complete')) {
+	// チュートリアルを完了していない通常ユーザーの場合、チュートリアルにリダイレクト
+	if (!instance.canSkipInitialTutorial && $i && !iAmAdmin && store.s.accountSetupWizard !== -1 && !window.location.pathname.startsWith('/onboarding') && !window.location.pathname.startsWith('/signup-complete')) {
 		const param = new URLSearchParams();
-		param.set('redirected_from', location.pathname + location.search + location.hash);
-		location.replace('/onboarding?' + param.toString());
-		return;
+		param.set('redirected_from', window.location.pathname + window.location.search + window.location.hash);
+		window.location.replace('/onboarding?' + param.toString());
+		await new Promise(() => {}); // never resolves; wait for navigation
+	}
+
+	if ($i) {
+		const hasLanguageConfig = $i.postingLang != null || ($i.viewingLangs?.length ?? 0) > 0;
+		if (!hasLanguageConfig) {
+			const browserLanguage = typeof navigator === 'undefined' ? null : navigator.language;
+			const autoPostingLang = getAutoPostingLang(browserLanguage);
+			const defaultViewingLangs = getDefaultViewingLangs(autoPostingLang);
+			try {
+				const updated = await misskeyApi('i/update', {
+					postingLang: autoPostingLang,
+					viewingLangs: defaultViewingLangs,
+				});
+				updateCurrentAccountPartial({
+					postingLang: updated.postingLang,
+					viewingLangs: updated.viewingLangs,
+					showMediaInAllLanguages: updated.showMediaInAllLanguages,
+					showHashtagsInAllLanguages: updated.showHashtagsInAllLanguages,
+				});
+				miLocalStorage.setItem('postingLangAutoDetected', autoPostingLang);
+				if (browserLanguage) {
+					miLocalStorage.setItem('postingLangAutoDetectBase', browserLanguage);
+				} else {
+					miLocalStorage.removeItem('postingLangAutoDetectBase');
+				}
+			} catch (err) {
+				console.warn('Failed to set default language config', err);
+			}
+		}
 	}
 
 	const fetchInstanceMetaPromise = fetchInstance();
@@ -139,12 +161,12 @@ export async function common(createVue: () => App<Element>) {
 		miLocalStorage.setItem('v', instance.version);
 	});
 
-	const params = new URLSearchParams(location.search);
+	const params = new URLSearchParams(window.location.search);
 	//#region loginId
 	const loginId = params.get('loginId');
 
 	if (loginId) {
-		const target = getUrlWithoutLoginId(location.href);
+		const target = getUrlWithoutLoginId(window.location.href);
 
 		if (!$i || $i.id !== loginId) {
 			const account = await getAccountFromId(loginId);
@@ -153,7 +175,7 @@ export async function common(createVue: () => App<Element>) {
 			}
 		}
 
-		history.replaceState({ misskey: 'loginId' }, '', target);
+		window.history.replaceState({ misskey: 'loginId' }, '', target);
 	}
 	//#endregion
 
@@ -169,84 +191,125 @@ export async function common(createVue: () => App<Element>) {
 	//#endregion
 
 	// NOTE: この処理は必ずクライアント更新チェック処理より後に来ること(テーマ再構築のため)
-	watch(defaultStore.reactiveState.darkMode, (darkMode) => {
-		applyTheme(darkMode ? ColdDeviceStorage.get('darkTheme') : ColdDeviceStorage.get('lightTheme'));
-		document.documentElement.dataset.colorMode = darkMode ? 'dark' : 'light';
+	watch(store.r.darkMode, (darkMode) => {
+		applyTheme(darkMode
+			? (prefer.s.darkTheme ?? defaultDarkTheme)
+			: (prefer.s.lightTheme ?? defaultLightTheme),
+		);
 	}, { immediate: miLocalStorage.getItem('theme') == null });
 
-	document.documentElement.dataset.colorMode = defaultStore.state.darkMode ? 'dark' : 'light';
+	window.document.documentElement.dataset.colorScheme = store.s.darkMode ? 'dark' : 'light';
 
-	const darkTheme = computed(ColdDeviceStorage.makeGetterSetter('darkTheme'));
-	const lightTheme = computed(ColdDeviceStorage.makeGetterSetter('lightTheme'));
+	const darkTheme = prefer.model('darkTheme');
+	const lightTheme = prefer.model('lightTheme');
 
 	watch(darkTheme, (theme) => {
-		if (defaultStore.state.darkMode) {
-			applyTheme(theme);
+		if (store.s.darkMode) {
+			applyTheme(theme ?? defaultDarkTheme);
 		}
 	});
 
 	watch(lightTheme, (theme) => {
-		if (!defaultStore.state.darkMode) {
-			applyTheme(theme);
+		if (!store.s.darkMode) {
+			applyTheme(theme ?? defaultLightTheme);
 		}
 	});
 
 	//#region Sync dark mode
-	if (ColdDeviceStorage.get('syncDeviceDarkMode')) {
-		defaultStore.set('darkMode', isDeviceDarkmode());
+	if (prefer.s.syncDeviceDarkMode) {
+		store.set('darkMode', isDeviceDarkmode());
 	}
 
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (mql) => {
-		if (ColdDeviceStorage.get('syncDeviceDarkMode')) {
-			defaultStore.set('darkMode', mql.matches);
+		if (prefer.s.syncDeviceDarkMode) {
+			store.set('darkMode', mql.matches);
 		}
 	});
 	//#endregion
 
+	if (prefer.s.darkTheme && store.s.darkMode) {
+		if (miLocalStorage.getItem('themeId') !== prefer.s.darkTheme.id) applyTheme(prefer.s.darkTheme);
+	} else if (prefer.s.lightTheme && !store.s.darkMode) {
+		if (miLocalStorage.getItem('themeId') !== prefer.s.lightTheme.id) applyTheme(prefer.s.lightTheme);
+	}
+
 	fetchInstanceMetaPromise.then(() => {
-		if (defaultStore.state.themeInitial) {
-			if (instance.defaultLightTheme != null) ColdDeviceStorage.set('lightTheme', JSON.parse(instance.defaultLightTheme));
-			if (instance.defaultDarkTheme != null) ColdDeviceStorage.set('darkTheme', JSON.parse(instance.defaultDarkTheme));
-			defaultStore.set('themeInitial', false);
-		} else {
-			if (defaultStore.state.darkMode) {
-				applyTheme(darkTheme.value);
-			} else {
-				applyTheme(lightTheme.value);
-			}
-		}
+		// TODO: instance.defaultLightTheme/instance.defaultDarkThemeが不正な形式だった場合のケア
+		if (prefer.s.lightTheme == null && instance.defaultLightTheme != null) prefer.commit('lightTheme', JSON.parse(instance.defaultLightTheme));
+		if (prefer.s.darkTheme == null && instance.defaultDarkTheme != null) prefer.commit('darkTheme', JSON.parse(instance.defaultDarkTheme));
 	});
 
-	watch(defaultStore.reactiveState.useBlurEffectForModal, v => {
-		document.documentElement.style.setProperty('--modalBgFilter', v ? 'blur(4px)' : 'none');
+	watch(prefer.r.overridedDeviceKind, (kind) => {
+		updateDeviceKind(kind);
 	}, { immediate: true });
 
-	watch(defaultStore.reactiveState.useBlurEffect, v => {
+	watch(prefer.r.useBlurEffectForModal, v => {
+		window.document.documentElement.style.setProperty('--MI-modalBgFilter', v ? 'blur(4px)' : 'none');
+	}, { immediate: true });
+
+	watch(prefer.r.useBlurEffect, v => {
 		if (v) {
-			document.documentElement.style.removeProperty('--blur');
+			window.document.documentElement.style.removeProperty('--MI-blur');
 		} else {
-			document.documentElement.style.setProperty('--blur', 'none');
+			window.document.documentElement.style.setProperty('--MI-blur', 'none');
 		}
 	}, { immediate: true });
 
 	// Keep screen on
-	const onVisibilityChange = () => document.addEventListener('visibilitychange', () => {
-		if (document.visibilityState === 'visible') {
+	const onVisibilityChange = () => window.document.addEventListener('visibilitychange', () => {
+		if (window.document.visibilityState === 'visible') {
 			navigator.wakeLock.request('screen');
 		}
 	});
-	if (defaultStore.state.keepScreenOn && 'wakeLock' in navigator) {
+	if (prefer.s.keepScreenOn && 'wakeLock' in navigator) {
 		navigator.wakeLock.request('screen')
 			.then(onVisibilityChange)
 			.catch(() => {
 				// On WebKit-based browsers, user activation is required to send wake lock request
 				// https://webkit.org/blog/13862/the-user-activation-api/
-				document.addEventListener(
+				window.document.addEventListener(
 					'click',
 					() => navigator.wakeLock.request('screen').then(onVisibilityChange),
 					{ once: true },
 				);
 			});
+	}
+
+	if (prefer.s.makeEveryTextElementsSelectable) {
+		window.document.documentElement.classList.add('forceSelectableAll');
+	} else {
+		// When global selection is disabled, clear lingering selections if the user clicks outside selectable areas.
+		const clearSelectionOnPointerDown = (ev: PointerEvent) => {
+			if (ev.button !== 0 && ev.pointerType !== 'touch' && ev.pointerType !== 'pen') return;
+
+			const selection = window.getSelection();
+			if (!selection || selection.isCollapsed) return;
+
+			const path = typeof ev.composedPath === 'function' ? ev.composedPath() : [];
+			let targetElement: Element | null = null;
+
+			for (const item of path) {
+				if (item instanceof Element) {
+					targetElement = item;
+					break;
+				}
+			}
+
+			if (!targetElement) {
+				const target = ev.target;
+				if (target instanceof Element) {
+					targetElement = target;
+				} else if (target instanceof Node) {
+					targetElement = target.parentElement;
+				}
+			}
+
+			if (targetElement?.closest('textarea, input, [contenteditable]:not([contenteditable="false"]), ._selectable, ._selectableAtomic')) return;
+
+			selection.removeAllRanges();
+		};
+
+		window.addEventListener('pointerdown', clearSelectionOnPointerDown, { capture: true });
 	}
 
 	//#region Fetch user
@@ -255,7 +318,7 @@ export async function common(createVue: () => App<Element>) {
 			console.log('account cache found. refreshing...');
 		}
 
-		refreshAccount();
+		refreshCurrentAccount();
 	}
 	//#endregion
 
@@ -263,9 +326,7 @@ export async function common(createVue: () => App<Element>) {
 		await fetchCustomEmojis();
 	} catch (err) { /* empty */ }
 
-	const app = createVue();
-
-	setupRouter(app);
+	const app = await createVue();
 
 	if (_DEV_) {
 		app.config.performance = true;
@@ -274,23 +335,22 @@ export async function common(createVue: () => App<Element>) {
 	widgets(app);
 	directives(app);
 	components(app);
-
 	if (instance.googleAnalyticsId) {
-		app.use(VueGtag, {
-			bootstrap: false,
-			appName: `Misskey v${version}`,
-			pageTrackerEnabled: true,
-			pageTrackerScreenviewEnabled: true,
+		app.use(createGtag( {
+			tagId: instance.googleAnalyticsId,
 			config: {
-				id: instance.googleAnalyticsId,
-				params: {
-					anonymize_ip: false,
-					send_page_view: true,
-				},
+				anonymize_ip: false,
+				send_page_view: true,
 			},
-		}, mainRouter);
+			pageTracker: {
+				router: mainRouter,
+				useScreenview: true,
+			},
+			initMode: 'manual',
+			appName: `Misskey v${version}`,
+		}));
 
-		const gtagConsent = miLocalStorage.getItemAsJson('gtagConsent') as GtagConsentParams ?? {
+		const gtagConsentParams = miLocalStorage.getItemAsJson('gtagConsent') as GtagConsentParams ?? {
 			ad_storage: 'denied',
 			ad_user_data: 'denied',
 			ad_personalization: 'denied',
@@ -299,13 +359,12 @@ export async function common(createVue: () => App<Element>) {
 			personalization_storage: 'denied',
 			security_storage: 'granted',
 		};
-		miLocalStorage.setItemAsJson('gtagConsent', gtagConsent);
-
-		if (typeof window['gtag'] === 'function') (window['gtag'] as GtagConsent)('consent', 'default', gtagConsent);
+		miLocalStorage.setItemAsJson('gtagConsent', gtagConsentParams);
+		gtagConsent('default', gtagConsentParams);
 
 		if (miLocalStorage.getItem('gaConsent') === 'true') {
 			// noinspection ES6MissingAwait
-			gtagBootstrap();
+			addGtag();
 		}
 	}
 
@@ -314,18 +373,64 @@ export async function common(createVue: () => App<Element>) {
 	const rootEl = ((): HTMLElement => {
 		const MISSKEY_MOUNT_DIV_ID = 'misskey_app';
 
-		const currentRoot = document.getElementById(MISSKEY_MOUNT_DIV_ID);
+		const currentRoot = window.document.getElementById(MISSKEY_MOUNT_DIV_ID);
 
 		if (currentRoot) {
 			console.warn('multiple import detected');
 			return currentRoot;
 		}
 
-		const root = document.createElement('div');
+		const root = window.document.createElement('div');
 		root.id = MISSKEY_MOUNT_DIV_ID;
-		document.body.appendChild(root);
+		window.document.body.appendChild(root);
 		return root;
 	})();
+
+	if (instance.sentryForFrontend) {
+		const Sentry = await import('@sentry/vue');
+
+		Sentry.init({
+			app,
+			release: version,
+			integrations: [
+				...(instance.sentryForFrontend.vueIntegration !== undefined ? [
+					Sentry.vueIntegration(instance.sentryForFrontend.vueIntegration ?? undefined),
+				] : []),
+				...(instance.sentryForFrontend.browserTracingIntegration !== undefined ? [
+					Sentry.browserTracingIntegration(instance.sentryForFrontend.browserTracingIntegration ?? undefined),
+				] : []),
+				...(instance.sentryForFrontend.replayIntegration !== undefined ? [
+					Sentry.replayIntegration(instance.sentryForFrontend.replayIntegration ?? undefined),
+				] : []),
+			],
+
+			// Set tracesSampleRate to 1.0 to capture 100%
+			tracesSampleRate: 1.0,
+
+			// Set `tracePropagationTargets` to control for which URLs distributed tracing should be enabled
+			...(instance.sentryForFrontend.browserTracingIntegration !== undefined ? {
+				tracePropagationTargets: [apiUrl],
+			} : {}),
+
+			// Capture Replay for 10% of all sessions,
+			// plus for 100% of sessions with an error
+			...(instance.sentryForFrontend.replayIntegration !== undefined ? {
+				replaysSessionSampleRate: 0.1,
+				replaysOnErrorSampleRate: 1.0,
+			} : {}),
+
+			...instance.sentryForFrontend.options,
+		});
+	}
+
+	if (instance.sentryForFrontend || instance.googleAnalyticsId) {
+		const consentValue = sensitiveContentConsent.value === null ? 'unset' : String(sensitiveContentConsent.value);
+		setUserProperties({
+			deviceId: getDeviceId(),
+			sensitiveContentConsent: consentValue,
+			displayOfSensitiveAds: String(prefer.s.displayOfSensitiveAds),
+		});
+	}
 
 	app.mount(rootEl);
 
@@ -336,34 +441,37 @@ export async function common(createVue: () => App<Element>) {
 	removeSplash();
 
 	//#region Self-XSS 対策メッセージ
-	console.log(
-		`%c${i18n.ts._selfXssPrevention.warning}`,
-		'color: #f00; background-color: #ff0; font-size: 36px; padding: 4px;',
-	);
-	console.log(
-		`%c${i18n.ts._selfXssPrevention.title}`,
-		'color: #f00; font-weight: 900; font-family: "Hiragino Sans W9", "Hiragino Kaku Gothic ProN", sans-serif; font-size: 24px;',
-	);
-	console.log(
-		`%c${i18n.ts._selfXssPrevention.description1}`,
-		'font-size: 16px; font-weight: 700;',
-	);
-	console.log(
-		`%c${i18n.ts._selfXssPrevention.description2}`,
-		'font-size: 16px;',
-		'font-size: 20px; font-weight: 700; color: #f00;',
-	);
-	console.log(i18n.tsx._selfXssPrevention.description3({ link: 'https://misskey-hub.net/docs/for-users/resources/self-xss/' }));
+	if (!_DEV_) {
+		console.log(
+			`%c${i18n.ts._selfXssPrevention.warning}`,
+			'color: #f00; background-color: #ff0; font-size: 36px; padding: 4px;',
+		);
+		console.log(
+			`%c${i18n.ts._selfXssPrevention.title}`,
+			'color: #f00; font-weight: 900; font-family: "Hiragino Sans W9", "Hiragino Kaku Gothic ProN", sans-serif; font-size: 24px;',
+		);
+		console.log(
+			`%c${i18n.ts._selfXssPrevention.description1}`,
+			'font-size: 16px; font-weight: 700;',
+		);
+		console.log(
+			`%c${i18n.ts._selfXssPrevention.description2}`,
+			'font-size: 16px;',
+			'font-size: 20px; font-weight: 700; color: #f00;',
+		);
+		console.log(i18n.tsx._selfXssPrevention.description3({ link: 'https://misskey-hub.net/docs/for-users/resources/self-xss/' }));
+	}
 	//#endregion
 
 	return {
 		isClientUpdated,
+		lastVersion,
 		app,
 	};
 }
 
 function removeSplash() {
-	const splash = document.getElementById('splash');
+	const splash = window.document.getElementById('splash');
 	if (splash) {
 		splash.style.opacity = '0';
 		splash.style.pointerEvents = 'none';

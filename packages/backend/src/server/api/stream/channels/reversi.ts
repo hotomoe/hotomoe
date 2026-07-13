@@ -5,6 +5,7 @@
 
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
+import type { JsonObject } from '@/misc/json-value.js';
 import Channel, { type MiChannelService } from '../channel.js';
 
 class ReversiChannel extends Channel {
@@ -14,7 +15,7 @@ class ReversiChannel extends Channel {
 	public static readonly kind = 'read:account';
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: JsonObject) {
 		this.subscriber.on(`reversiStream:${this.user!.id}`, this.send);
 	}
 
@@ -32,10 +33,11 @@ export class ReversiChannelService implements MiChannelService<true> {
 	public readonly kind = ReversiChannel.kind;
 
 	@bindThis
-	public create(id: string, connection: Channel['connection']): ReversiChannel {
+	public create(id: string, connection: Channel['connection'], dimension?: number | null): ReversiChannel {
 		return new ReversiChannel(
 			id,
 			connection,
+			null,
 		);
 	}
 }

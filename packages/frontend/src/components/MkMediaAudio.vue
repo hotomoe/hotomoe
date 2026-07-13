@@ -5,25 +5,26 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div
+	v-if="!blocked"
 	ref="playerEl"
 	v-hotkey="keymap"
 	tabindex="0"
 	:class="[
 		$style.audioContainer,
-		(audio.isSensitive && defaultStore.state.highlightSensitiveMedia) && $style.sensitive,
+		(audio.isSensitive && prefer.s.highlightSensitiveMedia) && $style.sensitive,
 	]"
 	@contextmenu.stop
 	@keydown.stop
 >
 	<button v-if="hide" :class="$style.hidden" @click="showHiddenContent">
 		<div :class="$style.hiddenTextWrapper">
-			<b v-if="audio.isSensitive" style="display: block;"><i class="ti ti-eye-exclamation"></i> {{ i18n.ts.sensitive }}{{ defaultStore.state.dataSaver.media ? ` (${i18n.ts.audio}${audio.size ? ' ' + bytes(audio.size) : ''})` : '' }}</b>
-			<b v-else style="display: block;"><i class="ti ti-music"></i> {{ defaultStore.state.dataSaver.media && audio.size ? bytes(audio.size) : i18n.ts.audio }}</b>
+			<b v-if="audio.isSensitive" style="display: block;"><i class="ti ti-eye-exclamation"></i> {{ i18n.ts.sensitive }}{{ prefer.s.dataSaver.media ? ` (${i18n.ts.audio}${audio.size ? ' ' + bytes(audio.size) : ''})` : '' }}</b>
+			<b v-else style="display: block;"><i class="ti ti-music"></i> {{ prefer.s.dataSaver.media && audio.size ? bytes(audio.size) : i18n.ts.audio }}</b>
 			<span style="display: block;">{{ i18n.ts.clickToShow }}</span>
 		</div>
 	</button>
 
-	<div v-else-if="defaultStore.reactiveState.useNativeUIForVideoAudioPlayer.value" :class="$style.nativeAudioContainer">
+	<div v-else-if="prefer.s.useNativeUiForVideoAudioPlayer" :class="$style.nativeAudioContainer">
 		<audio
 			ref="audioEl"
 			preload="metadata"
@@ -43,23 +44,24 @@ SPDX-License-Identifier: AGPL-3.0-only
 				ref="audioEl"
 				preload="metadata"
 				crossorigin="anonymous"
+				@keydown.prevent="() => {}"
 			>
 				<source :src="audio.url">
 			</audio>
 			<div :class="[$style.controlsChild, $style.controlsLeft]">
-				<button class="_button" :class="$style.controlButton" @click.prevent.stop="togglePlayPause">
+				<button class="_button" tabindex="-1" :class="['_button', $style.controlButton]" @click.prevent.stop="togglePlayPause">
 					<i v-if="isPlaying" class="ti-filled ti-filled-player-pause"></i>
 					<i v-else class="ti-filled ti-filled-player-play"></i>
 				</button>
 			</div>
 			<div :class="[$style.controlsChild, $style.controlsRight]">
-				<button class="_button" :class="$style.controlButton" @click.prevent.stop="showMenu">
+				<button class="_button" tabindex="-1" :class="['_button', $style.controlButton]" @click.prevent.stop="showMenu">
 					<i class="ti ti-settings"></i>
 				</button>
 			</div>
 			<div :class="[$style.controlsChild, $style.controlsTime]">{{ hms(elapsedTimeMs) }}</div>
 			<div :class="[$style.controlsChild, $style.controlsVolume]">
-				<button class="_button" :class="$style.controlButton" @click.prevent.stop="toggleMute">
+				<button class="_button" tabindex="-1" :class="['_button', $style.controlButton]" @click.prevent.stop="toggleMute">
 					<i v-if="volume === 0" class="ti ti-volume-3"></i>
 					<i v-else class="ti ti-volume"></i>
 				</button>
@@ -79,17 +81,20 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { shallowRef, watch, computed, ref, onDeactivated, onActivated, onMounted, defineAsyncComponent } from 'vue';
+import { useTemplateRef, watch, computed, ref, onDeactivated, onActivated, onMounted, defineAsyncComponent } from 'vue';
 import * as Misskey from 'misskey-js';
 import type { MenuItem } from '@/types/menu.js';
-import { defaultStore } from '@/store.js';
+import type { Keymap } from '@/utility/hotkey.js';
+import { copyToClipboard } from '@/utility/copy-to-clipboard';
 import { i18n } from '@/i18n.js';
 import * as os from '@/os.js';
 import bytes from '@/filters/bytes.js';
 import { hms } from '@/filters/hms.js';
 import MkMediaRange from '@/components/MkMediaRange.vue';
-import { pleaseLogin } from '@/scripts/please-login.js';
-import { $i, iAmModerator } from '@/account.js';
+import { pleaseLogin } from '@/utility/please-login.js';
+import { sensitiveContentConsent, requestSensitiveContentConsent } from '@/utility/sensitive-content-consent.js';
+import { $i, iAmModerator } from '@/i.js';
+import { prefer } from '@/preferences.js';
 
 const MkAudioVisualizer = defineAsyncComponent(() => import('@/components/MkAudioVisualizer.vue'));
 const props = defineProps<{
@@ -97,46 +102,65 @@ const props = defineProps<{
 	user?: Misskey.entities.UserLite;
 }>();
 
+const blocked = computed(() => props.audio.isSensitive && sensitiveContentConsent.value === false);
+
 const keymap = {
-	'up': () => {
-		if (hasFocus() && audioEl.value) {
-			volume.value = Math.min(volume.value + 0.1, 1);
-		}
+	'up': {
+		allowRepeat: true,
+		callback: () => {
+			if (hasFocus() && audioEl.value) {
+				volume.value = Math.min(volume.value + 0.1, 1);
+			}
+		},
 	},
-	'down': () => {
-		if (hasFocus() && audioEl.value) {
-			volume.value = Math.max(volume.value - 0.1, 0);
-		}
+	'down': {
+		allowRepeat: true,
+		callback: () => {
+			if (hasFocus() && audioEl.value) {
+				volume.value = Math.max(volume.value - 0.1, 0);
+			}
+		},
 	},
-	'left': () => {
-		if (hasFocus() && audioEl.value) {
-			audioEl.value.currentTime = Math.max(audioEl.value.currentTime - 5, 0);
-		}
+	'left': {
+		allowRepeat: true,
+		callback: () => {
+			if (hasFocus() && audioEl.value) {
+				audioEl.value.currentTime = Math.max(audioEl.value.currentTime - 5, 0);
+			}
+		},
 	},
-	'right': () => {
-		if (hasFocus() && audioEl.value) {
-			audioEl.value.currentTime = Math.min(audioEl.value.currentTime + 5, audioEl.value.duration);
-		}
+	'right': {
+		allowRepeat: true,
+		callback: () => {
+			if (hasFocus() && audioEl.value) {
+				audioEl.value.currentTime = Math.min(audioEl.value.currentTime + 5, audioEl.value.duration);
+			}
+		},
 	},
 	'space': () => {
 		if (hasFocus()) {
 			togglePlayPause();
 		}
 	},
-};
+} as const satisfies Keymap;
 
 // PlayerElもしくはその子要素にフォーカスがあるかどうか
 function hasFocus() {
 	if (!playerEl.value) return false;
-	return playerEl.value === document.activeElement || playerEl.value.contains(document.activeElement);
+	return playerEl.value === window.document.activeElement || playerEl.value.contains(window.document.activeElement);
 }
 
-const playerEl = shallowRef<HTMLDivElement>();
-const audioEl = shallowRef<HTMLAudioElement>();
+const playerEl = useTemplateRef('playerEl');
+const audioEl = useTemplateRef('audioEl');
 const audioVisualizer = ref<InstanceType<typeof MkAudioVisualizer>>();
 
-// eslint-disable-next-line vue/no-setup-props-destructure
-const hide = ref((defaultStore.state.nsfw === 'force' || defaultStore.state.dataSaver.media) ? true : (props.audio.isSensitive && defaultStore.state.nsfw !== 'ignore'));
+function calcHide(): boolean {
+	if (prefer.s.nsfw === 'force' || prefer.s.dataSaver.media) return true;
+	if (props.audio.isSensitive && sensitiveContentConsent.value !== true) return true;
+	return props.audio.isSensitive && prefer.s.nsfw !== 'ignore';
+}
+
+const hide = ref(calcHide());
 
 // Menu
 const menuShowing = ref(false);
@@ -201,12 +225,36 @@ function showMenu(ev: MouseEvent) {
 		}
 	}
 
+	const details: MenuItem[] = [];
 	if ($i?.id === props.audio.userId) {
-		menu.push({
-			type: 'link' as const,
+		details.push({
+			type: 'link',
 			text: i18n.ts._fileViewer.title,
 			icon: 'ti ti-info-circle',
 			to: `/my/drive/file/${props.audio.id}`,
+		});
+	}
+
+	if (iAmModerator) {
+		details.push({
+			type: 'link',
+			text: i18n.ts.moderation,
+			icon: 'ti ti-photo-exclamation',
+			to: `/admin/file/${props.audio.id}`,
+		});
+	}
+
+	if (details.length > 0) {
+		menu.push({ type: 'divider' }, ...details);
+	}
+
+	if (prefer.s.devMode) {
+		menu.push({ type: 'divider' }, {
+			icon: 'ti ti-hash',
+			text: i18n.ts.copyFileId,
+			action: () => {
+				copyToClipboard(props.audio.id);
+			},
 		});
 	}
 
@@ -219,22 +267,41 @@ function showMenu(ev: MouseEvent) {
 	});
 }
 
-function showHiddenContent(ev: MouseEvent) {
+async function showHiddenContent(ev: MouseEvent) {
+	if (!hide.value) return;
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
 	if (props.audio.isSensitive && !$i) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		pleaseLogin();
+		await pleaseLogin();
 		return;
 	}
 
-	if (hide.value) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		hide.value = false;
+	if (props.audio.isSensitive && sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) return;
 	}
+
+	if (props.audio.isSensitive && prefer.s.confirmWhenRevealingSensitiveMedia) {
+		const { canceled } = await os.confirm({
+			type: 'question',
+			text: i18n.ts.sensitiveMediaRevealConfirm,
+		});
+		if (canceled) return;
+	}
+
+	hide.value = false;
 }
 
-function toggleSensitive(file: Misskey.entities.DriveFile) {
+async function toggleSensitive(file: Misskey.entities.DriveFile) {
+	const { canceled } = await os.confirm({
+		type: 'warning',
+		text: file.isSensitive ? i18n.ts.unmarkAsSensitiveConfirm : i18n.ts.markAsSensitiveConfirm,
+	});
+
+	if (canceled) return;
+
 	os.apiWithDialog('drive/files/update', {
 		fileId: file.id,
 		isSensitive: !file.isSensitive,
@@ -402,7 +469,7 @@ onDeactivated(() => {
 	elapsedTimeMs.value = 0;
 	durationMs.value = 0;
 	bufferedEnd.value = 0;
-	hide.value = (defaultStore.state.nsfw === 'force' || defaultStore.state.dataSaver.media) ? true : (props.audio.isSensitive && defaultStore.state.nsfw !== 'ignore');
+	hide.value = calcHide();
 	stopAudioElWatch();
 	onceInit = false;
 	if (mediaTickFrameId) {
@@ -416,11 +483,11 @@ onDeactivated(() => {
 .audioContainer {
 	container-type: inline-size;
 	position: relative;
-	border: .5px solid var(--divider);
-	border-radius: var(--radius);
+	border: .5px solid var(--MI_THEME-divider);
+	border-radius: var(--MI-radius);
 	overflow: clip;
 
-	&:focus {
+	&:focus-visible {
 		outline: none;
 	}
 }
@@ -437,7 +504,7 @@ onDeactivated(() => {
 		height: 100%;
 		pointer-events: none;
 		border-radius: inherit;
-		box-shadow: inset 0 0 0 4px var(--warn);
+		box-shadow: inset 0 0 0 4px var(--MI_THEME-warn);
 	}
 }
 
@@ -479,12 +546,16 @@ onDeactivated(() => {
 
 	.controlButton {
 		padding: 6px;
-		border-radius: calc(var(--radius) / 2);
+		border-radius: calc(var(--MI-radius) / 2);
 		font-size: 1.05rem;
 
 		&:hover {
-			color: var(--accent);
-			background-color: var(--accentedBg);
+			color: var(--MI_THEME-accent);
+			background-color: var(--MI_THEME-accentedBg);
+		}
+
+		&:focus-visible {
+			outline: none;
 		}
 	}
 }

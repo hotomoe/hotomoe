@@ -29,13 +29,15 @@ SPDX-License-Identifier: AGPL-3.0-only
 <script lang="ts" setup>
 import { ref, watch, computed } from 'vue';
 import * as Misskey from 'misskey-js';
-import { useWidgetPropsManager, WidgetComponentEmits, WidgetComponentExpose, WidgetComponentProps } from './widget.js';
+import { useWidgetPropsManager } from './widget.js';
+import type { WidgetComponentEmits, WidgetComponentExpose, WidgetComponentProps } from './widget.js';
 import MarqueeText from '@/components/MkMarquee.vue';
-import { GetFormResultType } from '@/scripts/form.js';
+import type { GetFormResultType } from '@/utility/form.js';
 import MkContainer from '@/components/MkContainer.vue';
-import { shuffle } from '@/scripts/shuffle.js';
-import { url as base } from '@/config.js';
-import { useInterval } from '@/scripts/use-interval.js';
+import { shuffle } from '@/utility/shuffle.js';
+import { url as base } from '@@/js/config.js';
+import { useInterval } from '@@/js/use-interval.js';
+import { generateClientTransactionId } from '@/utility/misskey-api.js';
 
 const name = 'rssTicker';
 
@@ -107,9 +109,14 @@ const intervalClear = ref<(() => void) | undefined>();
 const key = ref(0);
 
 const tick = () => {
-	if (document.visibilityState === 'hidden' && rawItems.value.length !== 0) return;
+	if (window.document.visibilityState === 'hidden' && rawItems.value.length !== 0) return;
 
-	window.fetch(fetchEndpoint.value, {})
+	window.fetch(fetchEndpoint.value, {
+		credentials: 'include',
+		headers: {
+			'X-Client-Transaction-Id': generateClientTransactionId('widget-rss-ticker'),
+		},
+	})
 		.then(res => res.json())
 		.then((feed: Misskey.entities.FetchRssResponse) => {
 			rawItems.value = feed.items;
@@ -171,7 +178,7 @@ defineExpose<WidgetComponentExpose>({
 	display: inline-flex;
 	align-items: center;
 	vertical-align: bottom;
-	color: var(--fg);
+	color: var(--MI_THEME-fg);
 }
 
 .divider {
@@ -179,6 +186,6 @@ defineExpose<WidgetComponentExpose>({
 	width: 0.5px;
 	height: 16px;
 	margin: 0 1em;
-	background: var(--divider);
+	background: var(--MI_THEME-divider);
 }
 </style>

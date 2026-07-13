@@ -1,74 +1,70 @@
 <template>
-	<div class="_panel _shadow" :class="$style.root">
-		<div :class="$style.main">
-			<div style="display: flex; align-items: center;">
-				<div :class="$style.headerIcon">
-					<i class="ti ti-report-analytics"></i>
-				</div>
-				<div :class="$style.headerTitle"><Mfm :text="i18n.ts.helpUsImproveUserExperience" /></div>
+<div class="_panel _shadow" data-focus-trap-interactable :class="$style.root">
+	<div :class="$style.main">
+		<div style="display: flex; align-items: center;">
+			<div :class="$style.headerIcon">
+				<i class="ti ti-report-analytics"></i>
 			</div>
-			<div :class="$style.text">
-				<Mfm
-					:text="i18n.tsx.pleaseConsentToTracking({
-						host: instance.name ?? host,
-						privacyPolicyUrl: instance.privacyPolicyUrl,
-					})"
-				/>
+			<div :class="$style.headerTitle"><Mfm :text="i18n.ts.helpUsImproveUserExperience"/></div>
+		</div>
+		<div :class="$style.text">
+			<Mfm
+				:text="i18n.tsx.pleaseConsentToTracking({
+					host: instance.name ?? host,
+					privacyPolicyUrl: instance.privacyPolicyUrl,
+				})"
+			/>
+		</div>
+		<div class="_gaps_s">
+			<div class="_buttons" style="justify-content: right;">
+				<MkButton @click="consentEssential">{{ i18n.ts.consentEssential }}</MkButton>
+				<MkButton primary @click="consentAll">{{ i18n.ts.consentAll }}</MkButton>
 			</div>
-			<div class="_gaps_s">
-				<div class="_buttons" style="justify-content: right;">
-					<MkButton @click="consentEssential">{{ i18n.ts.consentEssential }}</MkButton>
-					<MkButton primary @click="consentAll">{{ i18n.ts.consentAll }}</MkButton>
-				</div>
-				<MkFolder>
-					<template #icon><i class="ti ti-lock-square"></i></template>
-					<template #label>{{ i18n.ts.gtagConsentCustomize }}</template>
-					<div class="_gaps_s">
-						<MkInfo>{{ i18n.tsx.gtagConsentCustomizeDescription({ host: instance.name ?? host }) }}</MkInfo>
-						<MkSwitch v-model="gtagConsentAnalytics">
-							{{ i18n.ts.gtagConsentAnalytics }}
-							<template #caption>{{ i18n.ts.gtagConsentAnalyticsDescription }}</template>
-						</MkSwitch>
-						<MkSwitch v-model="gtagConsentFunctionality">
-							{{ i18n.ts.gtagConsentFunctionality }}
-							<template #caption>{{ i18n.ts.gtagConsentFunctionalityDescription }}</template>
-						</MkSwitch>
-						<MkSwitch v-model="gtagConsentPersonalization">
-							{{ i18n.ts.gtagConsentPersonalization }}
-							<template #caption>{{ i18n.ts.gtagConsentPersonalizationDescription }}</template>
-						</MkSwitch>
-						<div class="_buttons" style="justify-content: right;">
-							<MkButton @click="consentSelected">{{ i18n.ts.consentSelected }}</MkButton>
-						</div>
+			<MkFolder>
+				<template #icon><i class="ti ti-lock-square"></i></template>
+				<template #label>{{ i18n.ts.gtagConsentCustomize }}</template>
+				<div class="_gaps_s">
+					<MkInfo>{{ i18n.tsx.gtagConsentCustomizeDescription({ host: instance.name ?? host }) }}</MkInfo>
+					<MkSwitch v-model="gtagConsentAnalytics">
+						{{ i18n.ts.gtagConsentAnalytics }}
+						<template #caption>{{ i18n.ts.gtagConsentAnalyticsDescription }}</template>
+					</MkSwitch>
+					<MkSwitch v-model="gtagConsentFunctionality">
+						{{ i18n.ts.gtagConsentFunctionality }}
+						<template #caption>{{ i18n.ts.gtagConsentFunctionalityDescription }}</template>
+					</MkSwitch>
+					<MkSwitch v-model="gtagConsentPersonalization">
+						{{ i18n.ts.gtagConsentPersonalization }}
+						<template #caption>{{ i18n.ts.gtagConsentPersonalizationDescription }}</template>
+					</MkSwitch>
+					<div class="_buttons" style="justify-content: right;">
+						<MkButton @click="consentSelected">{{ i18n.ts.consentSelected }}</MkButton>
 					</div>
-				</MkFolder>
-			</div>
+				</div>
+			</MkFolder>
 		</div>
 	</div>
+</div>
 </template>
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { host } from '@@/js/config.js';
+import { addGtag, consent as gtagConsent, set as gtagSet } from 'vue-gtag';
+import type { GtagConsentParams } from '@/types/gtag.js';
 import MkButton from '@/components/MkButton.vue';
 import MkFolder from '@/components/MkFolder.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
 import MkInfo from '@/components/MkInfo.vue';
 import { miLocalStorage } from '@/local-storage.js';
 import { instance } from '@/instance.js';
-import { host } from '@/config.js';
 import { i18n } from '@/i18n.js';
-import { $i } from '@/account.js';
+import { $i } from '@/i.js';
 import * as os from '@/os.js';
-import {
-	bootstrap as gtagBootstrap,
-	GtagConsent,
-	GtagConsentParams,
-	set as gtagSet
-} from 'vue-gtag';
 
 const emit = defineEmits<(ev: 'closed') => void>();
 
-const zIndex = os.claimZIndex('middle');
+const zIndex = os.claimZIndex('high');
 
 const gtagConsentAnalytics = ref(false);
 const gtagConsentFunctionality = ref(false);
@@ -76,7 +72,7 @@ const gtagConsentPersonalization = ref(false);
 
 function consentAll() {
 	miLocalStorage.setItem('gaConsent', 'true');
-	const gtagConsent = <GtagConsentParams>{
+	const params = <GtagConsentParams>{
 		ad_storage: 'granted',
 		ad_user_data: 'granted',
 		ad_personalization: 'granted',
@@ -85,9 +81,8 @@ function consentAll() {
 		personalization_storage: 'granted',
 		security_storage: 'granted',
 	};
-	miLocalStorage.setItemAsJson('gtagConsent', gtagConsent);
-
-	if (typeof window['gtag'] === 'function') (window['gtag'] as GtagConsent)('consent', 'update', gtagConsent);
+	miLocalStorage.setItemAsJson('gtagConsent', params);
+	gtagConsent('update', params);
 	bootstrap();
 
 	emit('closed');
@@ -95,7 +90,7 @@ function consentAll() {
 
 function consentEssential() {
 	miLocalStorage.setItem('gaConsent', 'true');
-	const gtagConsent = <GtagConsentParams>{
+	const params = <GtagConsentParams>{
 		ad_storage: 'denied',
 		ad_user_data: 'denied',
 		ad_personalization: 'denied',
@@ -104,9 +99,8 @@ function consentEssential() {
 		personalization_storage: 'denied',
 		security_storage: 'granted',
 	};
-	miLocalStorage.setItemAsJson('gtagConsent', gtagConsent);
-
-	if (typeof window['gtag'] === 'function') (window['gtag'] as GtagConsent)('consent', 'update', gtagConsent);
+	miLocalStorage.setItemAsJson('gtagConsent', params);
+	gtagConsent('update', params);
 	bootstrap();
 
 	emit('closed');
@@ -114,7 +108,7 @@ function consentEssential() {
 
 function consentSelected() {
 	miLocalStorage.setItem('gaConsent', 'true');
-	const gtagConsent = <GtagConsentParams>{
+	const params = <GtagConsentParams>{
 		ad_storage: gtagConsentAnalytics.value ? 'granted' : 'denied',
 		ad_user_data: gtagConsentFunctionality.value ? 'granted' : 'denied',
 		ad_personalization: gtagConsentPersonalization.value ? 'granted' : 'denied',
@@ -123,16 +117,15 @@ function consentSelected() {
 		personalization_storage: gtagConsentPersonalization.value ? 'granted' : 'denied',
 		security_storage: 'granted',
 	};
-	miLocalStorage.setItemAsJson('gtagConsent', gtagConsent);
-
-	if (typeof window['gtag'] === 'function') (window['gtag'] as GtagConsent)('consent', 'update', gtagConsent);
+	miLocalStorage.setItemAsJson('gtagConsent', params);
+	gtagConsent('update', params);
 	bootstrap();
 
 	emit('closed');
 }
 
 function bootstrap() {
-	gtagBootstrap();
+	addGtag();
 	gtagSet({
 		'client_id': miLocalStorage.getItem('id'),
 		'user_id': $i?.id,
@@ -144,12 +137,12 @@ function bootstrap() {
 .root {
 	position: fixed;
 	z-index: v-bind(zIndex);
-	bottom: var(--margin);
+	bottom: var(--MI-margin);
 	left: 0;
 	right: 0;
 	margin: auto;
 	box-sizing: border-box;
-	width: calc(100% - (var(--margin) * 2));
+	width: calc(100% - (var(--MI-margin) * 2));
 	max-width: 500px;
 	display: flex;
 }
@@ -163,7 +156,7 @@ function bootstrap() {
 .headerIcon {
 	margin-right: 8px;
 	font-size: 40px;
-	color: var(--accent);
+	color: var(--MI_THEME-accent);
 }
 
 .headerTitle {

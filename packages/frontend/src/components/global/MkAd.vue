@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div v-if="chosen && !shouldHide" :class="$style.root">
+<div v-if="chosen && !shouldHide">
 	<div
 		v-if="!showMenu"
 		:class="[$style.main, {
@@ -24,40 +24,59 @@ SPDX-License-Identifier: AGPL-3.0-only
 				rel: 'nofollow noopener',
 				target: '_blank',
 			}"
-			@click="onAdClicked"
+			@click="hideSensitive ? showHiddenSensitiveAd($event) : onAdClicked()"
 		>
-			<img :src="chosen.imageUrl" :class="$style.img">
+			<div :class="[$style.imgBox, (chosen.isSensitive && prefer.s.highlightSensitiveMedia) && $style.sensitive]">
+				<ImgWithBlurhash
+					:class="$style.img"
+					:hash="chosen.imageBlurhash"
+					:src="hideSensitive ? null : chosen.imageUrl"
+					:forceBlurhash="hideSensitive"
+					:cover="false"
+					:width="adDimensions.width"
+					:height="adDimensions.height"
+					:style="hideSensitive ? 'filter: brightness(0.7);' : null"
+				/>
+				<template v-if="hideSensitive">
+					<div :class="$style.hiddenText">
+						<div :class="$style.hiddenTextWrapper">
+							<b style="display: block;"><i class="ti ti-eye-exclamation"></i> {{ i18n.ts.sensitiveAd }}</b>
+							<span style="display: block;">{{ i18n.ts.clickToShow }}</span>
+						</div>
+					</div>
+				</template>
+			</div>
 			<button class="_button" :class="$style.i" @click.prevent.stop="toggleMenu"><i :class="$style.iIcon" class="ti ti-info-circle"></i></button>
 		</component>
 	</div>
 	<div v-else :class="$style.menu">
-		<div :class="$style.menuContainer">
-			<div>Ads by {{ host }}</div>
-			<!--<MkButton class="button" primary>{{ i18n.ts._ad.like }}</MkButton>-->
-			<MkButton v-if="chosen.ratio !== 0" :class="$style.menuButton" @click="reduceFrequency">{{ i18n.ts._ad.reduceFrequencyOfThisAd }}</MkButton>
-			<button class="_textButton" @click="toggleMenu">{{ i18n.ts._ad.back }}</button>
-		</div>
+		<div>Ads by {{ host }}</div>
+		<!--<MkButton class="button" primary>{{ i18n.ts._ad.like }}</MkButton>-->
+		<MkButton v-if="chosen.ratio !== 0" :class="$style.menuButton" @click="reduceFrequency">{{ i18n.ts._ad.reduceFrequencyOfThisAd }}</MkButton>
+		<button class="_textButton" @click="toggleMenu">{{ i18n.ts._ad.back }}</button>
 	</div>
 </div>
-<div v-else></div>
 </template>
 
 <script lang="ts" setup>
 /* eslint-disable id-denylist */
-import { ref, computed, onActivated, onMounted } from 'vue';
+import { ref, computed, onActivated, onMounted, watch } from 'vue';
+import { url as local, host } from '@@/js/config.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
-import { url as local, host } from '@/config.js';
 import MkButton from '@/components/MkButton.vue';
-import { defaultStore } from '@/store.js';
+import ImgWithBlurhash from '@/components/MkImgWithBlurhash.vue';
+import { store } from '@/store.js';
 import * as os from '@/os.js';
-import { $i } from '@/account.js';
-import { usageReport } from '@/scripts/usage-report.js';
+import { $i } from '@/i.js';
+import { prefer } from '@/preferences.js';
+import { usageReport } from '@/utility/usage-report.js';
+import { sensitiveContentConsent, requestSensitiveContentConsent } from '@/utility/sensitive-content-consent.js';
 
 type Ad = (typeof instance)['ads'][number];
 
 const props = defineProps<{
-	prefer: string[];
+	preferForms: string[];
 	specify?: Ad;
 }>();
 
@@ -66,12 +85,16 @@ const toggleMenu = (): void => {
 	showMenu.value = !showMenu.value;
 };
 
+const excludeSensitive = computed(() => prefer.s.displayOfSensitiveAds === 'filtered' || sensitiveContentConsent.value === false);
+
 const choseAd = (): Ad | null => {
 	if (props.specify) {
 		return props.specify;
 	}
 
-	const allAds = instance.ads.map(ad => defaultStore.state.mutedAds.includes(ad.id) ? {
+	const baseAds = (excludeSensitive.value ? instance.ads.filter(ad => !ad.isSensitive) : instance.ads);
+
+	const allAds = baseAds.map(ad => store.s.mutedAds.includes(ad.id) ? {
 		...ad,
 		ratio: 0,
 	} : ad);
@@ -80,21 +103,23 @@ const choseAd = (): Ad | null => {
 	const lowPriorityAds = allAds.filter(ad => ad.ratio === 0);
 
 	let ads: Ad[];
-	const preferredAds = valuableAds.filter(ad => props.prefer.includes(ad.place));
+	const preferredAds = valuableAds.filter(ad => props.preferForms.includes(ad.place));
 	if (preferredAds.length !== 0) {
 		ads = preferredAds;
 	} else {
-		ads = lowPriorityAds.filter(ad => props.prefer.includes(ad.place));
+		ads = lowPriorityAds.filter(ad => props.preferForms.includes(ad.place));
 	}
 
 	if (ads.length === 0) {
-		const nonPreferredAds = valuableAds.filter(ad => !props.prefer.includes(ad.place));
+		const nonPreferredAds = valuableAds.filter(ad => !props.preferForms.includes(ad.place));
 		if (nonPreferredAds.length !== 0) {
 			ads = nonPreferredAds;
 		} else {
-			ads = lowPriorityAds.filter(ad => !props.prefer.includes(ad.place));
+			ads = lowPriorityAds.filter(ad => !props.preferForms.includes(ad.place));
 		}
 	}
+
+	if (ads.length === 0) return null;
 
 	const totalFactor = ads.reduce((a, b) => a + b.ratio, 0);
 	if (totalFactor === 0) return ads[Math.floor(Math.random() * ads.length)];
@@ -116,12 +141,55 @@ const chosen = ref(choseAd());
 
 const self = computed(() => chosen.value?.url.startsWith(local));
 
-const shouldHide = ref(!defaultStore.state.forceShowAds && $i && $i.policies.canHideAds && (props.specify == null));
+const shouldHide = computed(() => {
+	const hideByPolicy = !prefer.s.forceShowAds && $i && $i.policies.canHideAds && (props.specify == null);
+	if (hideByPolicy) return true;
+
+	const ad = chosen.value;
+	if (!ad?.isSensitive) return false;
+	if (prefer.s.displayOfSensitiveAds === 'filtered') return true;
+	return sensitiveContentConsent.value === false;
+});
+
+const adDimensions = computed(() => {
+	switch (chosen.value?.place) {
+		case 'horizontal': return { width: 600, height: 80 };
+		case 'horizontal-big': return { width: 600, height: 250 };
+		case 'vertical': return { width: 300, height: 450 };
+		case 'square':
+		default: return { width: 300, height: 300 };
+	}
+});
+
+function calcHideSensitive(): boolean {
+	const ad = chosen.value;
+	if (!ad?.isSensitive) return false;
+	if (sensitiveContentConsent.value !== true) return true;
+	return prefer.s.displayOfSensitiveAds !== 'always';
+}
+
+const hideSensitive = ref(calcHideSensitive());
+
+watch(chosen, () => {
+	hideSensitive.value = calcHideSensitive();
+});
+
+watch([() => prefer.s.displayOfSensitiveAds, () => sensitiveContentConsent.value], () => {
+	hideSensitive.value = calcHideSensitive();
+});
+
+watch([excludeSensitive, chosen], () => {
+	if (props.specify != null) return;
+	if (excludeSensitive.value && chosen.value?.isSensitive) {
+		chosen.value = choseAd();
+		showMenu.value = false;
+	}
+}, { immediate: true });
 
 function reduceFrequency(): void {
 	if (chosen.value == null) return;
-	if (defaultStore.state.mutedAds.includes(chosen.value.id)) return;
-	defaultStore.push('mutedAds', chosen.value.id);
+	if (store.s.mutedAds.includes(chosen.value.id)) return;
+	store.push('mutedAds', chosen.value.id);
 	os.success();
 	chosen.value = choseAd();
 	showMenu.value = false;
@@ -137,8 +205,32 @@ function onAdClicked(): void {
 	});
 }
 
+async function showHiddenSensitiveAd(ev: MouseEvent) {
+	if (!hideSensitive.value) return;
+	if (chosen.value == null || !chosen.value.isSensitive) return;
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	// `displayOfSensitiveAds` is the "master" switch; when filtered, don't allow revealing.
+	if (prefer.s.displayOfSensitiveAds === 'filtered') return;
+
+	if (sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) {
+			if (props.specify == null) {
+				chosen.value = choseAd();
+				showMenu.value = false;
+			}
+			return;
+		}
+	}
+
+	hideSensitive.value = false;
+}
+
 onMounted(() => {
-	if (chosen.value == null) return;
+	if (shouldHide.value || chosen.value == null) return;
 	usageReport({
 		t: Math.floor(Date.now() / 1000),
 		e: 'a',
@@ -148,7 +240,7 @@ onMounted(() => {
 });
 
 onActivated(() => {
-	if (chosen.value == null) return;
+	if (shouldHide.value || chosen.value == null) return;
 	usageReport({
 		t: Math.floor(Date.now() / 1000),
 		e: 'a',
@@ -159,37 +251,28 @@ onActivated(() => {
 </script>
 
 <style lang="scss" module>
-.root {
-	background-size: auto auto;
-	background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, var(--ad) 8px, var(--ad) 14px );
-}
-
 .main {
 	text-align: center;
 
 	&.form_square {
 		> .link,
-		> .link > .img {
+		> .link > .imgBox {
 			max-width: min(300px, 100%);
 			max-height: 300px;
 		}
 	}
 
 	&.form_horizontal {
-		padding: 8px;
-
 		> .link,
-		> .link > .img {
+		> .link > .imgBox {
 			max-width: min(600px, 100%);
 			max-height: 80px;
 		}
 	}
 
 	&.form_horizontalBig {
-		padding: 8px;
-
 		> .link,
-		> .link > .img {
+		> .link > .imgBox {
 			max-width: min(600px, 100%);
 			max-height: 250px;
 		}
@@ -197,7 +280,7 @@ onActivated(() => {
 
 	&.form_vertical {
 		> .link,
-		> .link > .img {
+		> .link > .imgBox {
 			max-width: min(300px, 100%);
 			max-height: 450px;
 		}
@@ -210,17 +293,22 @@ onActivated(() => {
 	vertical-align: bottom;
 
 	&:hover {
-		> .img {
+		.img {
 			filter: contrast(120%);
 		}
 	}
 }
 
+.imgBox {
+	position: relative;
+	width: 100%;
+}
+
 .img {
 	display: block;
-	object-fit: contain;
 	margin: auto;
 	border-radius: 5px;
+	overflow: hidden;
 }
 
 .i {
@@ -229,9 +317,10 @@ onActivated(() => {
 	right: 1px;
 	display: grid;
 	place-content: center;
-	background: var(--panel);
+	background: var(--MI_THEME-panel);
 	border-radius: 100%;
 	padding: 2px;
+	z-index: 2;
 }
 
 .iIcon {
@@ -239,16 +328,49 @@ onActivated(() => {
 	line-height: 17px;
 }
 
-.menu {
-	padding: 8px;
-	text-align: center;
+.hiddenText {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
 }
 
-.menuContainer {
+.hiddenTextWrapper {
+	display: table-cell;
+	text-align: center;
+	font-size: 0.8em;
+	color: #fff;
+}
+
+.sensitive {
+	position: relative;
+
+	&::after {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		border-radius: 5px;
+		box-shadow: inset 0 0 0 4px var(--MI_THEME-warn);
+	}
+}
+
+.menu {
+	text-align: center;
 	padding: 8px;
 	margin: 0 auto;
 	max-width: 400px;
-	border: solid 1px var(--divider);
+	background: var(--MI_THEME-panel);
+	border: solid 1px var(--MI_THEME-divider);
 }
 
 .menuButton {

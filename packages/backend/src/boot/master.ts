@@ -10,10 +10,11 @@ import * as os from 'node:os';
 import cluster from 'node:cluster';
 import chalk from 'chalk';
 import chalkTemplate from 'chalk-template';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { coreLogger } from '@/logger.js';
 import { loadConfig } from '@/config.js';
 import type { Config } from '@/config.js';
-import { showMachineInfo } from '@/misc/show-machine-info.js';
 import { envOption } from '@/env.js';
 import { jobQueue, server } from './common.js';
 
@@ -58,7 +59,6 @@ export async function masterMain() {
 	try {
 		greet();
 		showEnvironment();
-		await showMachineInfo(bootLogger);
 		showNodejsVersion();
 		config = loadConfigBoot();
 		//await connectDb();
@@ -69,6 +69,25 @@ export async function masterMain() {
 	}
 
 	bootLogger.succ('Misskey initialized');
+
+	if (config.sentryForBackend) {
+		Sentry.init({
+			release: meta.version,
+			integrations: [
+				...(config.sentryForBackend.enableNodeProfiling ? [nodeProfilingIntegration()] : []),
+			],
+
+			tracesSampleRate: 1,
+			profileSessionSampleRate: 1,
+			maxBreadcrumbs: 0,
+
+			...config.sentryForBackend.options,
+		});
+	}
+
+	bootLogger.info(
+		`mode: [disableClustering: ${envOption.disableClustering}, onlyServer: ${envOption.onlyServer}, onlyQueue: ${envOption.onlyQueue}]`,
+	);
 
 	if (envOption.disableClustering) {
 		if (envOption.onlyServer) {

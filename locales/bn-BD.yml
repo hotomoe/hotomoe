@@ -252,7 +252,6 @@ removeAreYouSure: "আপনি কি \"{x}\" সরানোর ব্যা�
 deleteAreYouSure: "আপনি কি \"{x}\" সরানোর ব্যাপারে নিশ্চিত?"
 resetAreYouSure: "রিসেট করার ব্যাপারে নিশ্চিত?"
 saved: "সংরক্ষিত হয়েছে"
-messaging: "চ্যাট"
 upload: "আপলোড"
 keepOriginalUploading: "আসল ছবি রাখুন"
 keepOriginalUploadingDescription: "ছবিটি আপলোড করার সময় আসল সংস্করণটি রাখুন। অপশনটি বন্ধ থাকলে, আপলোডের সময় ওয়েব প্রকাশনার জন্য ছবি ব্রাউজারে তৈরি করা হবে।"
@@ -265,7 +264,6 @@ uploadFromUrlMayTakeTime: "URL হতে আপলোড হতে কিছু 
 explore: "ঘুরে দেখুন"
 messageRead: "পড়া"
 noMoreHistory: "আর কোন ইতিহাস নেই"
-startMessaging: "চ্যাট শুরু করুন"
 nUsersRead: "{n} জন পড়েছেন"
 agreeTo: "{0} এর প্রতি আমি সম্মত"
 start: "শুরু করুন"
@@ -339,7 +337,6 @@ enableLocalTimeline: "স্থানীয় টাইমলাইন চাল�
 enableGlobalTimeline: "গ্লোবাল টাইমলাইন চালু করুন"
 disablingTimelinesInfo: "আপনি এই টাইমলাইনগুলি বন্ধ করলেও প্রশাসক এবং মডারেটররা এই টাইমলাইনগুলি ব্যাবহার করতে পারবে"
 registration: "নিবন্ধন"
-enableRegistration: "নতুন ব্যাবহারকারী নিবন্ধন চালু করুন"
 invite: "আমন্ত্রণ"
 driveCapacityPerLocalAccount: "প্রত্যেক স্থানীয় ব্যাবহারকারীর জন্য ড্রাইভের জায়গা"
 driveCapacityPerRemoteAccount: "প্রত্যেক রিমোট ব্যাবহারকারীর জন্য ড্রাইভের জায়গা"
@@ -428,8 +425,6 @@ retype: "পুনঃ প্রবেশ"
 noteOf: "{user} এর নোট"
 quoteAttached: "উদ্ধৃত"
 quoteQuestion: "উদ্ধৃতি হিসাবে সংযুক্ত করবেন?"
-noMessagesYet: "কোন মেসেজ নেই"
-newMessageExists: "নতুন মেসেজ পেয়েছেন"
 onlyOneFileCanBeAttached: "আপনি মেসেজের সাথে সর্বোচ্চ একটি ফাইল যুক্ত করতে পারবেন"
 signinRequired: "দয়া করে লগ ইন করুন"
 invitations: "আমন্ত্রণ"
@@ -451,7 +446,6 @@ or: "অথবা"
 language: "ভাষা"
 uiLanguage: "UI এর ভাষা"
 aboutX: "{x} সম্পর্কে"
-disableDrawer: "ড্রয়ার মেনু প্রদর্শন করবেন না"
 noHistory: "কোনো ইতিহাস নেই"
 signinHistory: "প্রবেশ করার ইতিহাস"
 doing: "প্রক্রিয়া করছে..."
@@ -625,10 +619,7 @@ abuseReported: "আপনার অভিযোগটি দাখিল কর�
 reporter: "অভিযোগকারী"
 reporteeOrigin: "অভিযোগটির উৎস"
 reporterOrigin: "অভিযোগকারীর উৎস"
-forwardReport: "রিমোট ইন্সত্যান্সে অভিযোগটি পাঠান"
-forwardReportIsAnonymous: "আপনার তথ্য রিমোট ইন্সত্যান্সে পাঠানো হবে না এবং একটি বেনামী সিস্টেম অ্যাকাউন্ট হিসাবে প্রদর্শিত হবে।"
 send: "পাঠান"
-abuseMarkAsResolved: "অভিযোগটিকে সমাধাকৃত হিসাবে চিহ্নিত করুন"
 openInNewTab: "নতুন ট্যাবে খুলুন"
 openInSideView: "সাইড ভিউতে খুলুন"
 defaultNavigationBehaviour: "ডিফল্ট নেভিগেশন"
@@ -858,6 +849,18 @@ replies: "জবাব"
 renotes: "রিনোট"
 sourceCode: "সোর্স কোড"
 flip: "উল্টান"
+postForm: "নোট লিখুন"
+information: "আপনার সম্পর্কে"
+_chat:
+  invitations: "আমন্ত্রণ"
+  noHistory: "কোনো ইতিহাস নেই"
+  members: "সদস্যবৃন্দ"
+  home: "মূল পাতা"
+  send: "পাঠান"
+_delivery:
+  stop: "স্থগিত করা হয়েছে"
+  _type:
+    none: "প্রকাশ করা হচ্ছে"
 _role:
   priority: "অগ্রাধিকার"
   _priority:
@@ -996,7 +999,6 @@ _theme:
     header: "হেডার"
     navBg: "সাইডবারের পটভূমি"
     navFg: "সাইডবারের পাঠ্য"
-    navHoverFg: "সাইডবারের পাঠ্য (হভার)"
     navActive: "সাইডবারের পাঠ্য (অ্যাকটিভ)"
     navIndicator: "সাইডবারের ইনডিকেটর"
     link: "লিংক"
@@ -1018,20 +1020,14 @@ _theme:
     buttonBg: "বাটনের পটভূমি"
     buttonHoverBg: "বাটনের পটভূমি (হভার)"
     inputBorder: "ইনপুট ফিল্ডের বর্ডার"
-    listItemHoverBg: "লিস্ট আইটেমের পটভূমি (হোভার)"
     driveFolderBg: "ড্রাইভ ফোল্ডারের পটভূমি"
-    wallpaperOverlay: "ওয়ালপেপার ওভারলে"
     badge: "ব্যাজ"
     messageBg: "চ্যাটের পটভূমি"
-    accentDarken: "অ্যাকসেন্ট (গাঢ়)"
-    accentLighten: "অ্যাকসেন্ট (হাল্কা)"
     fgHighlighted: "হাইলাইট করা পাঠ্য"
 _sfx:
   note: "নোটগুলি"
   noteMy: "নোট (আপনার)"
   notification: "বিজ্ঞপ্তি"
-  antenna: "অ্যান্টেনাগুলি"
-  channel: "চ্যানেলের বিজ্ঞপ্তি"
 _ago:
   future: "ভবিষ্যৎ"
   justNow: "এইমাত্র"
@@ -1089,6 +1085,7 @@ _permissions:
   "write:gallery": "গ্যালারী সম্পাদনা করুন"
   "read:gallery-likes": "গ্যালারীর পছন্দগুলি দেখুন"
   "write:gallery-likes": "গ্যালারীর পছন্দগুলি সম্পাদনা করুন"
+  "write:chat": "চ্যাটগুলি সম্পাদনা করুন"
 _auth:
   shareAccess: "\"{name}\" কে অ্যাকাউন্টের অ্যাক্সেস দিবেন?"
   shareAccessAsk: "অ্যাপ্লিকেশনটিকে অ্যাকাউন্টের অ্যাক্সেস দিবেন?"
@@ -1128,7 +1125,6 @@ _widgets:
   button: "বাটন"
   onlineUsers: "অনলাইনে থাকা ব্যবহারকারীগণ"
   jobQueue: "জব কিউ"
-  serverMetric: "সার্ভার মেট্রিক্স"
   aiscript: "AiScript কনসোল"
   aichan: "আই চান"
   _userList:
@@ -1242,9 +1238,6 @@ _pages:
   newPage: "নতুন পৃষ্ঠা বানান"
   editPage: "পৃষ্ঠাটি সম্পাদনা করুন"
   readPage: "উৎস দেখছেন"
-  created: "পৃষ্ঠা তৈরি করা হয়েছে"
-  updated: "পৃষ্ঠা সম্পাদনা করা হয়েছে"
-  deleted: "পৃষ্ঠা মুছে ফেলা হয়েছে"
   pageSetting: "পৃষ্ঠার সেটিংস"
   nameAlreadyExists: "পৃষ্ঠার URLটি ইতিমধ্যেই ব্যাবহার করা হয়েছে"
   invalidNameTitle: "পৃষ্ঠার URL অবৈধ"
@@ -1313,6 +1306,7 @@ _notification:
     pollEnded: "পোল শেষ"
     receiveFollowRequest: "প্রাপ্ত অনুসরণের অনুরোধসমূহ"
     followRequestAccepted: "গৃহীত অনুসরণের অনুরোধসমূহ"
+    login: "প্রবেশ করুন"
     app: "লিঙ্ক করা অ্যাপ থেকে বিজ্ঞপ্তি"
   _actions:
     followBack: "ফলো ব্যাক করেছে"
@@ -1343,8 +1337,18 @@ _deck:
 _webhookSettings:
   name: "নাম"
   active: "চালু"
+_abuseReport:
+  _notificationRecipient:
+    _recipientType:
+      mail: "ইমেইল"
 _moderationLogTypes:
   suspend: "স্থগিত করা"
   resetPassword: "পাসওয়ার্ড রিসেট করুন"
 _reversi:
   total: "মোট"
+_remoteLookupErrors:
+  _noSuchObject:
+    title: "পাওয়া যায়নি"
+_search:
+  searchScopeAll: "সবগুলো"
+  searchScopeLocal: "স্থানীয়"

@@ -22,10 +22,15 @@ import type { MiNote } from '@/models/Note.js';
  * receiveFollowRequest - フォローリクエストされた
  * followRequestAccepted - 自分の送ったフォローリクエストが承認された
  * roleAssigned - ロールが付与された
+ * chatRoomInvitationReceived - チャットルームに招待された
  * achievementEarned - 実績を獲得
  * noteScheduled - 予約投稿が予約された
  * scheduledNotePosted - 予約投稿が投稿された
  * scheduledNoteError - 予約投稿がエラーになった
+ * sensitiveFlagAssigned - センシティブフラグが付与された
+ * exportCompleted - エクスポートが完了
+ * login - ログイン
+ * createToken - トークン作成
  * app - アプリ通知
  * test - テスト通知（サーバー側）
  */
@@ -41,10 +46,15 @@ export const notificationTypes = [
 	'receiveFollowRequest',
 	'followRequestAccepted',
 	'roleAssigned',
+	'chatRoomInvitationReceived',
 	'achievementEarned',
+	'exportCompleted',
+	'login',
 	'noteScheduled',
 	'scheduledNotePosted',
 	'scheduledNoteError',
+	'sensitiveFlagAssigned',
+	'createToken',
 	'app',
 	'test',
 ] as const;
@@ -64,12 +74,27 @@ export const mutedNoteReasons = ['word', 'manual', 'spam', 'other'] as const;
 export const followingVisibilities = ['public', 'followers', 'private'] as const;
 export const followersVisibilities = ['public', 'followers', 'private'] as const;
 
+/**
+ * ユーザーがエクスポートできるものの種類
+ *
+ * （主にエクスポート完了通知で使用するものであり、既存のDBの名称等と必ずしも一致しない）
+ */
+export const userExportableEntities = ['antenna', 'blocking', 'clip', 'customEmoji', 'favorite', 'following', 'muting', 'note', 'userList'] as const;
+
+/**
+ * ユーザーがインポートできるものの種類
+ *
+ * （主にインポート完了通知で使用するものであり、既存のDBの名称等と必ずしも一致しない）
+ */
+export const userImportableEntities = ['antenna', 'blocking', 'customEmoji', 'following', 'muting', 'userList'] as const;
+
 export const moderationLogTypes = [
 	'updateServerSettings',
 	'suspend',
 	'unsuspend',
 	'updateUserName',
 	'updateUserNote',
+	'updateInlinePolicies',
 	'addCustomEmoji',
 	'updateCustomEmoji',
 	'deleteCustomEmoji',
@@ -96,6 +121,8 @@ export const moderationLogTypes = [
 	'markSensitiveDriveFile',
 	'unmarkSensitiveDriveFile',
 	'resolveAbuseReport',
+	'forwardAbuseReport',
+	'updateAbuseReportNote',
 	'createInvitation',
 	'createAd',
 	'updateAd',
@@ -112,6 +139,18 @@ export const moderationLogTypes = [
 	'unsetUserAvatar',
 	'unsetUserBanner',
 	'unsetUserMutualLink',
+	'createSystemWebhook',
+	'updateSystemWebhook',
+	'deleteSystemWebhook',
+	'createAbuseReportNotificationRecipient',
+	'updateAbuseReportNotificationRecipient',
+	'deleteAbuseReportNotificationRecipient',
+	'deleteAccount',
+	'deletePage',
+	'deleteFlash',
+	'deleteGalleryPost',
+	'deleteChatRoom',
+	'updateProxyAccountDescription',
 ] as const;
 
 export type ModerationLogPayloads = {
@@ -142,6 +181,13 @@ export type ModerationLogPayloads = {
 		userHost: string | null;
 		before: string | null;
 		after: string | null;
+	};
+	updateInlinePolicies: {
+		userId: string;
+		userUsername: string;
+		userHost: string | null;
+		before: any;
+		after: any;
 	};
 	addCustomEmoji: {
 		emojiId: string;
@@ -275,7 +321,18 @@ export type ModerationLogPayloads = {
 	resolveAbuseReport: {
 		reportId: string;
 		report: any;
-		forwarded: boolean;
+		forwarded?: boolean;
+		resolvedAs?: string | null;
+	};
+	forwardAbuseReport: {
+		reportId: string;
+		report: any;
+	};
+	updateAbuseReportNote: {
+		reportId: string;
+		report: any;
+		before: string;
+		after: string;
 	};
 	createInvitation: {
 		invitations: any[];
@@ -348,7 +405,64 @@ export type ModerationLogPayloads = {
 		userId: string;
 		userUsername: string;
 		userMutualLinkSections: { name: string | null; mutualLinks: { id: string; url: string; fileId: string; description: string | null; imgSrc: string; }[]; }[] | []
-	}
+	};
+	createSystemWebhook: {
+		systemWebhookId: string;
+		webhook: any;
+	};
+	updateSystemWebhook: {
+		systemWebhookId: string;
+		before: any;
+		after: any;
+	};
+	deleteSystemWebhook: {
+		systemWebhookId: string;
+		webhook: any;
+	};
+	createAbuseReportNotificationRecipient: {
+		recipientId: string;
+		recipient: any;
+	};
+	updateAbuseReportNotificationRecipient: {
+		recipientId: string;
+		before: any;
+		after: any;
+	};
+	deleteAbuseReportNotificationRecipient: {
+		recipientId: string;
+		recipient: any;
+	};
+	deleteAccount: {
+		userId: string;
+		userUsername: string;
+		userHost: string | null;
+	};
+	deletePage: {
+		pageId: string;
+		pageUserId: string;
+		pageUserUsername: string;
+		page: any;
+	};
+	deleteFlash: {
+		flashId: string;
+		flashUserId: string;
+		flashUserUsername: string;
+		flash: any;
+	};
+	deleteGalleryPost: {
+		postId: string;
+		postUserId: string;
+		postUserUsername: string;
+		post: any;
+	};
+	deleteChatRoom: {
+		roomId: string;
+		room: any;
+	};
+	updateProxyAccountDescription: {
+		before: string | null;
+		after: string | null;
+	};
 };
 
 export type MinimumUser = {
@@ -368,6 +482,7 @@ export type NoteCreateOption = {
 	files?: MiDriveFile[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
+	dimension?: number | null;
 	reactionAcceptance?: MiNote['reactionAcceptance'];
 	cw?: string | null;
 	visibility?: string;
@@ -379,25 +494,28 @@ export type NoteCreateOption = {
 	uri?: string | null;
 	url?: string | null;
 	app?: MiApp | null;
+	lang?: string | null;
 };
 
 export type Serialized<T> = {
 	[K in keyof T]:
-		T[K] extends Date
-			? string
-			: T[K] extends (Date | null)
-				? (string | null)
-				: T[K] extends Record<string, any>
-					? Serialized<T[K]>
-					: T[K] extends (Record<string, any> | null)
+	T[K] extends Date
+		? string
+		: T[K] extends (Date | null)
+			? (string | null)
+			: T[K] extends Record<string, any>
+				? Serialized<T[K]>
+				: T[K] extends (Record<string, any> | null)
 					? (Serialized<T[K]> | null)
-						: T[K] extends (Record<string, any> | undefined)
+					: T[K] extends (Record<string, any> | undefined)
 						? (Serialized<T[K]> | undefined)
-							: T[K];
+						: T[K];
 };
 
 export type FilterUnionByProperty<
-  Union,
-  Property extends string | number | symbol,
-  Condition
+	Union,
+	Property extends string | number | symbol,
+	Condition,
 > = Union extends Record<Property, Condition> ? Union : never;
+
+export type Awaitable<T> = T | Promise<T>;

@@ -121,13 +121,13 @@ SPDX-License-Identifier: AGPL-3.0-only
 import { ref, shallowRef, computed, onMounted } from 'vue';
 import { create as createConfetti } from 'canvas-confetti';
 
-import { definePageMetadata } from '@/scripts/page-metadata.js';
-import { reactionPicker } from '@/scripts/reaction-picker.js';
+import { definePage } from '@/page.js';
+import { reactionPicker } from '@/utility/reaction-picker.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
-import { host } from '@/config.js';
+import { host } from '@@/js/config.js';
 import { confirm as osConfirm } from '@/os.js';
-import { defaultStore } from '@/store.js';
+import { store } from '@/store.js';
 
 import MkAnimBg from '@/components/MkAnimBg.vue';
 import MkButton from '@/components/MkButton.vue';
@@ -143,7 +143,7 @@ function pageChangeHandler(to: number) {
 }
 
 // See: @/_boot_/common.ts L123 for details
-const query = new URLSearchParams(location.search);
+const query = new URLSearchParams(window.location.search);
 const originalPath = query.get('redirected_from');
 
 async function cancel() {
@@ -157,8 +157,8 @@ async function cancel() {
 
 	if (confirm.canceled) return;
 
-	defaultStore.set('accountSetupWizard', -1);
-	location.href = '/';
+	store.set('accountSetupWizard', -1);
+	window.location.href = '/';
 }
 
 // #region デフォルトオープニング画面のアニメーション
@@ -209,17 +209,17 @@ onMounted(() => {
 		reactionPicker.init(),
 		instanceIconElImageLoaded(),
 	]).then(() => {
-		setTimeout(() => {
+		window.setTimeout(() => {
 			// 待たないとアニメーションが正しく動かない場合がある
 			animationPhase.value = 1;
 
-			setTimeout(() => {
+			window.setTimeout(() => {
 				animationPhase.value = 2;
 
-				setTimeout(() => {
+				window.setTimeout(() => {
 					animationPhase.value = 3;
 
-					setTimeout(() => {
+					window.setTimeout(() => {
 						animationPhase.value = 4;
 						confetti({
 							spread: 70,
@@ -234,7 +234,7 @@ onMounted(() => {
 
 // #endregion
 
-definePageMetadata(() => ({
+definePage(() => ({
 	title: i18n.ts.onboarding,
 	description: i18n.ts.headlineMisskey,
 }));

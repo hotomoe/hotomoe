@@ -37,6 +37,10 @@ export interface Locale extends ILocale {
      */
     "search": string;
     /**
+     * リセット
+     */
+    "reset": string;
+    /**
      * 通知
      */
     "notifications": string;
@@ -211,6 +215,10 @@ export interface Locale extends ILocale {
      */
     "copyLink": string;
     /**
+     * リモートのリンクをコピー
+     */
+    "copyRemoteLink": string;
+    /**
      * リノートのリンクをコピー
      */
     "copyLinkRenote": string;
@@ -270,6 +278,10 @@ export interface Locale extends ILocale {
      * ユーザーを検索
      */
     "searchUser": string;
+    /**
+     * ユーザーのノートを検索
+     */
+    "searchThisUsersNotes": string;
     /**
      * 返信
      */
@@ -515,6 +527,60 @@ export interface Locale extends ILocale {
      */
     "sensitive": string;
     /**
+     * 成人向けの可能性があるコンテンツ
+     */
+    "sensitiveContentConsentTitle": string;
+    /**
+     * このコンテンツは成人向けのコンテンツである可能性があります。
+     *
+     * <center>$[x2 あなたは18歳以上ですか？]</center>
+     */
+    "sensitiveContentConsentAreYouOver18": string;
+    /**
+     * 表示するコンテンツ設定
+     */
+    "displayedContentSettings": string;
+    /**
+     * 成人向けの可能性があるコンテンツ
+     */
+    "displayOfSensitiveContentConsent": string;
+    "_displayOfSensitiveContentConsent": {
+        /**
+         * 表示する
+         */
+        "show": string;
+        /**
+         * 隠す
+         */
+        "hide": string;
+        /**
+         * 未設定
+         */
+        "notSet": string;
+    };
+    /**
+     * 成人向けの広告の表示
+     */
+    "displayOfSensitiveAds": string;
+    "_displayOfSensitiveAds": {
+        /**
+         * 隠す（クリックで表示）
+         */
+        "hidden": string;
+        /**
+         * 常に表示する
+         */
+        "always": string;
+        /**
+         * 表示しない
+         */
+        "filtered": string;
+    };
+    /**
+     * 成人向けの広告
+     */
+    "sensitiveAd": string;
+    /**
      * 追加
      */
     "add": string;
@@ -659,6 +725,10 @@ export interface Locale extends ILocale {
      */
     "editAntenna": string;
     /**
+     * アンテナを作成
+     */
+    "createAntenna": string;
+    /**
      * ウィジェットを選択
      */
     "selectWidget": string;
@@ -759,9 +829,29 @@ export interface Locale extends ILocale {
      */
     "loginFailed": string;
     /**
+     * 認証情報を確認できませんでした。
+     */
+    "credentialsVerificationFailed": string;
+    /**
      * リモートで表示
      */
     "showOnRemote": string;
+    /**
+     * リモートで続行
+     */
+    "continueOnRemote": string;
+    /**
+     * Misskey Hubからサーバーを選択
+     */
+    "chooseServerOnMisskeyHub": string;
+    /**
+     * サーバーのドメインを直接指定
+     */
+    "specifyServerHost": string;
+    /**
+     * ドメインを入力してください
+     */
+    "inputHostName": string;
     /**
      * 全般
      */
@@ -802,6 +892,10 @@ export interface Locale extends ILocale {
      * ホスト
      */
     "host": string;
+    /**
+     * 自分を選択
+     */
+    "selectSelf": string;
     /**
      * ユーザーを選択
      */
@@ -958,6 +1052,14 @@ export interface Locale extends ILocale {
      * センシティブなメディアを含むサーバーのホストを改行で区切って設定します。このサーバーからのメディアは全てセンシティブとして扱われます。
      */
     "sensitiveMediaInstancesDescription": string;
+    /**
+     * 連合を許可するサーバー
+     */
+    "federationAllowedHosts": string;
+    /**
+     * 連合を許可するサーバーのホストを改行で区切って設定します。
+     */
+    "federationAllowedHostsDescription": string;
     /**
      * ミュートとブロック
      */
@@ -1147,10 +1249,6 @@ export interface Locale extends ILocale {
      */
     "saved": string;
     /**
-     * チャット
-     */
-    "messaging": string;
-    /**
      * アップロード
      */
     "upload": string;
@@ -1199,9 +1297,9 @@ export interface Locale extends ILocale {
      */
     "noMoreHistory": string;
     /**
-     * チャットを開始
+     * チャットを始める
      */
-    "startMessaging": string;
+    "startChat": string;
     /**
      * {n}人が読みました
      */
@@ -1323,6 +1421,10 @@ export interface Locale extends ILocale {
      */
     "selectFolders": string;
     /**
+     * ファイルが選択されていません
+     */
+    "fileNotSelected": string;
+    /**
      * ファイル名を変更
      */
     "renameFile": string;
@@ -1350,6 +1452,10 @@ export interface Locale extends ILocale {
      * ファイルを追加
      */
     "addFile": string;
+    /**
+     * ファイルを表示
+     */
+    "showFile": string;
     /**
      * ドライブは空です
      */
@@ -1518,10 +1624,6 @@ export interface Locale extends ILocale {
      * 登録
      */
     "registration": string;
-    /**
-     * 誰でも新規登録できるようにする
-     */
-    "enableRegistration": string;
     /**
      * 招待
      */
@@ -1695,6 +1797,10 @@ export interface Locale extends ILocale {
      */
     "withFileAntenna": string;
     /**
+     * センシティブなチャンネルのノートを除外
+     */
+    "excludeNotesInSensitiveChannel": string;
+    /**
      * ブラウザへのプッシュ通知を有効にする
      */
     "enableServiceworker": string;
@@ -1814,6 +1920,10 @@ export interface Locale extends ILocale {
      * モデレーションノート
      */
     "moderationNote": string;
+    /**
+     * モデレーター間でだけ共有されるメモを記入することができます。
+     */
+    "moderationNoteDescription": string;
     /**
      * モデレーションノートを追加する
      */
@@ -1967,21 +2077,21 @@ export interface Locale extends ILocale {
      */
     "quoteQuestion": string;
     /**
-     * まだチャットはありません
+     * クリップボードのテキストが長いです。テキストファイルとして添付しますか？
      */
-    "noMessagesYet": string;
-    /**
-     * 新しいメッセージがあります
-     */
-    "newMessageExists": string;
+    "attachAsFileQuestion": string;
     /**
      * メッセージに添付できるファイルはひとつです
      */
     "onlyOneFileCanBeAttached": string;
     /**
-     * 続行する前に、サインアップまたはサインインが必要です
+     * 続行する前に、登録またはログインが必要です
      */
     "signinRequired": string;
+    /**
+     * 続行するには、お使いのサーバーに移動するか、このサーバーに登録・ログインする必要があります
+     */
+    "signinOrContinueOnRemote": string;
     /**
      * 招待
      */
@@ -2059,6 +2169,79 @@ export interface Locale extends ILocale {
      */
     "uiLanguage": string;
     /**
+     * 投稿する言語
+     */
+    "postingLanguage": string;
+    /**
+     * 選択した言語が表示する言語として設定されているユーザーのタイムラインに表示されます。
+     * 投稿フォーム上でも変更できます。
+     */
+    "postingLanguageDescription": string;
+    /**
+     * ブラウザーの言語が変更されています。投稿する言語の設定を確認してください。
+     */
+    "postingLanguageBrowserLangChanged": string;
+    /**
+     * 投稿と表示する言語
+     */
+    "postingAndViewingLanguage": string;
+    /**
+     * 表示する言語
+     */
+    "viewingLanguages": string;
+    /**
+     * 選択した言語に一致する投稿だけが表示されます。
+     */
+    "viewingLanguagesDescription": string;
+    /**
+     * すべての言語を表示する
+     */
+    "viewingLanguagesShowAll": string;
+    /**
+     * すべての言語の投稿を表示します。
+     */
+    "viewingLanguagesShowAllDescription": string;
+    /**
+     * メディアはすべて表示する
+     */
+    "viewingLanguagesShowAllMedia": string;
+    /**
+     * 言語設定に関係なくメディア付きの投稿を表示します。
+     */
+    "viewingLanguagesShowAllMediaDescription": string;
+    /**
+     * ハッシュタグはすべて表示する
+     */
+    "viewingLanguagesShowAllHashtags": string;
+    /**
+     * 言語設定に関係なくハッシュタグ付きの投稿を表示します。
+     */
+    "viewingLanguagesShowAllHashtagsDescription": string;
+    /**
+     * 未分類の投稿を表示する
+     */
+    "viewingLanguagesIncludeUnknown": string;
+    /**
+     * サードパーティークライアント、ボットなどの投稿が含まれます
+     */
+    "viewingLanguagesIncludeUnknownDescription": string;
+    /**
+     * リモートの投稿を含める
+     */
+    "viewingLanguagesIncludeRemote": string;
+    /**
+     * 次元
+     */
+    "dimension": string;
+    /**
+     * {dimension}次元
+     */
+    "dimensionWithNumber": ParameterizedString<"dimension">;
+    /**
+     * 0次元は0〜999次元の投稿が表示されます。
+     */
+    "dimensionDescription": string;
+    /**
      * {x}について
      */
     "aboutX": ParameterizedString<"x">;
@@ -2071,9 +2254,21 @@ export interface Locale extends ILocale {
      */
     "native": string;
     /**
-     * メニューをドロワーで表示しない
+     * メニューのスタイル
      */
-    "disableDrawer": string;
+    "menuStyle": string;
+    /**
+     * スタイル
+     */
+    "style": string;
+    /**
+     * ドロワー
+     */
+    "drawer": string;
+    /**
+     * ポップアップ
+     */
+    "popup": string;
     /**
      * ノートのアクションをホバー時のみ表示する
      */
@@ -2351,6 +2546,10 @@ export interface Locale extends ILocale {
      */
     "details": string;
     /**
+     * リノートの詳細
+     */
+    "renoteDetails": string;
+    /**
      * 絵文字を選択
      */
     "chooseEmoji": string;
@@ -2410,6 +2609,14 @@ export interface Locale extends ILocale {
      * スクラッチパッドは、AiScriptの実験環境を提供します。Misskeyと対話するコードの記述、実行、結果の確認ができます。
      */
     "scratchpadDescription": string;
+    /**
+     * UIインスペクター
+     */
+    "uiInspector": string;
+    /**
+     * メモリ上に存在しているUIコンポーネントのインスタンスの一覧を見ることができます。UIコンポーネントはUi:C:系関数により生成されます。
+     */
+    "uiInspectorDescription": string;
     /**
      * 出力
      */
@@ -2743,6 +2950,26 @@ export interface Locale extends ILocale {
      */
     "wordMute": string;
     /**
+     * 指定した語句を含むノートを最小化します。最小化されたノートをクリックすることで表示することができます。
+     */
+    "wordMuteDescription": string;
+    /**
+     * ハードワードミュート
+     */
+    "hardWordMute": string;
+    /**
+     * ミュートされたノートを隠す
+     */
+    "hideMutedNotes": string;
+    /**
+     * ミュートされたワードを表示
+     */
+    "showMutedWord": string;
+    /**
+     * 指定した語句を含むノートを隠します。ワードミュートとは異なり、ノートは完全に表示されなくなります。
+     */
+    "hardWordMuteDescription": string;
+    /**
      * 正規表現エラー
      */
     "regexpError": string;
@@ -2759,6 +2986,10 @@ export interface Locale extends ILocale {
      */
     "userSaysSomething": ParameterizedString<"name">;
     /**
+     * {name}が「{word}」について何かを言いました
+     */
+    "userSaysSomethingAbout": ParameterizedString<"name" | "word">;
+    /**
      * アクティブにする
      */
     "makeActive": string;
@@ -2770,6 +3001,10 @@ export interface Locale extends ILocale {
      * コピー
      */
     "copy": string;
+    /**
+     * クリップボードにコピーされました
+     */
+    "copiedToClipboard": string;
     /**
      * メトリクス
      */
@@ -2867,7 +3102,7 @@ export interface Locale extends ILocale {
      */
     "reportAbuseOf": ParameterizedString<"name">;
     /**
-     * 通報理由の詳細を記入してください。対象のノートがある場合はそのURLも記入してください。
+     * 通報理由の詳細を記入してください。対象のノートやページなどがある場合はそのURLも記入してください。
      */
     "fillAbuseReportDescription": string;
     /**
@@ -2887,21 +3122,9 @@ export interface Locale extends ILocale {
      */
     "reporterOrigin": string;
     /**
-     * リモートサーバーに通報を転送する
-     */
-    "forwardReport": string;
-    /**
-     * リモートサーバーからはあなたの情報は見れず、匿名のシステムアカウントとして表示されます。
-     */
-    "forwardReportIsAnonymous": string;
-    /**
      * 送信
      */
     "send": string;
-    /**
-     * 対応済みにする
-     */
-    "abuseMarkAsResolved": string;
     /**
      * 新しいタブで開く
      */
@@ -3171,7 +3394,7 @@ export interface Locale extends ILocale {
      */
     "narrow": string;
     /**
-     * 設定はページリロード後に反映されます。今すぐリロードしますか？
+     * 設定はページリロード後に反映されます。
      */
     "reloadToApplySetting": string;
     /**
@@ -3186,6 +3409,34 @@ export interface Locale extends ILocale {
      * キャッシュをクリア
      */
     "clearCache": string;
+    /**
+     * タイムラインのキャッシュ
+     */
+    "timelineCache": string;
+    /**
+     * 自分のタイムライン、リスト、アンテナのキャッシュを削除します。
+     */
+    "timelineCacheDescription": string;
+    /**
+     * ホームタイムラインのキャッシュを削除
+     */
+    "purgeHomeTimelineCache": string;
+    /**
+     * ユーザータイムラインのキャッシュを削除
+     */
+    "purgeUserTimelineCache": string;
+    /**
+     * リストタイムラインのキャッシュを削除
+     */
+    "purgeUserListTimelineCache": string;
+    /**
+     * アンテナタイムラインのキャッシュを削除
+     */
+    "purgeAntennaTimelineCache": string;
+    /**
+     * 選択したタイムラインのキャッシュを削除しますか？
+     */
+    "purgeTimelineCacheConfirm": string;
     /**
      * {n}人がオンライン
      */
@@ -3459,6 +3710,10 @@ export interface Locale extends ILocale {
      */
     "noMaintainerInformationWarning": string;
     /**
+     * 問い合わせ先URLが設定されていません。
+     */
+    "noInquiryUrlWarning": string;
+    /**
      * Botプロテクションが設定されていません。
      */
     "noBotProtectionWarning": string;
@@ -3726,6 +3981,10 @@ export interface Locale extends ILocale {
      */
     "authenticationFailed": string;
     /**
+     * ワンタイムパスワードが間違っているか、期限切れになっています。
+     */
+    "incorrectTotp": string;
+    /**
      * 「{choice}」に投票しますか？
      */
     "voteConfirm": ParameterizedString<"choice">;
@@ -3821,6 +4080,18 @@ export interface Locale extends ILocale {
      * 1ヶ月
      */
     "oneMonth": string;
+    /**
+     * 3ヶ月
+     */
+    "threeMonths": string;
+    /**
+     * 1年
+     */
+    "oneYear": string;
+    /**
+     * 3日
+     */
+    "threeDays": string;
     /**
      * 反映されるまで時間がかかる場合があります。
      */
@@ -3921,6 +4192,10 @@ export interface Locale extends ILocale {
      * ログアウトしますか？
      */
     "logoutConfirm": string;
+    /**
+     * ログアウトするとクライアントの設定情報がブラウザから消去されます。再ログイン時に設定情報を復元できるようにするためには、設定の自動バックアップを有効にしてください。
+     */
+    "logoutWillClearClientData": string;
     /**
      * 最終利用日時
      */
@@ -4162,6 +4437,26 @@ export interface Locale extends ILocale {
      */
     "unassign": string;
     /**
+     * インラインポリシー
+     */
+    "inlinePolicies": string;
+    /**
+     * ロールに加えて、ユーザー固有のポリシー値を調整します。
+     */
+    "inlinePoliciesDescription": string;
+    /**
+     * 値を設定
+     */
+    "inlinePolicyOperationSet": string;
+    /**
+     * 値を加算
+     */
+    "inlinePolicyOperationIncrement": string;
+    /**
+     * インラインポリシーを追加
+     */
+    "inlinePolicyAdd": string;
+    /**
      * 色
      */
     "color": string;
@@ -4190,7 +4485,7 @@ export interface Locale extends ILocale {
      */
     "invalidParamError": string;
     /**
-     * リクエストパラメータに問題があります。通常これはバグですが、入力した文字数が多すぎる等の可能性もあります。
+     * リクエストパラメータに問題があります。通常これはバグですが、入力した文字数が多すぎる・許可されていない文字を入力している等の可能性もあります。
      */
     "invalidParamErrorDescription": string;
     /**
@@ -4238,9 +4533,13 @@ export interface Locale extends ILocale {
      */
     "thisPostMayBeAnnoyingIgnore": string;
     /**
-     * 見たことのあるリノートを省略して表示
+     * リノートのスマート省略
      */
     "collapseRenotes": string;
+    /**
+     * リアクションやリノートをしたことがあるノートをたたんで表示します。
+     */
+    "collapseRenotesDescription": string;
     /**
      * サーバー内部エラー
      */
@@ -4334,6 +4633,18 @@ export interface Locale extends ILocale {
      */
     "sensitiveWordsDescription2": string;
     /**
+     * ブロックするリモートカスタム絵文字
+     */
+    "blockedRemoteCustomEmojis": string;
+    /**
+     * name または name@host が一致するリモートカスタム絵文字を取得・表示しません。改行で区切って複数設定できます。
+     */
+    "blockedRemoteCustomEmojisDescription": string;
+    /**
+     * 項目をスラッシュで囲むと正規表現になります。
+     */
+    "blockedRemoteCustomEmojisDescription2": string;
+    /**
      * 禁止ワード
      */
     "prohibitedWords": string;
@@ -4397,6 +4708,10 @@ export interface Locale extends ILocale {
      * リモートサーバーのチャートを生成
      */
     "enableChartsForFederatedInstances": string;
+    /**
+     * リモートサーバーの情報を取得
+     */
+    "enableStatsForFederatedInstances": string;
     /**
      * ノートのアクションにクリップを追加
      */
@@ -4546,6 +4861,14 @@ export interface Locale extends ILocale {
      */
     "archive": string;
     /**
+     * アーカイブ済み
+     */
+    "archived": string;
+    /**
+     * アーカイブ解除
+     */
+    "unarchive": string;
+    /**
      * {name}をアーカイブしますか？
      */
     "channelArchiveConfirmTitle": ParameterizedString<"name">;
@@ -4585,6 +4908,18 @@ export interface Locale extends ILocale {
      * ユーザー指定
      */
     "specifyUser": string;
+    /**
+     * 照会しますか？
+     */
+    "lookupConfirm": string;
+    /**
+     * ハッシュタグのページを開きますか？
+     */
+    "openTagPageConfirm": string;
+    /**
+     * ホスト指定
+     */
+    "specifyHost": string;
     /**
      * プレビューできません
      */
@@ -4962,7 +5297,7 @@ export interface Locale extends ILocale {
      */
     "disableStreamingTimeline": string;
     /**
-     * 通知をグルーピングして表示する
+     * 通知をグルーピング
      */
     "useGroupedNotifications": string;
     /**
@@ -5008,6 +5343,10 @@ export interface Locale extends ILocale {
      * スペースで区切るとAND指定になり、改行で区切るとOR指定になります。スラッシュで囲むと正規表現になります。一致した場合、サムネイルがぼかされて表示されます。
      */
     "urlPreviewDenyListDescription": string;
+    /**
+     * URLとサイトの設定
+     */
+    "urlAndSiteSettings": string;
     /**
      * コード
      */
@@ -5152,118 +5491,6 @@ export interface Locale extends ILocale {
      * お問い合わせ
      */
     "inquiry": string;
-    /**
-     * もう一度お試しください。
-     */
-    "tryAgain": string;
-    /**
-     * センシティブなメディアを表示するとき確認する
-     */
-    "confirmWhenRevealingSensitiveMedia": string;
-    /**
-     * センシティブなメディアです。表示しますか？
-     */
-    "sensitiveMediaRevealConfirm": string;
-    /**
-     * 作成したリスト
-     */
-    "createdLists": string;
-    /**
-     * 作成したアンテナ
-     */
-    "createdAntennas": string;
-    /**
-     * {x}から
-     */
-    "fromX": ParameterizedString<"x">;
-    /**
-     * 埋め込みコードを生成
-     */
-    "genEmbedCode": string;
-    /**
-     * このユーザーのノート一覧
-     */
-    "noteOfThisUser": string;
-    /**
-     * これ以上このクリップにノートを追加できません。
-     */
-    "clipNoteLimitExceeded": string;
-    /**
-     * パフォーマンス
-     */
-    "performance": string;
-    /**
-     * 変更あり
-     */
-    "modified": string;
-    /**
-     * 破棄
-     */
-    "discard": string;
-    /**
-     * {n}件の変更があります
-     */
-    "thereAreNChanges": ParameterizedString<"n">;
-    /**
-     * パスキーでログイン
-     */
-    "signinWithPasskey": string;
-    /**
-     * 登録されていないパスキーです。
-     */
-    "unknownWebAuthnKey": string;
-    /**
-     * パスキーの検証に失敗しました。
-     */
-    "passkeyVerificationFailed": string;
-    /**
-     * パスキーの検証に成功しましたが、パスワードレスログインが無効になっています。
-     */
-    "passkeyVerificationSucceededButPasswordlessLoginDisabled": string;
-    /**
-     * フォロワーへのメッセージ
-     */
-    "messageToFollower": string;
-    /**
-     * 対象
-     */
-    "target": string;
-    /**
-     * CAPTCHAのテストを目的とした機能です。<strong>本番環境で使用しないでください。</strong>
-     */
-    "testCaptchaWarning": string;
-    /**
-     * 禁止ワード（ユーザーの名前）
-     */
-    "prohibitedWordsForNameOfUser": string;
-    /**
-     * このリストに含まれる文字列がユーザーの名前に含まれる場合、ユーザーの名前の変更を拒否します。モデレーター権限を持つユーザーはこの制限の影響を受けません。
-     */
-    "prohibitedWordsForNameOfUserDescription": string;
-    /**
-     * 変更しようとした名前に禁止された文字列が含まれています
-     */
-    "yourNameContainsProhibitedWords": string;
-    /**
-     * 名前に禁止されている文字列が含まれています。この名前を使用したい場合は、サーバー管理者にお問い合わせください。
-     */
-    "yourNameContainsProhibitedWordsDescription": string;
-    /**
-     * 投稿者により、表示にはログインが必要と設定されています
-     */
-    "thisContentsAreMarkedAsSigninRequiredByAuthor": string;
-    /**
-     * ロックダウン
-     */
-    "lockdown": string;
-    /**
-     * アカウントを選択してください
-     */
-    "pleaseSelectAccount": string;
-    /**
-     * 利用可能なロール
-     */
-    "availableRoles": string;
     /**
      * 通報の種類
      */
@@ -5480,6 +5707,778 @@ export interface Locale extends ILocale {
      * {x}に投稿されます
      */
     "willBePostedAt": ParameterizedString<"x">;
+    /**
+     * 管理者によって、ドライブのファイルがセンシティブとして設定されました。
+     * 詳細については、[NSFWガイドライン](https://go.misskey.io/media-guideline)を確認してください。
+     */
+    "sensitiveByModerator": string;
+    /**
+     * この情報は他のユーザーには公開されません。
+     */
+    "thisInfoIsNotVisibleOtherUser": string;
+    /**
+     * 水に流す
+     */
+    "flushItAway": string;
+    /**
+     * 削除をしても全てが水に流れるわけではありませんが…
+     */
+    "deleteNotWash": string;
+    /**
+     * もう一度お試しください。
+     */
+    "tryAgain": string;
+    /**
+     * センシティブなメディアを表示するとき確認する
+     */
+    "confirmWhenRevealingSensitiveMedia": string;
+    /**
+     * センシティブなメディアです。表示しますか？
+     */
+    "sensitiveMediaRevealConfirm": string;
+    /**
+     * 作成したリスト
+     */
+    "createdLists": string;
+    /**
+     * 作成したアンテナ
+     */
+    "createdAntennas": string;
+    /**
+     * {x}から
+     */
+    "fromX": ParameterizedString<"x">;
+    /**
+     * 埋め込みコードを生成
+     */
+    "genEmbedCode": string;
+    /**
+     * このユーザーのノート一覧
+     */
+    "noteOfThisUser": string;
+    /**
+     * これ以上このクリップにノートを追加できません。
+     */
+    "clipNoteLimitExceeded": string;
+    /**
+     * パフォーマンス
+     */
+    "performance": string;
+    /**
+     * 変更あり
+     */
+    "modified": string;
+    /**
+     * 破棄
+     */
+    "discard": string;
+    /**
+     * {n}件の変更があります
+     */
+    "thereAreNChanges": ParameterizedString<"n">;
+    /**
+     * パスキーでログイン
+     */
+    "signinWithPasskey": string;
+    /**
+     * 登録されていないパスキーです。
+     */
+    "unknownWebAuthnKey": string;
+    /**
+     * パスキーの検証に失敗しました。
+     */
+    "passkeyVerificationFailed": string;
+    /**
+     * パスキーの検証に成功しましたが、パスワードレスログインが無効になっています。
+     */
+    "passkeyVerificationSucceededButPasswordlessLoginDisabled": string;
+    /**
+     * フォロワーへのメッセージ
+     */
+    "messageToFollower": string;
+    /**
+     * 対象
+     */
+    "target": string;
+    /**
+     * CAPTCHAのテストを目的とした機能です。<strong>本番環境で使用しないでください。</strong>
+     */
+    "testCaptchaWarning": string;
+    /**
+     * 禁止ワード（ユーザーの名前）
+     */
+    "prohibitedWordsForNameOfUser": string;
+    /**
+     * このリストに含まれる文字列がユーザーの名前に含まれる場合、ユーザーの名前の変更を拒否します。モデレーター権限を持つユーザーはこの制限の影響を受けません。
+     */
+    "prohibitedWordsForNameOfUserDescription": string;
+    /**
+     * 変更しようとした名前に禁止された文字列が含まれています
+     */
+    "yourNameContainsProhibitedWords": string;
+    /**
+     * 名前に禁止されている文字列が含まれています。この名前を使用したい場合は、サーバー管理者にお問い合わせください。
+     */
+    "yourNameContainsProhibitedWordsDescription": string;
+    /**
+     * 投稿者により、表示にはログインが必要と設定されています
+     */
+    "thisContentsAreMarkedAsSigninRequiredByAuthor": string;
+    /**
+     * ロックダウン
+     */
+    "lockdown": string;
+    /**
+     * アカウントを選択してください
+     */
+    "pleaseSelectAccount": string;
+    /**
+     * 利用可能なロール
+     */
+    "availableRoles": string;
+    /**
+     * 注意事項を理解した上でオンにします。
+     */
+    "acknowledgeNotesAndEnable": string;
+    /**
+     * このサーバーはホワイトリスト連合で運用されています。管理者が指定したサーバー以外とやり取りすることはできません。
+     */
+    "federationSpecified": string;
+    /**
+     * このサーバーは連合が無効化されています。他のサーバーのユーザーとやり取りすることはできません。
+     */
+    "federationDisabled": string;
+    /**
+     * リアクションする際に確認する
+     */
+    "confirmOnReact": string;
+    /**
+     * 「{emoji}」をリアクションしますか？
+     */
+    "reactAreYouSure": ParameterizedString<"emoji">;
+    /**
+     * このメディアをセンシティブとして設定しますか？
+     */
+    "markAsSensitiveConfirm": string;
+    /**
+     * このメディアのセンシティブ指定を解除しますか？
+     */
+    "unmarkAsSensitiveConfirm": string;
+    /**
+     * 環境設定
+     */
+    "preferences": string;
+    /**
+     * アクセシビリティ
+     */
+    "accessibility": string;
+    /**
+     * 設定のプロファイル
+     */
+    "preferencesProfile": string;
+    /**
+     * 設定IDをコピー
+     */
+    "copyPreferenceId": string;
+    /**
+     * 初期値に戻す
+     */
+    "resetToDefaultValue": string;
+    /**
+     * アカウントで上書き
+     */
+    "overrideByAccount": string;
+    /**
+     * 無題
+     */
+    "untitled": string;
+    /**
+     * 名前はありません
+     */
+    "noName": string;
+    /**
+     * スキップ
+     */
+    "skip": string;
+    /**
+     * 復元
+     */
+    "restore": string;
+    /**
+     * デバイス間で同期
+     */
+    "syncBetweenDevices": string;
+    /**
+     * サーバーに設定値が存在します
+     */
+    "preferenceSyncConflictTitle": string;
+    /**
+     * 同期が有効にされた設定項目は設定値をサーバーに保存しますが、この設定項目のサーバーに保存された設定値が見つかりました。どちらの設定値で上書きしますか？
+     */
+    "preferenceSyncConflictText": string;
+    /**
+     * サーバーの設定値
+     */
+    "preferenceSyncConflictChoiceServer": string;
+    /**
+     * デバイスの設定値
+     */
+    "preferenceSyncConflictChoiceDevice": string;
+    /**
+     * 同期の有効化をキャンセル
+     */
+    "preferenceSyncConflictChoiceCancel": string;
+    /**
+     * ペースト
+     */
+    "paste": string;
+    /**
+     * 絵文字パレット
+     */
+    "emojiPalette": string;
+    /**
+     * 投稿フォーム
+     */
+    "postForm": string;
+    /**
+     * 文字数
+     */
+    "textCount": string;
+    /**
+     * 情報
+     */
+    "information": string;
+    /**
+     * チャット
+     */
+    "chat": string;
+    /**
+     * 旧設定情報を移行
+     */
+    "migrateOldSettings": string;
+    /**
+     * 通常これは自動で行われていますが、何らかの理由により上手く移行されなかった場合は手動で移行処理をトリガーできます。現在の設定情報は上書きされます。
+     */
+    "migrateOldSettings_description": string;
+    /**
+     * 圧縮
+     */
+    "compress": string;
+    /**
+     * 右
+     */
+    "right": string;
+    /**
+     * 下
+     */
+    "bottom": string;
+    /**
+     * 上
+     */
+    "top": string;
+    /**
+     * 埋め込み
+     */
+    "embed": string;
+    /**
+     * 設定を移行しています。しばらくお待ちください... (後ほど、設定→その他→旧設定情報を移行 で手動で移行することもできます)
+     */
+    "settingsMigrating": string;
+    /**
+     * 読み取り専用
+     */
+    "readonly": string;
+    /**
+     * デッキへ戻る
+     */
+    "goToDeck": string;
+    /**
+     * 連合ジョブ
+     */
+    "federationJobs": string;
+    /**
+     * ドライブでは、過去にアップロードしたファイルの一覧が表示されます。<br>
+     * ノートに添付する際に再利用したり、あとで投稿するファイルを予めアップロードしておくこともできます。<br>
+     * <b>ファイルを削除すると、今までそのファイルを使用した全ての場所(ノート、ページ、アバター、バナー等)からも見えなくなるので注意してください。</b><br>
+     * フォルダを作って整理することもできます。
+     */
+    "driveAboutTip": string;
+    /**
+     * リモートサーバーに通報を転送する
+     */
+    "forwardReport": string;
+    /**
+     * リモートサーバーからはあなたの情報は見れず、匿名のシステムアカウントとして表示されます。
+     */
+    "forwardReportIsAnonymous": string;
+    /**
+     * 入力内容が正しくありません。
+     */
+    "incorrectInput": string;
+    "_chat": {
+        /**
+         * まだメッセージはありません
+         */
+        "noMessagesYet": string;
+        /**
+         * 新しいメッセージ
+         */
+        "newMessage": string;
+        /**
+         * 個人チャット
+         */
+        "individualChat": string;
+        /**
+         * 特定ユーザーとの一対一のチャットができます。
+         */
+        "individualChat_description": string;
+        /**
+         * ルームチャット
+         */
+        "roomChat": string;
+        /**
+         * 複数人でのチャットができます。
+         * また、個人チャットを許可していないユーザーとでも、相手が受け入れればチャットができます。
+         */
+        "roomChat_description": string;
+        /**
+         * ルームを作成
+         */
+        "createRoom": string;
+        /**
+         * ユーザーを招待してチャットを始めましょう
+         */
+        "inviteUserToChat": string;
+        /**
+         * 作成したルーム
+         */
+        "yourRooms": string;
+        /**
+         * 参加中のルーム
+         */
+        "joiningRooms": string;
+        /**
+         * 招待
+         */
+        "invitations": string;
+        /**
+         * 招待はありません
+         */
+        "noInvitations": string;
+        /**
+         * 履歴
+         */
+        "history": string;
+        /**
+         * 履歴はありません
+         */
+        "noHistory": string;
+        /**
+         * ルームはありません
+         */
+        "noRooms": string;
+        /**
+         * ユーザーを招待
+         */
+        "inviteUser": string;
+        /**
+         * 送信した招待
+         */
+        "sentInvitations": string;
+        /**
+         * 参加
+         */
+        "join": string;
+        /**
+         * 無視
+         */
+        "ignore": string;
+        /**
+         * ルームから退出
+         */
+        "leave": string;
+        /**
+         * メンバー
+         */
+        "members": string;
+        /**
+         * メッセージを検索
+         */
+        "searchMessages": string;
+        /**
+         * ホーム
+         */
+        "home": string;
+        /**
+         * 送信
+         */
+        "send": string;
+        /**
+         * 改行
+         */
+        "newline": string;
+        /**
+         * このルームをミュート
+         */
+        "muteThisRoom": string;
+        /**
+         * ルームを削除
+         */
+        "deleteRoom": string;
+        /**
+         * このサーバー、またはこのアカウントでチャットは有効化されていません。
+         */
+        "chatNotAvailableForThisAccountOrServer": string;
+        /**
+         * このサーバー、またはこのアカウントでチャットは読み取り専用となっています。新たに書き込んだり、チャットルームを作成・参加したりすることはできません。
+         */
+        "chatIsReadOnlyForThisAccountOrServer": string;
+        /**
+         * 相手のアカウントでチャット機能が使えない状態になっています。
+         */
+        "chatNotAvailableInOtherAccount": string;
+        /**
+         * このユーザーとのチャットを開始できません
+         */
+        "cannotChatWithTheUser": string;
+        /**
+         * チャットが使えない状態になっているか、相手がチャットを開放していません。
+         */
+        "cannotChatWithTheUser_description": string;
+        /**
+         * チャットする
+         */
+        "chatWithThisUser": string;
+        /**
+         * このユーザーはフォロワーからのみチャットを受け付けています。
+         */
+        "thisUserAllowsChatOnlyFromFollowers": string;
+        /**
+         * このユーザーは、このユーザーがフォローしているユーザーからのみチャットを受け付けています。
+         */
+        "thisUserAllowsChatOnlyFromFollowing": string;
+        /**
+         * このユーザーは相互フォローのユーザーからのみチャットを受け付けています。
+         */
+        "thisUserAllowsChatOnlyFromMutualFollowing": string;
+        /**
+         * このユーザーは誰からもチャットを受け付けていません。
+         */
+        "thisUserNotAllowedChatAnyone": string;
+        /**
+         * チャットを許可する相手
+         */
+        "chatAllowedUsers": string;
+        /**
+         * 自分からチャットメッセージを送った相手とはこの設定に関わらずチャットが可能です。
+         */
+        "chatAllowedUsers_note": string;
+        "_chatAllowedUsers": {
+            /**
+             * 誰でも
+             */
+            "everyone": string;
+            /**
+             * 自分のフォロワーのみ
+             */
+            "followers": string;
+            /**
+             * 自分がフォローしているユーザーのみ
+             */
+            "following": string;
+            /**
+             * 相互フォローのユーザーのみ
+             */
+            "mutual": string;
+            /**
+             * 誰も許可しない
+             */
+            "none": string;
+        };
+    };
+    "_emojiPalette": {
+        /**
+         * パレット
+         */
+        "palettes": string;
+        /**
+         * パレットのデバイス間同期を有効にする
+         */
+        "enableSyncBetweenDevicesForPalettes": string;
+        /**
+         * メインで使用するパレット
+         */
+        "paletteForMain": string;
+        /**
+         * リアクションで使用するパレット
+         */
+        "paletteForReaction": string;
+    };
+    "_settings": {
+        /**
+         * ドライブの管理と設定、使用量の確認、ファイルをアップロードする際の設定を行えます。
+         */
+        "driveBanner": string;
+        /**
+         * プラグインを利用するとクライアントの機能を拡張することができます。プラグインのインストール、個別の設定と管理が行えます。
+         */
+        "pluginBanner": string;
+        /**
+         * サーバーからの受信する通知の種類と範囲や、プッシュ通知の設定が行えます。
+         */
+        "notificationsBanner": string;
+        /**
+         * API
+         */
+        "api": string;
+        /**
+         * Webhook
+         */
+        "webhook": string;
+        /**
+         * サービス連携
+         */
+        "serviceConnection": string;
+        /**
+         * 外部のアプリ・サービスと連携するためのアクセストークンやWebhookの管理と設定が行えます。
+         */
+        "serviceConnectionBanner": string;
+        /**
+         * アカウントのデータ
+         */
+        "accountData": string;
+        /**
+         * アカウントデータのアーカイブをエクスポート/インポートして管理できます。
+         */
+        "accountDataBanner": string;
+        /**
+         * 非表示にするコンテンツの設定や、特定のユーザーからのアクションを制限する設定と管理を行えます。
+         */
+        "muteAndBlockBanner": string;
+        /**
+         * クライアントの視覚や動作に関するパーソナライズを行い、より最適に使用できるように設定できます。
+         */
+        "accessibilityBanner": string;
+        /**
+         * コンテンツの公開範囲、見つけやすさ、フォローの承認制などアカウントのプライバシーに関する設定を行えます。
+         */
+        "privacyBanner": string;
+        /**
+         * パスワード、ログイン方法、認証アプリ、パスキーなどアカウントのセキュリティに関する設定を行えます。
+         */
+        "securityBanner": string;
+        /**
+         * 好みに応じた、クライアントの全体的な動作の設定が行えます。
+         */
+        "preferencesBanner": string;
+        /**
+         * 好みに応じた、クライアントの見た目・表示方法に関する設定が行えます。
+         */
+        "appearanceBanner": string;
+        /**
+         * クライアントで再生するサウンドの設定が行えます。
+         */
+        "soundsBanner": string;
+        /**
+         * タイムラインとノート
+         */
+        "timelineAndNote": string;
+        /**
+         * 全てのテキスト要素を選択可能にする
+         */
+        "makeEveryTextElementsSelectable": string;
+        /**
+         * 有効にすると、一部のシチュエーションでのユーザビリティが低下する場合があります。
+         */
+        "makeEveryTextElementsSelectable_description": string;
+        /**
+         * アイコンをスクロールに追従させる
+         */
+        "useStickyIcons": string;
+        /**
+         * ナビゲーションバーに副ボタンを表示
+         */
+        "showNavbarSubButtons": string;
+        /**
+         * オンのとき
+         */
+        "ifOn": string;
+        /**
+         * オフのとき
+         */
+        "ifOff": string;
+        /**
+         * デバイス間でインストールしたテーマを同期
+         */
+        "enableSyncThemesBetweenDevices": string;
+        "_chat": {
+            /**
+             * 送信者の名前を表示
+             */
+            "showSenderName": string;
+            /**
+             * Enterで送信
+             */
+            "sendOnEnter": string;
+        };
+    };
+    "_preferencesProfile": {
+        /**
+         * プロファイル名
+         */
+        "profileName": string;
+        /**
+         * このデバイスを識別する名前を設定してください。
+         */
+        "profileNameDescription": string;
+        /**
+         * 例: 「メインPC」、「スマホ」など
+         */
+        "profileNameDescription2": string;
+    };
+    "_preferencesBackup": {
+        /**
+         * 自動バックアップ
+         */
+        "autoBackup": string;
+        /**
+         * バックアップから復元
+         */
+        "restoreFromBackup": string;
+        /**
+         * バックアップが見つかりませんでした
+         */
+        "noBackupsFoundTitle": string;
+        /**
+         * 自動で作成されたバックアップは見つかりませんでしたが、バックアップファイルを手動で保存している場合、それをインポートして復元することはできます。
+         */
+        "noBackupsFoundDescription": string;
+        /**
+         * 復元するバックアップを選択してください
+         */
+        "selectBackupToRestore": string;
+        /**
+         * 自動バックアップを有効にするにはプロファイル名の設定が必要です。
+         */
+        "youNeedToNameYourProfileToEnableAutoBackup": string;
+        /**
+         * このデバイスで設定の自動バックアップは有効になっていません。
+         */
+        "autoPreferencesBackupIsNotEnabledForThisDevice": string;
+        /**
+         * 設定のバックアップが見つかりました
+         */
+        "backupFound": string;
+    };
+    "_accountSettings": {
+        /**
+         * コンテンツの表示にログインを必須にする
+         */
+        "requireSigninToViewContents": string;
+        /**
+         * あなたが作成した全てのノートなどのコンテンツを表示するのにログインを必須にします。クローラーに情報が収集されるのを防ぐ効果が期待できます。
+         */
+        "requireSigninToViewContentsDescription1": string;
+        /**
+         * URLプレビュー(OGP)、Webページへの埋め込み、ノートの引用に対応していないサーバーからの表示も不可になります。
+         */
+        "requireSigninToViewContentsDescription2": string;
+        /**
+         * リモートサーバーに連合されたコンテンツでは、これらの制限が適用されない場合があります。
+         */
+        "requireSigninToViewContentsDescription3": string;
+        /**
+         * 過去のノートをフォロワーのみ表示可能にする
+         */
+        "makeNotesFollowersOnlyBefore": string;
+        /**
+         * この機能が有効になっている間、設定された日時より過去、または設定された時間を経過しているノートがフォロワーのみ表示可能になります。無効に戻すと、ノートの公開状態も元に戻ります。
+         */
+        "makeNotesFollowersOnlyBeforeDescription": string;
+        /**
+         * 過去のノートを非公開化する
+         */
+        "makeNotesHiddenBefore": string;
+        /**
+         * この機能が有効になっている間、設定された日時より過去、または設定された時間を経過しているノートが自分のみ表示可能(非公開化)になります。無効に戻すと、ノートの公開状態も元に戻ります。
+         */
+        "makeNotesHiddenBeforeDescription": string;
+        /**
+         * リモートサーバーに連合されたノートには効果が及ばない場合があります。
+         */
+        "mayNotEffectForFederatedNotes": string;
+        /**
+         * これらの制限は簡易的なものです。リモートサーバーでの閲覧やモデレーション時など、一部のシチュエーションでは適用されない場合があります。
+         */
+        "mayNotEffectSomeSituations": string;
+        /**
+         * 指定した時間を経過しているノート
+         */
+        "notesHavePassedSpecifiedPeriod": string;
+        /**
+         * 指定した日時より前のノート
+         */
+        "notesOlderThanSpecifiedDateAndTime": string;
+    };
+    "_abuseUserReport": {
+        /**
+         * 転送
+         */
+        "forward": string;
+        /**
+         * 匿名のシステムアカウントとして、リモートサーバーに通報を転送します。
+         */
+        "forwardDescription": string;
+        /**
+         * 解決
+         */
+        "resolve": string;
+        /**
+         * 是認
+         */
+        "accept": string;
+        /**
+         * 否認
+         */
+        "reject": string;
+        /**
+         * 内容が正当である通報に対応した場合は「是認」を選択し、肯定的にケースが解決されたことをマークします。
+         * 内容が正当でない通報の場合は「否認」を選択し、否定的にケースが解決されたことをマークします。
+         */
+        "resolveTutorial": string;
+    };
+    "_delivery": {
+        /**
+         * 配信状態
+         */
+        "status": string;
+        /**
+         * 配信停止
+         */
+        "stop": string;
+        /**
+         * 配信再開
+         */
+        "resume": string;
+        "_type": {
+            /**
+             * 配信中
+             */
+            "none": string;
+            /**
+             * 手動停止中
+             */
+            "manuallySuspended": string;
+            /**
+             * サーバー削除のため停止中
+             */
+            "goneSuspended": string;
+            /**
+             * サーバー応答なしのため停止中
+             */
+            "autoSuspendedForNotResponding": string;
+        };
+    };
     "_bubbleGame": {
         /**
          * 遊び方
@@ -5940,11 +6939,11 @@ export interface Locale extends ILocale {
         };
         "_profileSettings": {
             /**
-             * プライバシー設定
+             * プロフィールを設定しましょう！
              */
             "title": string;
             /**
-             * 多くのユーザーが利用しているプライバシー関連の設定項目をリストアップしました。必要に応じて変更してください。
+             * ノートを投稿する前に、あなたのことを紹介するプロフィールを設定しましょう。
              */
             "description": string;
             /**
@@ -6095,6 +7094,14 @@ export interface Locale extends ILocale {
          */
         "shortNameDescription": string;
         /**
+         * 次元数
+         */
+        "dimensions": string;
+        /**
+         * 利用可能な次元の数。1以上を指定してください。
+         */
+        "dimensionsDescription": string;
+        /**
          * 有効にすると、各種タイムラインを取得する際のパフォーマンスが大幅に向上し、データベースへの負荷を軽減することが可能です。ただし、Redisのメモリ使用量は増加します。サーバーのメモリ容量が少ない場合、または動作が不安定な場合は無効にすることができます。
          */
         "fanoutTimelineDescription": string;
@@ -6106,6 +7113,30 @@ export interface Locale extends ILocale {
          * 有効にすると、タイムラインがキャッシュされていない場合にDBへ追加で問い合わせを行うフォールバック処理を行います。無効にすると、フォールバック処理を行わないことでさらにサーバーの負荷を軽減することができますが、タイムラインが取得できる範囲に制限が生じます。
          */
         "fanoutTimelineDbFallbackDescription": string;
+        /**
+         * 有効にすると、リアクション作成時のパフォーマンスが大幅に向上し、データベースへの負荷を軽減することが可能です。ただし、Redisのメモリ使用量は増加します。
+         */
+        "reactionsBufferingDescription": string;
+        /**
+         * 問い合わせ先URL
+         */
+        "inquiryUrl": string;
+        /**
+         * サーバー運営者へのお問い合わせフォームのURLや、運営者の連絡先等が記載されたWebページのURLを指定します。
+         */
+        "inquiryUrlDescription": string;
+        /**
+         * アカウントの作成をオープンにする
+         */
+        "openRegistration": string;
+        /**
+         * 登録を開放することはリスクが伴います。サーバーを常に監視し、トラブルが発生した際にすぐに対応できる体制がある場合のみオンにすることを推奨します。
+         */
+        "openRegistrationWarning": string;
+        /**
+         * 一定期間モデレーターのアクティビティが検出されなかった場合、スパム防止のためこの設定は自動でオフになります。
+         */
+        "thisSettingWillAutomaticallyOffWhenModeratorsInactive": string;
     };
     "_accountMigration": {
         /**
@@ -7009,6 +8040,62 @@ export interface Locale extends ILocale {
                  */
                 "description": string;
             };
+            "_sensitiveContentConsentResponded": {
+                /**
+                 * あなたは18歳以上ですか？
+                 */
+                "title": string;
+                /**
+                 * 年齢確認に応答した
+                 */
+                "description": string;
+                /**
+                 * 年齢確認のタッチをお願いしまーす
+                 */
+                "flavor": string;
+            };
+            "_postingLanguageConfigured": {
+                /**
+                 * ここではMisskeyの言葉で話せ
+                 */
+                "title": string;
+                /**
+                 * 投稿する言語を設定した
+                 */
+                "description": string;
+                /**
+                 * 日本語でおk
+                 */
+                "flavor": string;
+            };
+            "_viewingLanguagesConfigured": {
+                /**
+                 * 読める、読めるぞ…！
+                 */
+                "title": string;
+                /**
+                 * 表示する言語を設定した
+                 */
+                "description": string;
+                /**
+                 * わからんもんは、わからん
+                 */
+                "flavor": string;
+            };
+            "_dimensionConfigured": {
+                /**
+                 * 次元の狭間
+                 */
+                "title": string;
+                /**
+                 * タイムラインの次元を設定した
+                 */
+                "description": string;
+                /**
+                 * 「0」が$[ruby 過去 全体]で 「1」が$[ruby 未来 雑談]
+                 */
+                "flavor": string;
+            };
             "_bubbleGameExplodingHead": {
                 /**
                  * 🤯
@@ -7159,6 +8246,14 @@ export interface Locale extends ILocale {
          */
         "descriptionOfDisplayOrder": string;
         /**
+         * アサイン状態を移行先アカウントにも引き継ぐ
+         */
+        "preserveAssignmentOnMoveAccount": string;
+        /**
+         * オンにすると、このロールが付与されたアカウントが移行された際に、移行先アカウントにもこのロールが引き継がれるようになります。
+         */
+        "preserveAssignmentOnMoveAccount_description": string;
+        /**
          * モデレーターのメンバー編集を許可
          */
         "canEditMembersByModerator": string;
@@ -7274,9 +8369,17 @@ export interface Locale extends ILocale {
              */
             "driveCapacity": string;
             /**
+             * アップロード可能な最大ファイルサイズ
+             */
+            "maxFileSize": string;
+            /**
              * ファイルにNSFWを常に付与
              */
             "alwaysMarkNsfw": string;
+            /**
+             * アイコンとバナーの更新を許可
+             */
+            "canUpdateBioMedia": string;
             /**
              * AIによるNSFW検出を無視
              */
@@ -7294,7 +8397,7 @@ export interface Locale extends ILocale {
              */
             "antennaNotesMax": string;
             /**
-             * ワードミュートの最大文字数
+             * ワードミュートの最大数
              */
             "wordMuteMax": string;
             /**
@@ -7350,6 +8453,26 @@ export interface Locale extends ILocale {
              */
             "avatarDecorationLimit": string;
             /**
+             * アンテナのインポートを許可
+             */
+            "canImportAntennas": string;
+            /**
+             * ブロックのインポートを許可
+             */
+            "canImportBlocking": string;
+            /**
+             * フォローのインポートを許可
+             */
+            "canImportFollowing": string;
+            /**
+             * ミュートのインポートを許可
+             */
+            "canImportMuting": string;
+            /**
+             * リストのインポートを許可
+             */
+            "canImportUserLists": string;
+            /**
              * 相互リンクのセクションの最大数
              */
             "mutualLinkSectionLimit": string;
@@ -7357,6 +8480,10 @@ export interface Locale extends ILocale {
              * セクション内の相互リンクの最大数
              */
             "mutualLinkLimit": string;
+            /**
+             * チャットを許可
+             */
+            "chatAvailability": string;
         };
         "_condition": {
             /**
@@ -7918,10 +9045,6 @@ export interface Locale extends ILocale {
          * キーワードをスラッシュで囲むと正規表現になります。
          */
         "muteWordsDescription2": string;
-        /**
-         * ミュートされた単語を含むノートを非表示にする
-         */
-        "hideMutedNotes": string;
     };
     "_instanceMute": {
         /**
@@ -7974,6 +9097,10 @@ export interface Locale extends ILocale {
          * 標準のテーマ
          */
         "builtinThemes": string;
+        /**
+         * サーバーのテーマ
+         */
+        "instanceTheme": string;
         /**
          * そのテーマは既にインストールされています
          */
@@ -8092,23 +9219,19 @@ export interface Locale extends ILocale {
              */
             "header": string;
             /**
-             * サイドバーの背景
+             * ナビゲーションバーの背景
              */
             "navBg": string;
             /**
-             * サイドバーの文字
+             * ナビゲーションバーの文字
              */
             "navFg": string;
             /**
-             * サイドバー文字(ホバー)
-             */
-            "navHoverFg": string;
-            /**
-             * サイドバー文字(アクティブ)
+             * ナビゲーションバー文字(アクティブ)
              */
             "navActive": string;
             /**
-             * サイドバーのインジケーター
+             * ナビゲーションバーのインジケーター
              */
             "navIndicator": string;
             /**
@@ -8128,7 +9251,7 @@ export interface Locale extends ILocale {
              */
             "mentionMe": string;
             /**
-             * Renote
+             * リノート
              */
             "renote": string;
             /**
@@ -8188,17 +9311,9 @@ export interface Locale extends ILocale {
              */
             "inputBorder": string;
             /**
-             * リスト項目の背景 (ホバー)
-             */
-            "listItemHoverBg": string;
-            /**
              * ドライブフォルダーの背景
              */
             "driveFolderBg": string;
-            /**
-             * 壁紙のオーバーレイ
-             */
-            "wallpaperOverlay": string;
             /**
              * バッジ
              */
@@ -8207,14 +9322,6 @@ export interface Locale extends ILocale {
              * チャットの背景
              */
             "messageBg": string;
-            /**
-             * アクセント (暗め)
-             */
-            "accentDarken": string;
-            /**
-             * アクセント (明るめ)
-             */
-            "accentLighten": string;
             /**
              * 強調された文字
              */
@@ -8235,17 +9342,13 @@ export interface Locale extends ILocale {
          */
         "notification": string;
         /**
-         * アンテナ受信
-         */
-        "antenna": string;
-        /**
-         * チャンネル通知
-         */
-        "channel": string;
-        /**
          * リアクション選択時
          */
         "reaction": string;
+        /**
+         * チャットのメッセージ
+         */
+        "chatMessage": string;
     };
     "_soundSettings": {
         /**
@@ -8272,6 +9375,10 @@ export interface Locale extends ILocale {
          * 長い音声を使用するとMisskeyの使用に支障をきたす可能性があります。それでも続行しますか？
          */
         "driveFileDurationWarnDescription": string;
+        /**
+         * 音声が読み込めませんでした。設定を変更してください
+         */
+        "driveFileError": string;
     };
     "_ago": {
         /**
@@ -8690,10 +9797,6 @@ export interface Locale extends ILocale {
          */
         "write:admin:send-email": string;
         /**
-         * サーバーの情報を見る
-         */
-        "read:admin:server-info": string;
-        /**
          * モデレーションログを見る
          */
         "read:admin:show-moderation-log": string;
@@ -8701,10 +9804,6 @@ export interface Locale extends ILocale {
          * ユーザーのプライベートな情報を見る
          */
         "read:admin:show-user": string;
-        /**
-         * ユーザーのプライベートな情報を見る
-         */
-        "read:admin:show-users": string;
         /**
          * ユーザーを凍結する
          */
@@ -8853,6 +9952,14 @@ export interface Locale extends ILocale {
          * 違反を報告する
          */
         "write:report-abuse": string;
+        /**
+         * チャットを操作する
+         */
+        "write:chat": string;
+        /**
+         * チャットを閲覧する
+         */
+        "read:chat": string;
     };
     "_auth": {
         /**
@@ -9042,10 +10149,6 @@ export interface Locale extends ILocale {
          */
         "jobQueue": string;
         /**
-         * サーバーメトリクス
-         */
-        "serverMetric": string;
-        /**
          * AiScriptコンソール
          */
         "aiscript": string;
@@ -9079,6 +10182,10 @@ export interface Locale extends ILocale {
          * もうすぐ誕生日のユーザー
          */
         "birthdaySoon": string;
+        /**
+         * チャット
+         */
+        "chat": string;
     };
     "_cw": {
         /**
@@ -9274,6 +10381,11 @@ export interface Locale extends ILocale {
          * 投稿する前に、[利用規約]({tosUrl})と[NSFWガイドライン](https://go.misskey.io/media-guideline)を必ずお読みください。
          */
         "tosAndGuidelinesInfo": ParameterizedString<"tosUrl">;
+        /**
+         * {dimension}次元はプライベート(>=1000)です。
+         * この投稿はローカルのみになり、連合には流れません。
+         */
+        "dimensionPrivateNotice": ParameterizedString<"dimension">;
     };
     "_profile": {
         /**
@@ -9373,6 +10485,18 @@ export interface Locale extends ILocale {
          * [ここ](https://go.misskey.io/donate)からプランをアップグレードできます。
          */
         "policyDisplayLimitExceeded": ParameterizedString<"max">;
+        /**
+         * フォローされた時のメッセージ
+         */
+        "followedMessage": string;
+        /**
+         * フォローされた時に相手に表示する短いメッセージを設定できます。
+         */
+        "followedMessageDescription": string;
+        /**
+         * フォローを承認制にしている場合、フォローリクエストを許可した時に表示されます。
+         */
+        "followedMessageDescriptionForLockedAccount": string;
     };
     "_exportOrImport": {
         /**
@@ -9614,18 +10738,6 @@ export interface Locale extends ILocale {
          */
         "readPage": string;
         /**
-         * ページを作成しました
-         */
-        "created": string;
-        /**
-         * ページを更新しました
-         */
-        "updated": string;
-        /**
-         * ページを削除しました
-         */
-        "deleted": string;
-        /**
          * ページ設定
          */
         "pageSetting": string;
@@ -9733,6 +10845,10 @@ export interface Locale extends ILocale {
          * ブロックを追加
          */
         "chooseBlock": string;
+        /**
+         * セクションタイトルを入力
+         */
+        "enterSectionTitle": string;
         /**
          * 種類を選択
          */
@@ -9842,7 +10958,7 @@ export interface Locale extends ILocale {
          */
         "youGotQuote": ParameterizedString<"name">;
         /**
-         * {name}がRenoteしました
+         * {name}がリノートしました
          */
         "youRenoted": ParameterizedString<"name">;
         /**
@@ -9873,6 +10989,10 @@ export interface Locale extends ILocale {
          * ロールが付与されました
          */
         "roleAssigned": string;
+        /**
+         * チャットルームへ招待されました
+         */
+        "chatRoomInvitationReceived": string;
         /**
          * プッシュ通知の更新をしました
          */
@@ -9929,6 +11049,26 @@ export interface Locale extends ILocale {
          * 通知の履歴をリセットする
          */
         "flushNotification": string;
+        /**
+         * ファイルがセンシティブとして設定されました
+         */
+        "sensitiveFlagAssigned": string;
+        /**
+         * {x}のエクスポートが完了しました
+         */
+        "exportOfXCompleted": ParameterizedString<"x">;
+        /**
+         * ログインがありました
+         */
+        "login": string;
+        /**
+         * アクセストークンが作成されました
+         */
+        "createToken": string;
+        /**
+         * 心当たりがない場合は「{text}」を通じてアクセストークンを削除してください。
+         */
+        "createTokenDescription": ParameterizedString<"text">;
         "_types": {
             /**
              * すべて
@@ -9951,7 +11091,7 @@ export interface Locale extends ILocale {
              */
             "reply": string;
             /**
-             * Renote
+             * リノート
              */
             "renote": string;
             /**
@@ -9979,6 +11119,10 @@ export interface Locale extends ILocale {
              */
             "roleAssigned": string;
             /**
+             * チャットルームへ招待された
+             */
+            "chatRoomInvitationReceived": string;
+            /**
              * 実績の獲得
              */
             "achievementEarned": string;
@@ -9995,6 +11139,26 @@ export interface Locale extends ILocale {
              */
             "scheduledNoteError": string;
             /**
+             * エクスポートが完了した
+             */
+            "exportCompleted": string;
+            /**
+             * ログイン
+             */
+            "login": string;
+            /**
+             * アクセストークンの作成
+             */
+            "createToken": string;
+            /**
+             * 通知のテスト
+             */
+            "test": string;
+            /**
+             * ファイルがセンシティブとして設定された
+             */
+            "sensitiveFlagAssigned": string;
+            /**
              * 連携アプリからの通知
              */
             "app": string;
@@ -10009,7 +11173,7 @@ export interface Locale extends ILocale {
              */
             "reply": string;
             /**
-             * Renote
+             * リノート
              */
             "renote": string;
         };
@@ -10024,9 +11188,25 @@ export interface Locale extends ILocale {
          */
         "columnAlign": string;
         /**
+         * カラム間のマージン
+         */
+        "columnGap": string;
+        /**
+         * デッキメニューの位置
+         */
+        "deckMenuPosition": string;
+        /**
+         * ナビゲーションバーの位置
+         */
+        "navbarPosition": string;
+        /**
          * カラムを追加
          */
         "addColumn": string;
+        /**
+         * 新着ノート通知の設定
+         */
+        "newNoteNotificationSettings": string;
         /**
          * カラムの設定
          */
@@ -10072,7 +11252,7 @@ export interface Locale extends ILocale {
          */
         "introduction": string;
         /**
-         * 画面の右にある + を押して、いつでもカラムを追加できます。
+         * カラムを追加するには、画面の + をクリックします。
          */
         "introduction2": string;
         /**
@@ -10091,6 +11271,10 @@ export interface Locale extends ILocale {
          * 幅を自動調整
          */
         "flexible": string;
+        /**
+         * プロファイル情報のデバイス間同期を有効にする
+         */
+        "enableSyncBetweenDevicesForProfiles": string;
         "_columns": {
             /**
              * メイン
@@ -10132,6 +11316,10 @@ export interface Locale extends ILocale {
              * ロールタイムライン
              */
             "roleTimeline": string;
+            /**
+             * チャット
+             */
+            "chat": string;
         };
     };
     "_dialog": {
@@ -10143,6 +11331,18 @@ export interface Locale extends ILocale {
          * 最小文字数を下回っています！ 現在 {current} / 制限 {min}
          */
         "charactersBelow": ParameterizedString<"current" | "min">;
+        /**
+         * 最小値を下回っています！ 現在 {current} / 制限 {min}
+         */
+        "numberBelow": ParameterizedString<"current" | "min">;
+        /**
+         * 最大値を超えています！ 現在 {current} / 制限 {max}
+         */
+        "numberAbove": ParameterizedString<"current" | "max">;
+        /**
+         * 無効な入力です！ 現在 {current}
+         */
+        "invalid": ParameterizedString<"current">;
     };
     "_disabledTimeline": {
         /**
@@ -10170,6 +11370,10 @@ export interface Locale extends ILocale {
          */
         "createWebhook": string;
         /**
+         * Webhookを編集
+         */
+        "modifyWebhook": string;
+        /**
          * 名前
          */
         "name": string;
@@ -10178,9 +11382,9 @@ export interface Locale extends ILocale {
          */
         "secret": string;
         /**
-         * Webhookを実行するタイミング
+         * トリガー
          */
-        "events": string;
+        "trigger": string;
         /**
          * 有効
          */
@@ -10291,6 +11495,88 @@ export interface Locale extends ILocale {
          * リソルバー
          */
         "resolver": string;
+        "_systemEvents": {
+            /**
+             * ユーザーから通報があったとき
+             */
+            "abuseReport": string;
+            /**
+             * ユーザーからの通報を処理したとき
+             */
+            "abuseReportResolved": string;
+            /**
+             * ユーザーが作成されたとき
+             */
+            "userCreated": string;
+            /**
+             * モデレーターが一定期間非アクティブになったとき
+             */
+            "inactiveModeratorsWarning": string;
+            /**
+             * モデレーターが一定期間非アクティブだったため、システムにより招待制へと変更されたとき
+             */
+            "inactiveModeratorsInvitationOnlyChanged": string;
+        };
+        /**
+         * Webhookを削除しますか？
+         */
+        "deleteConfirm": string;
+        /**
+         * スイッチの右にあるボタンをクリックするとダミーのデータを使用したテスト用Webhookを送信できます。
+         */
+        "testRemarks": string;
+    };
+    "_abuseReport": {
+        "_notificationRecipient": {
+            /**
+             * 通報の通知先を追加
+             */
+            "createRecipient": string;
+            /**
+             * 通報の通知先を編集
+             */
+            "modifyRecipient": string;
+            /**
+             * 通知先の種類
+             */
+            "recipientType": string;
+            "_recipientType": {
+                /**
+                 * メール
+                 */
+                "mail": string;
+                /**
+                 * Webhook
+                 */
+                "webhook": string;
+                "_captions": {
+                    /**
+                     * モデレーター権限を持つユーザーのメールアドレスに通知を送ります(通報を受けた時のみ)
+                     */
+                    "mail": string;
+                    /**
+                     * 指定したSystemWebhookに通知を送ります(通報を受けた時と通報を解決した時にそれぞれ発信)
+                     */
+                    "webhook": string;
+                };
+            };
+            /**
+             * キーワード
+             */
+            "keywords": string;
+            /**
+             * 通知先ユーザー
+             */
+            "notifiedUser": string;
+            /**
+             * 使用するWebhook
+             */
+            "notifiedWebhook": string;
+            /**
+             * 通知先を削除しますか？
+             */
+            "deleteConfirm": string;
+        };
     };
     "_moderationLogTypes": {
         /**
@@ -10402,6 +11688,14 @@ export interface Locale extends ILocale {
          */
         "resolveAbuseReport": string;
         /**
+         * 通報を転送
+         */
+        "forwardAbuseReport": string;
+        /**
+         * 通報のモデレーションノート更新
+         */
+        "updateAbuseReportNote": string;
+        /**
          * 招待コードを作成
          */
         "createInvitation": string;
@@ -10437,6 +11731,54 @@ export interface Locale extends ILocale {
          * ユーザーのバナーを解除
          */
         "unsetUserBanner": string;
+        /**
+         * SystemWebhookを作成
+         */
+        "createSystemWebhook": string;
+        /**
+         * SystemWebhookを更新
+         */
+        "updateSystemWebhook": string;
+        /**
+         * SystemWebhookを削除
+         */
+        "deleteSystemWebhook": string;
+        /**
+         * 通報の通知先を作成
+         */
+        "createAbuseReportNotificationRecipient": string;
+        /**
+         * 通報の通知先を更新
+         */
+        "updateAbuseReportNotificationRecipient": string;
+        /**
+         * 通報の通知先を削除
+         */
+        "deleteAbuseReportNotificationRecipient": string;
+        /**
+         * アカウントを削除
+         */
+        "deleteAccount": string;
+        /**
+         * ページを削除
+         */
+        "deletePage": string;
+        /**
+         * Playを削除
+         */
+        "deleteFlash": string;
+        /**
+         * ギャラリーの投稿を削除
+         */
+        "deleteGalleryPost": string;
+        /**
+         * チャットルームを削除
+         */
+        "deleteChatRoom": string;
+        /**
+         * プロキシアカウントの説明を更新
+         */
+        "updateProxyAccountDescription": string;
     };
     "_fileViewer": {
         /**
@@ -10482,20 +11824,12 @@ export interface Locale extends ILocale {
              * このプラグインをインストールしますか？
              */
             "title": string;
-            /**
-             * プラグイン情報
-             */
-            "metaTitle": string;
         };
         "_theme": {
             /**
              * このテーマをインストールしますか？
              */
             "title": string;
-            /**
-             * テーマ情報
-             */
-            "metaTitle": string;
         };
         "_meta": {
             /**
@@ -10607,7 +11941,7 @@ export interface Locale extends ILocale {
     "_dataSaver": {
         "_media": {
             /**
-             * メディアの読み込み
+             * メディアの読み込みを無効化
              */
             "title": string;
             /**
@@ -10617,7 +11951,7 @@ export interface Locale extends ILocale {
         };
         "_avatar": {
             /**
-             * アイコン画像
+             * アイコン画像のアニメーションを無効化
              */
             "title": string;
             /**
@@ -10627,7 +11961,7 @@ export interface Locale extends ILocale {
         };
         "_urlPreview": {
             /**
-             * URLプレビューのサムネイル
+             * URLプレビューのサムネイルを非表示
              */
             "title": string;
             /**
@@ -10637,7 +11971,7 @@ export interface Locale extends ILocale {
         };
         "_code": {
             /**
-             * コードハイライト
+             * コードハイライトを非表示
              */
             "title": string;
             /**
@@ -11034,6 +12368,299 @@ export interface Locale extends ILocale {
          */
         "rolesDescription": string;
     };
+    "_contextMenu": {
+        /**
+         * コンテキストメニュー
+         */
+        "title": string;
+        /**
+         * アプリケーション
+         */
+        "app": string;
+        /**
+         * Shiftキーでアプリケーション
+         */
+        "appWithShift": string;
+        /**
+         * ブラウザのUI
+         */
+        "native": string;
+    };
+    "_gridComponent": {
+        "_error": {
+            /**
+             * この値は必須項目です
+             */
+            "requiredValue": string;
+            /**
+             * 正規表現によるバリデーションはtype:textのカラムのみサポートします。
+             */
+            "columnTypeNotSupport": string;
+            /**
+             * この値は{pattern}のパターンに一致しません
+             */
+            "patternNotMatch": ParameterizedString<"pattern">;
+            /**
+             * この値は一意である必要があります
+             */
+            "notUnique": string;
+        };
+    };
+    "_roleSelectDialog": {
+        /**
+         * 選択されていません
+         */
+        "notSelected": string;
+    };
+    "_customEmojisManager": {
+        "_gridCommon": {
+            /**
+             * 選択行をコピー
+             */
+            "copySelectionRows": string;
+            /**
+             * 選択範囲をコピー
+             */
+            "copySelectionRanges": string;
+            /**
+             * 選択行を削除
+             */
+            "deleteSelectionRows": string;
+            /**
+             * 選択範囲の値をクリア
+             */
+            "deleteSelectionRanges": string;
+            /**
+             * 検索設定
+             */
+            "searchSettings": string;
+            /**
+             * 検索条件を詳細に設定します。
+             */
+            "searchSettingCaption": string;
+            /**
+             * 表示件数
+             */
+            "searchLimit": string;
+            /**
+             * 並び順
+             */
+            "sortOrder": string;
+            /**
+             * 登録ログ
+             */
+            "registrationLogs": string;
+            /**
+             * 絵文字更新・削除時のログが表示されます。更新・削除操作を行ったり、ページを遷移・リロードすると消えます。
+             */
+            "registrationLogsCaption": string;
+            /**
+             * 絵文字の更新・削除に失敗しました。詳細は登録ログをご確認ください。
+             */
+            "alertEmojisRegisterFailedDescription": string;
+        };
+        "_logs": {
+            /**
+             * 成功ログを表示
+             */
+            "showSuccessLogSwitch": string;
+            /**
+             * 失敗ログはありません。
+             */
+            "failureLogNothing": string;
+            /**
+             * ログはありません。
+             */
+            "logNothing": string;
+        };
+        "_remote": {
+            /**
+             * 選択行の詳細
+             */
+            "selectionRowDetail": string;
+            /**
+             * 選択行をインポート
+             */
+            "importSelectionRows": string;
+            /**
+             * 選択範囲の行をインポート
+             */
+            "importSelectionRangesRows": string;
+            /**
+             * チェックされた絵文字をインポート
+             */
+            "importEmojisButton": string;
+            /**
+             * 絵文字のインポート
+             */
+            "confirmImportEmojisTitle": string;
+            /**
+             * リモートから受信した{count}個の絵文字のインポートを行います。絵文字のライセンスに十分な注意を払ってください。実行しますか？
+             */
+            "confirmImportEmojisDescription": ParameterizedString<"count">;
+        };
+        "_local": {
+            /**
+             * 登録済み絵文字一覧
+             */
+            "tabTitleList": string;
+            /**
+             * 絵文字の登録
+             */
+            "tabTitleRegister": string;
+            "_list": {
+                /**
+                 * 登録された絵文字はありません。
+                 */
+                "emojisNothing": string;
+                /**
+                 * 選択行を削除対象にする
+                 */
+                "markAsDeleteTargetRows": string;
+                /**
+                 * 選択範囲の行を削除対象にする
+                 */
+                "markAsDeleteTargetRanges": string;
+                /**
+                 * 変更された絵文字はありません。
+                 */
+                "alertUpdateEmojisNothingDescription": string;
+                /**
+                 * 削除対象の絵文字はありません。
+                 */
+                "alertDeleteEmojisNothingDescription": string;
+                /**
+                 * ページを移動しますか？
+                 */
+                "confirmMovePage": string;
+                /**
+                 * 表示を変更しますか？
+                 */
+                "confirmChangeView": string;
+                /**
+                 * {count}個の絵文字を更新します。実行しますか？
+                 */
+                "confirmUpdateEmojisDescription": ParameterizedString<"count">;
+                /**
+                 * チェックがつけられた{count}個の絵文字を削除します。実行しますか？
+                 */
+                "confirmDeleteEmojisDescription": ParameterizedString<"count">;
+                /**
+                 * 今までに加えた変更がすべてリセットされます。
+                 */
+                "confirmResetDescription": string;
+                /**
+                 * このページの絵文字に変更が加えられています。
+                 * 保存せずにこのままページを移動すると、このページで加えた変更はすべて破棄されます。
+                 */
+                "confirmMovePageDesciption": string;
+                /**
+                 * 絵文字に設定されたロールで検索
+                 */
+                "dialogSelectRoleTitle": string;
+            };
+            "_register": {
+                /**
+                 * アップロード設定
+                 */
+                "uploadSettingTitle": string;
+                /**
+                 * この画面で絵文字アップロードを行う際の動作を設定できます。
+                 */
+                "uploadSettingDescription": string;
+                /**
+                 * ディレクトリ名を"category"に入力する
+                 */
+                "directoryToCategoryLabel": string;
+                /**
+                 * ディレクトリをドラッグ・ドロップした時に、ディレクトリ名を"category"に入力します。
+                 */
+                "directoryToCategoryCaption": string;
+                /**
+                 * いずれかの方法で登録する絵文字を選択してください。
+                 */
+                "emojiInputAreaCaption": string;
+                /**
+                 * この枠に画像ファイルまたはディレクトリをドラッグ＆ドロップ
+                 */
+                "emojiInputAreaList1": string;
+                /**
+                 * このリンクをクリックしてPCから選択する
+                 */
+                "emojiInputAreaList2": string;
+                /**
+                 * このリンクをクリックしてドライブから選択する
+                 */
+                "emojiInputAreaList3": string;
+                /**
+                 * リストに表示されている絵文字を新たなカスタム絵文字として登録します。よろしいですか？（負荷を避けるため、一度の操作で登録可能な絵文字は{count}件までです）
+                 */
+                "confirmRegisterEmojisDescription": ParameterizedString<"count">;
+                /**
+                 * 編集内容を破棄し、リストに表示されている絵文字をクリアします。よろしいですか？
+                 */
+                "confirmClearEmojisDescription": string;
+                /**
+                 * ドラッグ＆ドロップされた{count}個のファイルをドライブにアップロードします。実行しますか？
+                 */
+                "confirmUploadEmojisDescription": ParameterizedString<"count">;
+            };
+        };
+    };
+    "_embedCodeGen": {
+        /**
+         * 埋め込みコードをカスタマイズ
+         */
+        "title": string;
+        /**
+         * ヘッダーを表示
+         */
+        "header": string;
+        /**
+         * 自動で続きを読み込む（非推奨）
+         */
+        "autoload": string;
+        /**
+         * 高さの最大値
+         */
+        "maxHeight": string;
+        /**
+         * 0で最大値の設定が無効になります。ウィジェットが縦に伸び続けるのを防ぐために、何らかの値に指定してください。
+         */
+        "maxHeightDescription": string;
+        /**
+         * 高さの最大値制限が無効（0）になっています。これが意図した変更ではない場合は、高さの最大値を何らかの値に設定してください。
+         */
+        "maxHeightWarn": string;
+        /**
+         * プレビュー画面で表示可能な範囲を超えたため、実際に埋め込んだ際とは表示が異なります。
+         */
+        "previewIsNotActual": string;
+        /**
+         * 角丸にする
+         */
+        "rounded": string;
+        /**
+         * 外枠に枠線をつける
+         */
+        "border": string;
+        /**
+         * プレビューに反映
+         */
+        "applyToPreview": string;
+        /**
+         * 埋め込みコードを作成
+         */
+        "generateCode": string;
+        /**
+         * コードが生成されました
+         */
+        "codeGenerated": string;
+        /**
+         * 生成されたコードをウェブサイトに貼り付けてご利用ください。
+         */
+        "codeGeneratedDescription": string;
+    };
     "_selfXssPrevention": {
         /**
          * 警告
@@ -11055,6 +12682,188 @@ export interface Locale extends ILocale {
          * 詳しくはこちらをご確認ください。 {link}
          */
         "description3": ParameterizedString<"link">;
+    };
+    "_followRequest": {
+        /**
+         * 受け取った申請
+         */
+        "recieved": string;
+        /**
+         * 送った申請
+         */
+        "sent": string;
+    };
+    "_remoteLookupErrors": {
+        "_federationNotAllowed": {
+            /**
+             * このサーバーとは通信できません
+             */
+            "title": string;
+            /**
+             * このサーバーとの通信が無効化されているか、このサーバーをブロックしている・ブロックされている可能性があります。
+             * サーバー管理者にお問い合わせください。
+             */
+            "description": string;
+        };
+        "_uriInvalid": {
+            /**
+             * URIが不正です
+             */
+            "title": string;
+            /**
+             * 入力されたURIに問題があります。URIに使用できない文字を入力していないか確認してください。
+             */
+            "description": string;
+        };
+        "_requestFailed": {
+            /**
+             * リクエストに失敗しました
+             */
+            "title": string;
+            /**
+             * このサーバーとの通信に失敗しました。相手サーバーがダウンしている可能性があります。また、不正なURIや存在しないURIを入力していないか確認してください。
+             */
+            "description": string;
+        };
+        "_responseInvalid": {
+            /**
+             * レスポンスが不正です
+             */
+            "title": string;
+            /**
+             * このサーバーと通信することはできましたが、得られたデータが不正なものでした。第三者のサーバーを介してリモートのコンテンツを照会している場合は、発信元のサーバーで取得できるURIを使用して照会し直してください。
+             */
+            "description": string;
+        };
+        "_noSuchObject": {
+            /**
+             * 見つかりません
+             */
+            "title": string;
+            /**
+             * 要求されたリソースは見つかりませんでした。URIをもう一度お確かめください。
+             */
+            "description": string;
+        };
+    };
+    "_captcha": {
+        /**
+         * CAPTCHAを通過してください
+         */
+        "verify": string;
+        /**
+         * サイトキーとシークレットキーにテスト用の値を入力することでプレビューを確認できます。
+         * 詳細は下記ページをご確認ください。
+         */
+        "testSiteKeyMessage": string;
+        "_error": {
+            "_requestFailed": {
+                /**
+                 * CAPTCHAのリクエストに失敗しました
+                 */
+                "title": string;
+                /**
+                 * しばらく後に実行するか、設定をもう一度ご確認ください。
+                 */
+                "text": string;
+            };
+            "_verificationFailed": {
+                /**
+                 * CAPTCHAの検証に失敗しました
+                 */
+                "title": string;
+                /**
+                 * 設定が正しいかどうかもう一度確認ください。
+                 */
+                "text": string;
+            };
+            "_unknown": {
+                /**
+                 * CAPTCHAエラー
+                 */
+                "title": string;
+                /**
+                 * 想定外のエラーが発生しました。
+                 */
+                "text": string;
+            };
+        };
+    };
+    "_bootErrors": {
+        /**
+         * 読み込みに失敗しました
+         */
+        "title": string;
+        /**
+         * 少し待ってからリロードしてもまだ問題が解決されない場合、以下のError IDを添えてサーバー管理者に連絡してください。
+         */
+        "serverError": string;
+        /**
+         * 以下を行うと解決する可能性があります。
+         */
+        "solution": string;
+        /**
+         * ブラウザおよびOSを最新バージョンに更新する
+         */
+        "solution1": string;
+        /**
+         * アドブロッカーを無効にする
+         */
+        "solution2": string;
+        /**
+         * ブラウザのキャッシュをクリアする
+         */
+        "solution3": string;
+        /**
+         * (Tor Browser) dom.webaudio.enabledをtrueに設定する
+         */
+        "solution4": string;
+        /**
+         * その他のオプション
+         */
+        "otherOption": string;
+        /**
+         * クライアント設定とキャッシュを削除
+         */
+        "otherOption1": string;
+        /**
+         * 簡易クライアントを起動
+         */
+        "otherOption2": string;
+        /**
+         * 修復ツールを起動
+         */
+        "otherOption3": string;
+    };
+    "_search": {
+        /**
+         * 全て
+         */
+        "searchScopeAll": string;
+        /**
+         * ローカル
+         */
+        "searchScopeLocal": string;
+        /**
+         * サーバー指定
+         */
+        "searchScopeServer": string;
+        /**
+         * ユーザー指定
+         */
+        "searchScopeUser": string;
+        /**
+         * サーバーのホストを入力してください
+         */
+        "pleaseEnterServerHost": string;
+        /**
+         * ユーザーを選択してください
+         */
+        "pleaseSelectUser": string;
+        /**
+         * 例: misskey.example.com
+         */
+        "serverHostPlaceholder": string;
     };
 }
 declare const locales: {

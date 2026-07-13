@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div :class="$style.root">
+<div v-if="!blocked" :class="$style.root">
 	<div v-if="media.isSensitive && hide" :class="$style.sensitive" @click="showHiddenContent" @dblclick="showHiddenContentDouble">
 		<span style="font-size: 1.6em;"><i class="ti ti-alert-triangle"></i></span>
 		<b>{{ i18n.ts.sensitive }}</b>
@@ -24,64 +24,71 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { shallowRef, watch, ref } from 'vue';
+import { ref, computed } from 'vue';
 import * as Misskey from 'misskey-js';
 import { i18n } from '@/i18n.js';
+import * as os from '@/os.js';
 import MkMediaAudio from '@/components/MkMediaAudio.vue';
-import { pleaseLogin } from '@/scripts/please-login.js';
-import { $i } from '@/account.js';
-import { defaultStore } from '@/store.js';
+import { pleaseLogin } from '@/utility/please-login.js';
+import { sensitiveContentConsent, requestSensitiveContentConsent } from '@/utility/sensitive-content-consent.js';
+import { $i } from '@/i.js';
+import { prefer } from '@/preferences.js';
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
 	media: Misskey.entities.DriveFile;
 	user?: Misskey.entities.UserLite;
-}>(), {
-});
+}>();
 
-const audioEl = shallowRef<HTMLAudioElement>();
-const hide = ref(true);
+const blocked = computed(() => props.media.isSensitive && sensitiveContentConsent.value === false);
 
-function showHiddenContent(ev: MouseEvent) {
-	if (hide.value && defaultStore.state.sensitiveDoubleClickRequired) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		return;
-	}
-
-	if (props.media.isSensitive && !$i) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		pleaseLogin();
-		return;
-	}
-
-	if (hide.value) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		hide.value = false;
-	}
+function calcHide(): boolean {
+	if (prefer.s.nsfw === 'force' || prefer.s.dataSaver.media) return true;
+	if (props.media.isSensitive && sensitiveContentConsent.value !== true) return true;
+	return props.media.isSensitive && prefer.s.nsfw !== 'ignore';
 }
 
-function showHiddenContentDouble(ev: MouseEvent) {
-	if (props.media.isSensitive && !$i) {
+const hide = ref(calcHide());
+
+async function showHiddenContent(ev: MouseEvent) {
+	if (hide.value && prefer.s.sensitiveDoubleClickRequired) {
 		ev.preventDefault();
 		ev.stopPropagation();
-		pleaseLogin();
 		return;
 	}
 
-	if (hide.value) {
-		ev.preventDefault();
-		ev.stopPropagation();
-		hide.value = false;
-	}
+	await revealHiddenContent(ev);
 }
 
-watch(audioEl, () => {
-	if (audioEl.value) {
-		audioEl.value.volume = 0.3;
+async function showHiddenContentDouble(ev: MouseEvent) {
+	await revealHiddenContent(ev);
+}
+
+async function revealHiddenContent(ev: MouseEvent) {
+	if (!hide.value) return;
+
+	ev.preventDefault();
+	ev.stopPropagation();
+
+	if (props.media.isSensitive && !$i) {
+		await pleaseLogin();
+		return;
 	}
-});
+
+	if (props.media.isSensitive && sensitiveContentConsent.value !== true) {
+		const allowed = await requestSensitiveContentConsent();
+		if (!allowed) return;
+	}
+
+	if (props.media.isSensitive && prefer.s.confirmWhenRevealingSensitiveMedia) {
+		const { canceled } = await os.confirm({
+			type: 'question',
+			text: i18n.ts.sensitiveMediaRevealConfirm,
+		});
+		if (canceled) return;
+	}
+
+	hide.value = false;
+}
 </script>
 
 <style lang="scss" module>
@@ -102,7 +109,6 @@ watch(audioEl, () => {
 }
 
 .download {
-	background: var(--noteAttachedFile);
 }
 
 .sensitive {

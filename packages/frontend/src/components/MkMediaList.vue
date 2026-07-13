@@ -5,20 +5,20 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <div>
-	<XBanner v-for="media in mediaList.filter(media => !previewable(media))" :key="media.id" :media="media" :user="user"/>
-	<div v-if="mediaList.filter(media => previewable(media)).length > 0" :class="$style.container">
+	<XBanner v-for="media in bannerMediaList" :key="media.id" :media="media" :user="user"/>
+	<div v-if="count > 0" :class="$style.container">
 		<div
 			ref="gallery"
 			:class="[
 				$style.medias,
 				count === 1 ? [$style.n1, {
-					[$style.n116_9]: defaultStore.reactiveState.mediaListWithOneImageAppearance.value === '16_9',
-					[$style.n11_1]: defaultStore.reactiveState.mediaListWithOneImageAppearance.value === '1_1',
-					[$style.n12_3]: defaultStore.reactiveState.mediaListWithOneImageAppearance.value === '2_3',
+					[$style.n116_9]: prefer.s.mediaListWithOneImageAppearance === '16_9',
+					[$style.n11_1]: prefer.s.mediaListWithOneImageAppearance === '1_1',
+					[$style.n12_3]: prefer.s.mediaListWithOneImageAppearance === '2_3',
 				}] : count === 2 ? $style.n2 : count === 3 ? $style.n3 : count === 4 ? $style.n4 : $style.nMany,
 			]"
 		>
-			<template v-for="media in mediaList.filter(media => previewable(media))">
+			<template v-for="media in previewableMediaList">
 				<XVideo v-if="media.type.startsWith('video')" :key="`video:${media.id}`" :class="$style.media" :video="media"/>
 				<XImage v-else-if="media.type.startsWith('image')" :key="`image:${media.id}`" :class="$style.media" class="image" :data-id="media.id" :image="media" :raw="raw"/>
 			</template>
@@ -28,17 +28,19 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, shallowRef } from 'vue';
+import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import PhotoSwipe from 'photoswipe';
 import 'photoswipe/style.css';
+import { FILE_TYPE_BROWSERSAFE } from '@@/js/const.js';
 import XBanner from '@/components/MkMediaBanner.vue';
 import XImage from '@/components/MkMediaImage.vue';
 import XVideo from '@/components/MkMediaVideo.vue';
 import * as os from '@/os.js';
-import { FILE_TYPE_BROWSERSAFE } from '@/const.js';
-import { defaultStore } from '@/store.js';
+import { focusParent } from '@/utility/focus.js';
+import { sensitiveContentConsent } from '@/utility/sensitive-content-consent.js';
+import { prefer } from '@/preferences.js';
 
 const props = defineProps<{
 	mediaList: Misskey.entities.DriveFile[];
@@ -46,11 +48,22 @@ const props = defineProps<{
 	raw?: boolean;
 }>();
 
-const gallery = shallowRef<HTMLDivElement>();
+const gallery = useTemplateRef('gallery');
 const pswpZIndex = os.claimZIndex('middle');
-document.documentElement.style.setProperty('--mk-pswp-root-z-index', pswpZIndex.toString());
-const count = computed(() => props.mediaList.filter(media => previewable(media)).length);
-let lightbox: PhotoSwipeLightbox | null;
+window.document.documentElement.style.setProperty('--mk-pswp-root-z-index', pswpZIndex.toString());
+const isBlocked = (media: Misskey.entities.DriveFile): boolean => media.isSensitive && sensitiveContentConsent.value === false;
+
+const bannerMediaList = computed(() => props.mediaList.filter(media => !previewable(media) && !isBlocked(media)));
+const previewableMediaList = computed(() => props.mediaList.filter(media => previewable(media) && !isBlocked(media)));
+const count = computed(() => previewableMediaList.value.length);
+
+const pswpFiles = computed(() => previewableMediaList.value.filter(media => {
+	if (media.type === 'image/svg+xml') return true; // svgのwebpublicはpngなのでtrue
+	return media.type.startsWith('image') && FILE_TYPE_BROWSERSAFE.includes(media.type);
+}));
+let lightbox: PhotoSwipeLightbox | null = null;
+
+let activeEl: HTMLElement | null = null;
 
 const popstateHandler = (): void => {
 	if (lightbox?.pswp && lightbox.pswp.isOpen === true) {
@@ -61,9 +74,9 @@ const popstateHandler = (): void => {
 async function calcAspectRatio() {
 	if (!gallery.value) return;
 
-	let img = props.mediaList[0];
+	const img = previewableMediaList.value[0];
 
-	if (props.mediaList.length !== 1 || !(img.properties.width && img.properties.height)) {
+	if (count.value !== 1 || !img || !(img.properties.width && img.properties.height)) {
 		gallery.value.style.aspectRatio = '';
 		return;
 	}
@@ -73,7 +86,7 @@ async function calcAspectRatio() {
 		return `${Math.max(ratio, img.properties.width / img.properties.height).toString()} / 1`;
 	};
 
-	switch (defaultStore.state.mediaListWithOneImageAppearance) {
+	switch (prefer.s.mediaListWithOneImageAppearance) {
 		case '16_9':
 			gallery.value.style.aspectRatio = ratioMax(16 / 9);
 			break;
@@ -89,28 +102,24 @@ async function calcAspectRatio() {
 	}
 }
 
-onMounted(() => {
-	calcAspectRatio();
+const buildLightbox = (): PhotoSwipeLightbox | null => {
+	if (!gallery.value) return null;
+	if (pswpFiles.value.length === 0) return null;
 
-	lightbox = new PhotoSwipeLightbox({
-		dataSource: props.mediaList
-			.filter(media => {
-				if (media.type === 'image/svg+xml') return true; // svgのwebpublicはpngなのでtrue
-				return media.type.startsWith('image') && FILE_TYPE_BROWSERSAFE.includes(media.type);
-			})
-			.map(media => {
-				const item = {
-					src: media.url,
-					w: media.properties.width,
-					h: media.properties.height,
-					alt: media.comment ?? media.name,
-					comment: media.comment ?? media.name,
-				};
-				if (media.properties.orientation != null && media.properties.orientation >= 5) {
-					[item.w, item.h] = [item.h, item.w];
-				}
-				return item;
-			}),
+	const lb = new PhotoSwipeLightbox({
+		dataSource: pswpFiles.value.map(media => {
+			const item = {
+				src: media.url,
+				w: media.properties.width,
+				h: media.properties.height,
+				alt: media.comment ?? media.name,
+				comment: media.comment ?? media.name,
+			};
+			if (media.properties.orientation != null && media.properties.orientation >= 5) {
+				[item.w, item.h] = [item.h, item.w];
+			}
+			return item;
+		}),
 		gallery: gallery.value,
 		mainClass: 'pswp',
 		children: '.image',
@@ -132,18 +141,17 @@ onMounted(() => {
 		bgOpacity: 1,
 		showAnimationDuration: 100,
 		hideAnimationDuration: 100,
+		returnFocus: false,
 		pswpModule: PhotoSwipe,
 	});
 
-	lightbox.on('itemData', (ev) => {
-		const { itemData } = ev;
-
+	lb.addFilter('itemData', (itemData) => {
 		// element is children
 		const { element } = itemData;
 
 		const id = element?.dataset.id;
-		const file = props.mediaList.find(media => media.id === id);
-		if (!file) return;
+		const file = id != null ? pswpFiles.value.find(media => media.id === id) : null;
+		if (!file) return itemData;
 
 		itemData.src = file.url;
 		itemData.w = Number(file.properties.width);
@@ -155,15 +163,17 @@ onMounted(() => {
 		itemData.alt = file.comment ?? file.name;
 		itemData.comment = file.comment ?? file.name;
 		itemData.thumbCropped = true;
+
+		return itemData;
 	});
 
-	lightbox.on('uiRegister', () => {
-		lightbox?.pswp?.ui?.registerElement({
+	lb.on('uiRegister', () => {
+		lb.pswp?.ui?.registerElement({
 			name: 'altText',
 			className: 'pswp__alt-text-container',
 			appendTo: 'wrapper',
 			onInit: (el, pswp) => {
-				let textBox = document.createElement('p');
+				const textBox = window.document.createElement('p');
 				textBox.className = 'pswp__alt-text _acrylic';
 				el.appendChild(textBox);
 
@@ -174,25 +184,40 @@ onMounted(() => {
 		});
 	});
 
-	lightbox.init();
+	lb.on('afterInit', () => {
+		activeEl = window.document.activeElement instanceof HTMLElement ? window.document.activeElement : null;
+		focusParent(activeEl, true, true);
+		lb.pswp?.element?.focus({
+			preventScroll: true,
+		});
+		window.history.pushState(null, '', '#pswp');
+	});
+
+	lb.on('destroy', () => {
+		focusParent(activeEl, true, false);
+		activeEl = null;
+		if (window.location.hash === '#pswp') {
+			window.history.back();
+		}
+	});
+
+	return lb;
+};
+
+onMounted(() => {
+	calcAspectRatio();
 
 	window.addEventListener('popstate', popstateHandler);
 
-	lightbox.on('beforeOpen', () => {
-		history.pushState(null, '', '#pswp');
-	});
-
-	lightbox.on('close', () => {
-		if (window.location.hash === '#pswp') {
-			history.back();
-		}
-	});
+	lightbox = buildLightbox();
+	lightbox?.init();
 });
 
 onUnmounted(() => {
 	window.removeEventListener('popstate', popstateHandler);
 	lightbox?.destroy();
 	lightbox = null;
+	activeEl = null;
 });
 
 const previewable = (file: Misskey.entities.DriveFile): boolean => {
@@ -200,13 +225,38 @@ const previewable = (file: Misskey.entities.DriveFile): boolean => {
 	// FILE_TYPE_BROWSERSAFEに適合しないものはブラウザで表示するのに不適切
 	return (file.type.startsWith('video') || file.type.startsWith('image')) && FILE_TYPE_BROWSERSAFE.includes(file.type);
 };
+
+const openGallery = () => {
+	if (pswpFiles.value.length === 0) return;
+	if (!lightbox) {
+		lightbox = buildLightbox();
+		lightbox?.init();
+	}
+	lightbox?.loadAndOpen(0);
+};
+
+watch(count, () => {
+	calcAspectRatio();
+}, { flush: 'post' });
+
+watch(pswpFiles, () => {
+	if (lightbox?.pswp && lightbox.pswp.isOpen === true) {
+		lightbox.pswp.close();
+	}
+	lightbox?.destroy();
+	lightbox = buildLightbox();
+	lightbox?.init();
+}, { flush: 'post' });
+
+defineExpose({
+	openGallery,
+});
 </script>
 
 <style lang="scss" module>
 .container {
 	position: relative;
 	width: 100%;
-	margin-top: 4px;
 }
 
 .medias {
@@ -289,14 +339,14 @@ const previewable = (file: Misskey.entities.DriveFile): boolean => {
 
 :global(.pswp) {
 	--pswp-root-z-index: var(--mk-pswp-root-z-index, 2000700) !important;
-	--pswp-bg: var(--modalBg) !important;
+	--pswp-bg: var(--MI_THEME-modalBg) !important;
 }
 </style>
 
 <style lang="scss">
 .pswp__bg {
-	background: var(--modalBg);
-	backdrop-filter: var(--modalBgFilter);
+	background: var(--MI_THEME-modalBg);
+	backdrop-filter: var(--MI-modalBgFilter);
 }
 
 .pswp__alt-text-container {
@@ -314,14 +364,14 @@ const previewable = (file: Misskey.entities.DriveFile): boolean => {
 }
 
 .pswp__alt-text {
-	color: var(--fg);
+	color: var(--MI_THEME-fg);
 	margin: 0 auto;
 	text-align: center;
-	padding: var(--margin);
-	border-radius: var(--radius);
+	padding: var(--MI-margin);
+	border-radius: var(--MI-radius);
 	max-height: 8em;
 	overflow-y: auto;
-	text-shadow: var(--bg) 0 0 10px, var(--bg) 0 0 3px, var(--bg) 0 0 3px;
+	text-shadow: var(--MI_THEME-bg) 0 0 10px, var(--MI_THEME-bg) 0 0 3px, var(--MI_THEME-bg) 0 0 3px;
 	white-space: pre-line;
 }
 </style>

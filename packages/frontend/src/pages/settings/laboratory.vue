@@ -10,8 +10,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 		<template #label>{{ i18n.ts.misskeyExperimentalFeatures }}</template>
 
 		<div class="_gaps_m">
-			<MkSwitch v-model="enableCondensedLineForAcct">
-				<template #label>Enable condensed line for acct</template>
+			<MkSwitch v-model="enableCondensedLine">
+				<template #label>Enable condensed line</template>
 			</MkSwitch>
 		</div>
 	</MkFolder>
@@ -67,7 +67,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</FormSection>
 
-	<FormSection v-if="$i.isModerator">
+	<FormSection v-if="$i.isModerator || $i.isAdmin">
 		<template #label><i class="ti ti-beach"></i> {{ i18n.ts.vacationMode }}</template>
 		<template #description>{{ i18n.ts.vacationModeDescription }}</template>
 
@@ -140,29 +140,29 @@ import MkSwitch from '@/components/MkSwitch.vue';
 import FormSection from '@/components/form/section.vue';
 import MkFolder from '@/components/MkFolder.vue';
 import MkInfo from '@/components/MkInfo.vue';
-import { misskeyApi } from '@/scripts/misskey-api.js';
+import { misskeyApi } from '@/utility/misskey-api.js';
 import { i18n } from '@/i18n.js';
-import { iAmModerator, signinRequired } from '@/account.js';
-import { definePageMetadata } from '@/scripts/page-metadata.js';
-import { defaultStore } from '@/store.js';
+import { iAmModerator, ensureSignin } from '@/i.js';
+import { definePage } from '@/page.js';
+import { prefer } from '@/preferences.js';
 import * as os from '@/os.js';
-import { unisonReload } from '@/scripts/unison-reload.js';
+import { unisonReload } from '@/utility/unison-reload.js';
 
-const $i = signinRequired();
+const $i = ensureSignin();
 
 const isVacation = ref<boolean | undefined>($i.isVacation !== null ? $i.isVacation : undefined);
 
-const hideCounters = computed(defaultStore.makeGetterSetter('hideCounters'));
-const enableCondensedLineForAcct = computed(defaultStore.makeGetterSetter('enableCondensedLineForAcct'));
-const privateMode = computed(defaultStore.makeGetterSetter('privateMode'));
-const hideDirectMessages = computed(defaultStore.makeGetterSetter('hideDirectMessages'));
-const hideDriveFileList = computed(defaultStore.makeGetterSetter('hideDriveFileList'));
-const hideModerationLog = computed(defaultStore.makeGetterSetter('hideModerationLog'));
-const hideRoleList = computed(defaultStore.makeGetterSetter('hideRoleList'));
+const hideCounters = prefer.model('hideCounters');
+const enableCondensedLine = prefer.model('enableCondensedLine');
+const privateMode = prefer.model('privateMode');
+const hideDirectMessages = prefer.model('hideDirectMessages');
+const hideDriveFileList = prefer.model('hideDriveFileList');
+const hideModerationLog = prefer.model('hideModerationLog');
+const hideRoleList = prefer.model('hideRoleList');
 
 function save() {
 	if (isVacation.value === true) {
-		defaultStore.set('vacationAlert', true);
+		prefer.commit('vacationAlert', true);
 	}
 	misskeyApi('i/update', {
 		isVacation: isVacation.value,
@@ -181,7 +181,7 @@ async function reloadAsk() {
 
 watch([
 	isVacation,
-	enableCondensedLineForAcct,
+	enableCondensedLine,
 	privateMode,
 	hideCounters,
 	hideDirectMessages,
@@ -196,7 +196,7 @@ const headerActions = computed(() => []);
 
 const headerTabs = computed(() => []);
 
-definePageMetadata(() => ({
+definePage(() => ({
 	title: i18n.ts.experimentalFeatures,
 	icon: 'ti ti-barrier-block',
 }));

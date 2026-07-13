@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div v-if="show" ref="el" :class="[$style.root]" :style="{ background: bg }">
+<div v-if="show" ref="el" :class="[$style.root]">
 	<div :class="[$style.upper, { [$style.slim]: narrow, [$style.thin]: thin_ }]">
 		<div v-if="!thin_ && narrow && props.displayMyAvatar && $i" class="_button" :class="$style.buttonsLeft" @click="openAccountMenu">
 			<MkAvatar :class="$style.avatar" :user="$i"/>
@@ -28,9 +28,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 			<XTabs v-if="!narrow || hideTitle" :class="$style.tabs" :tab="tab" :tabs="tabs" :rootEl="el" @update:tab="key => emit('update:tab', key)" @tabClick="onTabClick"/>
 		</template>
-		<div v-if="(!thin_ && narrow && !hideTitle) || (actions && actions.length > 0)" :class="$style.buttonsRight">
-			<template v-for="action in actions">
-				<button v-tooltip.noDelay="action.text" class="_button" :class="[$style.button, { [$style.highlighted]: action.highlighted }]" @click.stop="action.handler" @touchstart="preventDrag"><i :class="action.icon"></i></button>
+		<div v-if="(!thin_ && narrow && !hideTitle) || hasActions" :class="$style.buttonsRight">
+			<template v-for="action in visibleActions">
+				<button v-tooltip.noDelay="action.text" class="_button" :class="[$style.button, { [$style.highlighted]: action.highlighted }]" @click.stop="action.handler" @touchstart="preventDrag">
+					<span v-if="action.label">{{ action.label }}</span>
+					<i :class="action.icon"></i>
+				</button>
 			</template>
 		</div>
 	</div>
@@ -40,23 +43,32 @@ SPDX-License-Identifier: AGPL-3.0-only
 </div>
 </template>
 
-<script lang="ts" setup>
-import { onMounted, onUnmounted, ref, inject, shallowRef, computed } from 'vue';
-import tinycolor from 'tinycolor2';
-import XTabs, { Tab } from './MkPageHeader.tabs.vue';
-import { scrollToTop } from '@/scripts/scroll.js';
-import { globalEvents } from '@/events.js';
-import { injectReactiveMetadata } from '@/scripts/page-metadata.js';
-import { $i, openAccountMenu as openAccountMenu_ } from '@/account.js';
-import { PageHeaderItem } from '@/types/page-header.js';
+<script lang="ts">
+import type { PageHeaderItem } from '@/types/page-header.js';
+import type { PageMetadata } from '@/page.js';
+import type { Tab } from './MkPageHeader.tabs.vue';
 
-const props = withDefaults(defineProps<{
+export type PageHeaderProps = {
+	overridePageMetadata?: PageMetadata;
 	tabs?: Tab[];
 	tab?: string;
 	actions?: PageHeaderItem[] | null;
 	thin?: boolean;
+	hideTitle?: boolean;
 	displayMyAvatar?: boolean;
-}>(), {
+};
+</script>
+
+<script lang="ts" setup>
+import { onMounted, onUnmounted, ref, inject, useTemplateRef, computed } from 'vue';
+import { scrollToTop } from '@@/js/scroll.js';
+import XTabs from './MkPageHeader.tabs.vue';
+import { globalEvents } from '@/events.js';
+import { openAccountMenu as openAccountMenu_ } from '@/accounts.js';
+import { $i } from '@/i.js';
+import { DI } from '@/di.js';
+
+const props = withDefaults(defineProps<PageHeaderProps>(), {
 	tabs: () => ([] as Tab[]),
 });
 
@@ -64,18 +76,24 @@ const emit = defineEmits<{
 	(ev: 'update:tab', key: string);
 }>();
 
-const pageMetadata = injectReactiveMetadata();
+//const viewId = inject(DI.viewId);
+const injectedPageMetadata = inject(DI.pageMetadata, ref(null));
+const pageMetadata = computed(() => props.overridePageMetadata ?? injectedPageMetadata.value);
 
-const hideTitle = inject('shouldOmitHeaderTitle', false);
+const hideTitle = computed(() => inject('shouldOmitHeaderTitle', false) || props.hideTitle);
 const thin_ = props.thin || inject('shouldHeaderThin', false);
 
-const el = shallowRef<HTMLElement | undefined>(undefined);
-const bg = ref<string | undefined>(undefined);
+const el = useTemplateRef('el');
 const narrow = ref(false);
 const hasTabs = computed(() => props.tabs.length > 0);
-const hasActions = computed(() => props.actions && props.actions.length > 0);
+const visibleActions = computed(() => {
+	if (!props.actions) return [];
+	if (!narrow.value) return props.actions;
+	return props.actions.filter(action => !action.hideWhenNarrow);
+});
+const hasActions = computed(() => visibleActions.value.length > 0);
 const show = computed(() => {
-	return !hideTitle || hasTabs.value || hasActions.value;
+	return !hideTitle.value || hasTabs.value || hasActions.value;
 });
 
 const preventDrag = (ev: TouchEvent) => {
@@ -98,23 +116,13 @@ function onTabClick(): void {
 	top();
 }
 
-const calcBg = () => {
-	const rawBg = 'var(--bg)';
-	const tinyBg = tinycolor(rawBg.startsWith('var(') ? getComputedStyle(document.documentElement).getPropertyValue(rawBg.slice(4, -1)) : rawBg);
-	tinyBg.setAlpha(0.85);
-	bg.value = tinyBg.toRgbString();
-};
-
 let ro: ResizeObserver | null;
 
 onMounted(() => {
-	calcBg();
-	globalEvents.on('themeChanged', calcBg);
-
 	if (el.value && el.value.parentElement) {
 		narrow.value = el.value.parentElement.offsetWidth < 500;
 		ro = new ResizeObserver((entries, observer) => {
-			if (el.value && el.value.parentElement && document.body.contains(el.value as HTMLElement)) {
+			if (el.value && el.value.parentElement && window.document.body.contains(el.value as HTMLElement)) {
 				narrow.value = el.value.parentElement.offsetWidth < 500;
 			}
 		});
@@ -123,17 +131,24 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-	globalEvents.off('themeChanged', calcBg);
 	if (ro) ro.disconnect();
 });
 </script>
 
 <style lang="scss" module>
 .root {
-	-webkit-backdrop-filter: var(--blur, blur(15px));
-	backdrop-filter: var(--blur, blur(15px));
-	border-bottom: solid 0.5px var(--divider);
+	background: color(from var(--MI_THEME-pageHeaderBg) srgb r g b / 0.75);
+	-webkit-backdrop-filter: var(--MI-blur, blur(15px));
+	backdrop-filter: var(--MI-blur, blur(15px));
+	border-bottom: solid 0.5px transparent;
 	width: 100%;
+	color: var(--MI_THEME-pageHeaderFg);
+}
+
+@container style(--MI_THEME-pageHeaderBg: var(--MI_THEME-bg)) {
+	.root {
+		border-bottom: solid 0.5px var(--MI_THEME-divider);
+	}
 }
 
 .upper,
@@ -145,7 +160,7 @@ onUnmounted(() => {
 .upper {
 	--height: 50px;
 	display: flex;
-	gap: var(--margin);
+	gap: var(--MI-margin);
 	height: var(--height);
 
 	.tabs:first-child {
@@ -198,12 +213,12 @@ onUnmounted(() => {
 
 .buttonsLeft {
 	composes: buttons;
-	margin: 0 var(--margin) 0 0;
+	margin: 0 var(--MI-margin) 0 0;
 }
 
 .buttonsRight {
 	composes: buttons;
-	margin: 0 0 0 var(--margin);
+	margin: 0 0 0 var(--MI-margin);
 }
 
 .avatar {
@@ -219,6 +234,7 @@ onUnmounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	gap: 4px;
 	height: var(--height);
 	width: calc(var(--height) - (var(--margin)));
 	box-sizing: border-box;
@@ -230,7 +246,7 @@ onUnmounted(() => {
 	}
 
 	&.highlighted {
-		color: var(--accent);
+		color: var(--MI_THEME-accent);
 	}
 }
 

@@ -5,6 +5,7 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import postcssPresetEnv from 'postcss-preset-env';
 import cssnano from 'cssnano';
 import postcss from 'postcss';
 import * as terser from 'terser';
@@ -20,7 +21,7 @@ async function copyFrontendFonts() {
 }
 
 async function copyFrontendTablerIcons() {
-  await fs.cp('./packages/frontend/node_modules/@tabler/icons-webfont', `./built/_frontend_dist_/tabler-icons.${meta.version}`, { dereference: true, recursive: true });
+  await fs.cp('./packages/frontend-shared/node_modules/@tabler/icons-webfont', `./built/_frontend_dist_/tabler-icons.${meta.version}`, { dereference: true, recursive: true });
   for (const file of [
     `./built/_frontend_dist_/tabler-icons.${meta.version}/dist/tabler-icons-filled.scss`,
     `./built/_frontend_dist_/tabler-icons.${meta.version}/dist/tabler-icons-filled.css`,
@@ -53,16 +54,18 @@ async function buildBackendScript() {
   await fs.mkdir('./packages/backend/built/server/web', { recursive: true });
   let clientEntry;
   try {
-    clientEntry = JSON.parse(await fs.readFile('./built/_vite_/manifest.json', 'utf-8'))['src/_boot_.ts'].file;
+		console.log(JSON.parse(await fs.readFile('./built/_frontend_vite_/manifest.json', 'utf-8'))['src/_boot_.ts'].file)
+    clientEntry = JSON.parse(await fs.readFile('./built/_frontend_vite_/manifest.json', 'utf-8'))['src/_boot_.ts'].file;
   } catch {
     clientEntry = 'src/_boot_.ts';
   }
-
   for (const file of [
     './packages/backend/src/server/web/boot.js',
+    './packages/backend/src/server/web/boot.embed.js',
     './packages/backend/src/server/web/bios.js',
     './packages/backend/src/server/web/cli.js',
-    './packages/backend/src/server/web/flush.js'
+    './packages/backend/src/server/web/flush.js',
+    './packages/backend/src/server/web/error.js',
   ]) {
     let source = await fs.readFile(file, { encoding: 'utf-8' });
     source = source.replaceAll('LANGS', JSON.stringify(Object.keys(locales)));
@@ -77,12 +80,20 @@ async function buildBackendStyle() {
 
   for (const file of [
     './packages/backend/src/server/web/style.css',
+    './packages/backend/src/server/web/style.embed.css',
     './packages/backend/src/server/web/bios.css',
     './packages/backend/src/server/web/cli.css',
     './packages/backend/src/server/web/error.css'
   ]) {
     const source = await fs.readFile(file, { encoding: 'utf-8' });
-    const { css } = await postcss([cssnano({ zindex: false })]).process(source, { from: undefined });
+    const { css } = await postcss([
+			postcssPresetEnv({
+				stage: 3,
+				autoprefixer: { flexbox: 'no-2009' },
+				features: { 'custom-properties': false },
+			}),
+			cssnano({ preset: 'default' }),
+		]).process(source, { from: undefined });
     await fs.writeFile(`./packages/backend/built/server/web/${path.basename(file)}`, css);
   }
 }

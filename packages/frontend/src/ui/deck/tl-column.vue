@@ -4,17 +4,14 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<XColumn :menu="menu" :column="column" :isStacked="isStacked" :refresher="() => timeline.reloadTimeline()">
+<XColumn :menu="menu" :column="column" :isStacked="isStacked" :refresher="async () => { await timeline?.reloadTimeline() }">
 	<template #header>
-		<i v-if="column.tl === 'home'" class="ti ti-home"></i>
-		<i v-else-if="column.tl === 'local'" class="ti ti-planet"></i>
-		<i v-else-if="column.tl === 'social'" class="ti ti-universe"></i>
-		<i v-else-if="column.tl === 'media'" class="ti ti-photo"></i>
-		<i v-else-if="column.tl === 'global'" class="ti ti-whirl"></i>
-		<span style="margin-left: 8px;">{{ column.name }}</span>
+		<i v-if="column.tl != null" :class="basicTimelineIconClass(column.tl)"/>
+		<span style="margin-left: 8px;">{{ column.name || (column.tl ? i18n.ts._timelines[column.tl] : null) || i18n.ts._deck._columns.tl }}</span>
+		<span v-if="column.tl != null && hasDimension(column.tl) && dimension > 0" :class="$style.dimensionBadge"><i class="ti ti-cube"></i>{{ dimension }}</span>
 	</template>
 
-	<div v-if="(((column.tl === 'local' || column.tl === 'social') && !isLocalTimelineAvailable) || (column.tl === 'global' && !isGlobalTimelineAvailable))" :class="$style.disabled">
+	<div v-if="!isAvailableBasicTimeline(column.tl)" :class="$style.disabled">
 		<p :class="$style.disabledTitle">
 			<i class="ti ti-circle-minus"></i>
 			{{ i18n.ts._disabledTimeline.title }}
@@ -24,38 +21,48 @@ SPDX-License-Identifier: AGPL-3.0-only
 	<MkTimeline
 		v-else-if="column.tl"
 		ref="timeline"
-		:key="column.tl + withRenotes + withReplies + onlyFiles"
+		:key="column.tl + withRenotes + withReplies + onlyFiles + dimension"
 		:src="column.tl"
 		:withRenotes="withRenotes"
 		:withReplies="withReplies"
+		:withSensitive="withSensitive"
 		:onlyFiles="onlyFiles"
+		:dimension="dimension"
+		@note="onNote"
 	/>
 </XColumn>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, watch, ref, shallowRef } from 'vue';
+import { onMounted, watch, ref, useTemplateRef, computed } from 'vue';
 import XColumn from './column.vue';
-import { removeColumn, updateColumn, Column } from './deck-store.js';
+import type { Column } from '@/deck.js';
+import type { MenuItem } from '@/types/menu.js';
+import type { SoundStore } from '@/preferences/def.js';
+import { removeColumn, updateColumn } from '@/deck.js';
 import MkTimeline from '@/components/MkTimeline.vue';
 import * as os from '@/os.js';
-import { $i } from '@/account.js';
 import { i18n } from '@/i18n.js';
-import { instance } from '@/instance.js';
+import { hasWithReplies, hasDimension, isAvailableBasicTimeline, basicTimelineIconClass } from '@/timelines.js';
+import { soundSettingsButton } from '@/ui/deck/tl-note-notification.js';
+import * as sound from '@/utility/sound.js';
+import { selectDimension } from '@/utility/dimension.js';
+import { claimAchievement } from '@/utility/achievements.js';
+import { prefer } from '@/preferences.js';
 
 const props = defineProps<{
 	column: Column;
 	isStacked: boolean;
 }>();
 
-const disabled = ref(false);
-const timeline = shallowRef<InstanceType<typeof MkTimeline>>();
+const timeline = useTemplateRef('timeline');
 
-const isLocalTimelineAvailable = (($i == null && instance.policies.ltlAvailable) || ($i != null && $i.policies.ltlAvailable));
-const isGlobalTimelineAvailable = (($i == null && instance.policies.gtlAvailable) || ($i != null && $i.policies.gtlAvailable));
+const soundSetting = ref<SoundStore>(props.column.soundSetting ?? { type: null, volume: 1 });
 const withRenotes = ref(props.column.withRenotes ?? true);
 const withReplies = ref(props.column.withReplies ?? false);
+const withSensitive = ref(props.column.withSensitive ?? true);
 const onlyFiles = ref(props.column.onlyFiles ?? false);
+const dimension = ref<number>(props.column.dimension ?? prefer.s.dimension);
 
 watch(withRenotes, v => {
 	updateColumn(props.column.id, {
@@ -69,19 +76,40 @@ watch(withReplies, v => {
 	});
 });
 
+watch(withSensitive, v => {
+	updateColumn(props.column.id, {
+		withSensitive: v,
+	});
+});
+
 watch(onlyFiles, v => {
 	updateColumn(props.column.id, {
 		onlyFiles: v,
 	});
 });
 
+watch(dimension, (value, previous) => {
+	updateColumn(props.column.id, {
+		dimension: value,
+	});
+	if (value != null && value !== previous) {
+		claimAchievement('dimensionConfigured');
+	}
+});
+
+async function pickDimension() {
+	const selected = await selectDimension(dimension.value);
+	if (selected === undefined) return;
+	dimension.value = selected;
+}
+
+watch(soundSetting, v => {
+	updateColumn(props.column.id, { soundSetting: v });
+});
+
 onMounted(() => {
 	if (props.column.tl == null) {
 		setType();
-	} else if ($i) {
-		disabled.value = (
-			(!((instance.policies.ltlAvailable) || ($i.policies.ltlAvailable)) && ['local', 'social'].includes(props.column.tl)) ||
-			(!((instance.policies.gtlAvailable) || ($i.policies.gtlAvailable)) && ['global'].includes(props.column.tl)));
 	}
 });
 
@@ -106,35 +134,77 @@ async function setType() {
 		}
 		return;
 	}
+	if (src == null) return;
 	updateColumn(props.column.id, {
-		tl: src,
+		tl: src ?? undefined,
 	});
 }
 
-const menu = [{
-	icon: 'ti ti-pencil',
-	text: i18n.ts.timeline,
-	action: setType,
-}, {
-	type: 'switch',
-	text: i18n.ts.showRenotes,
-	ref: withRenotes,
-}, props.column.tl === 'local' || props.column.tl === 'social' ? {
-	type: 'switch',
-	text: i18n.ts.showRepliesToOthersInTimeline,
-	ref: withReplies,
-	disabled: onlyFiles,
-} : undefined, {
-	type: 'switch',
-	text: i18n.ts.fileAttachedOnly,
-	ref: onlyFiles,
-	disabled: props.column.tl === 'local' || props.column.tl === 'social' ? withReplies : false,
-}];
+function onNote() {
+	sound.playMisskeySfxFile(soundSetting.value);
+}
+
+const menu = computed<MenuItem[]>(() => {
+	const menuItems: MenuItem[] = [{
+		icon: 'ti ti-pencil',
+		text: i18n.ts.timeline,
+		action: setType,
+	}];
+
+	if (hasDimension(props.column.tl)) {
+		menuItems.push({
+			icon: 'ti ti-cube',
+			text: i18n.tsx.dimensionWithNumber({ dimension: dimension.value }),
+			action: pickDimension,
+		});
+	}
+
+	menuItems.push({
+		icon: 'ti ti-bell',
+		text: i18n.ts._deck.newNoteNotificationSettings,
+		action: () => soundSettingsButton(soundSetting),
+	}, {
+		type: 'switch',
+		text: i18n.ts.showRenotes,
+		ref: withRenotes,
+	});
+
+	if (hasWithReplies(props.column.tl)) {
+		menuItems.push({
+			type: 'switch',
+			text: i18n.ts.showRepliesToOthersInTimeline,
+			ref: withReplies,
+			disabled: onlyFiles,
+		});
+	}
+
+	menuItems.push({
+		type: 'switch',
+		text: i18n.ts.fileAttachedOnly,
+		ref: onlyFiles,
+		disabled: hasWithReplies(props.column.tl) ? withReplies : false,
+	}, {
+		type: 'switch',
+		text: i18n.ts.withSensitive,
+		ref: withSensitive,
+	});
+
+	return menuItems;
+});
 </script>
 
 <style lang="scss" module>
 .disabled {
 	text-align: center;
+}
+
+.dimensionBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 8px;
+	font-size: 0.8em;
+	opacity: 0.75;
 }
 
 .disabledTitle {

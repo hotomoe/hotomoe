@@ -4,7 +4,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<MkSpacer :contentMax="narrow ? 800 : 1100">
+<div class="_spacer" :style="{ '--MI_SPACER-w': narrow ? '800px' : '1100px' }">
 	<div ref="rootEl" class="ftskorzw" :class="{ wide: !narrow }" style="container-type: inline-size;">
 		<div class="main _gaps">
 			<div v-if="user.isSuspended && iAmModerator" class="punished"><i class="ti ti-alert-triangle" style="margin-right: 8px;"></i> {{ i18n.ts.userSuspended }}</div>
@@ -14,7 +14,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<div class="profile _gaps">
 				<MkAccountMoved v-if="user.movedTo" :movedTo="user.movedTo"/>
 				<MkAccountMoved v-if="movedFromLog" :movedFrom="movedFromLog[0]?.movedFromId"/>
-				<MkRemoteCaution v-if="user.host != null" :href="user.url ?? user.uri!" class="warn"/>
+				<MkRemoteCaution v-if="user.host != null" :href="user.url ?? user.uri!"/>
+				<MkInfo v-if="user.host == null && user.username.includes('.')">{{ i18n.ts.isSystemAccount }}</MkInfo>
 
 				<div :key="user.id" class="main _panel">
 					<div class="banner-container" :style="style">
@@ -24,18 +25,18 @@ SPDX-License-Identifier: AGPL-3.0-only
 							<MkUserName class="name" :user="user" :nowrap="true"/>
 							<div class="bottom">
 								<span class="username"><MkAcct :user="user" :detail="true"/></span>
-								<span v-if="user.isAdmin" v-tooltip.noDelay="i18n.ts.administrator" style="color: var(--badge);"><i class="ti ti-shield"></i></span>
-								<span v-if="user.isLocked" v-tooltip.noDelay="i18n.ts.isLocked"><i class="ti ti-lock"></i></span>
-								<span v-if="user.isBot" v-tooltip.noDelay="i18n.ts.isBot"><i class="ti ti-robot"></i></span>
+								<span v-if="user.isAdmin" :title="i18n.ts.isAdmin" style="color: var(--MI_THEME-badge);"><i class="ti ti-shield"></i></span>
+								<span v-if="user.isLocked" :title="i18n.ts.isLocked"><i class="ti ti-lock"></i></span>
+								<span v-if="user.isBot" :title="i18n.ts.isBot"><i class="ti ti-robot"></i></span>
 								<button v-if="$i && !isEditingMemo && !memoDraft" class="_button add-note-button" @click="showMemoTextarea">
 									<i class="ti ti-edit"/> {{ i18n.ts.addMemo }}
 								</button>
 							</div>
 						</div>
 						<span v-if="$i && $i.id != user.id && user.isFollowed" class="followed">{{ i18n.ts.followsYou }}</span>
-						<div v-if="$i" class="actions">
+						<div class="actions">
 							<button class="menu _button" @click="menu"><i class="ti ti-dots"></i></button>
-							<MkFollowButton v-if="$i.id != user.id" v-model:user="user" :inline="true" :transparent="false" :full="true" class="koudoku"/>
+							<MkFollowButton v-if="$i?.id != user.id" v-model:user="user" :inline="true" :transparent="false" :full="true" class="koudoku"/>
 						</div>
 					</div>
 					<MkAvatar class="avatar" :user="user" indicator/>
@@ -43,10 +44,16 @@ SPDX-License-Identifier: AGPL-3.0-only
 						<MkUserName :user="user" :nowrap="false" class="name"/>
 						<div class="bottom">
 							<span class="username"><MkAcct :user="user" :detail="true"/></span>
-							<span v-if="user.isAdmin" :title="i18n.ts.administrator" style="color: var(--badge);"><i class="ti ti-shield"></i></span>
+							<span v-if="user.isAdmin" :title="i18n.ts.isAdmin" style="color: var(--MI_THEME-badge);"><i class="ti ti-shield"></i></span>
 							<span v-if="user.isLocked" :title="i18n.ts.isLocked"><i class="ti ti-lock"></i></span>
 							<span v-if="user.isBot" :title="i18n.ts.isBot"><i class="ti ti-robot"></i></span>
 						</div>
+					</div>
+					<div v-if="user.followedMessage != null" class="followedMessage">
+						<MkFukidashi class="fukidashi" :tail="narrow ? 'none' : 'left'" negativeMargin>
+							<div class="messageHeader">{{ i18n.ts.messageToFollower }}</div>
+							<div><MkSparkle><Mfm :plain="true" :text="user.followedMessage" :author="user" class="_selectable"/></MkSparkle></div>
+						</MkFukidashi>
 					</div>
 					<div v-if="user.roles.length > 0 && !hideRoleList" class="roles">
 						<span v-for="role in user.roles" :key="role.id" v-tooltip="role.description" class="role" :style="{ '--color': role.color }">
@@ -59,6 +66,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div v-if="!hideModerationNote" class="moderationNote">
 						<MkTextarea v-if="editModerationNote || (moderationNote != null && moderationNote !== '')" v-model="moderationNote" manualSave>
 							<template #label>{{ i18n.ts.moderationNote }}</template>
+							<template #caption>{{ i18n.ts.moderationNoteDescription }}</template>
 						</MkTextarea>
 						<div v-else>
 							<MkButton small @click="editModerationNote = true">{{ i18n.ts.addModerationNote }}</MkButton>
@@ -77,7 +85,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</div>
 					<div class="description">
 						<MkOmit>
-							<Mfm v-if="user.description" :text="user.description" :isNote="false" :author="user"/>
+							<Mfm v-if="user.description" :text="user.description" :isNote="false" :author="user" class="_selectable"/>
 							<p v-else class="empty">{{ i18n.ts.noAccountDescription }}</p>
 						</MkOmit>
 					</div>
@@ -122,10 +130,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<div v-if="user.fields.length > 0 || userSkebStatus" class="fields">
 						<dl v-for="(field, i) in user.fields" :key="i" class="field">
 							<dt class="name">
-								<Mfm :text="field.name" :plain="true" :colored="false"/>
+								<Mfm :text="field.name" :author="user" :plain="true" :colored="false" class="_selectable"/>
 							</dt>
 							<dd class="value">
-								<Mfm :text="field.value" :author="user" :colored="false"/>
+								<Mfm :text="field.value" :author="user" :colored="false" class="_selectable"/>
 								<i v-if="user.verifiedLinks.includes(field.value)" v-tooltip:dialog="i18n.ts.verifiedLink" class="ti ti-circle-check" :class="$style.verifiedLink"></i>
 							</dd>
 						</dl>
@@ -193,9 +201,9 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<MkInfo v-else-if="$i && $i.id === user.id">{{ i18n.ts.userPagePinTip }}</MkInfo>
 				<template v-if="narrow">
 					<MkLazy>
-						<XFiles :key="user.id" :user="user"/>
+						<XFiles :key="user.id" :user="user" @unfold="emit('unfoldFiles')"/>
 					</MkLazy>
-					<MkLazy>
+					<MkLazy v-if="!hideCounters">
 						<XActivity :key="user.id" :user="user"/>
 					</MkLazy>
 				</template>
@@ -207,38 +215,41 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</div>
 		</div>
 		<div v-if="!narrow" class="sub _gaps" style="container-type: inline-size;">
-			<XFiles :key="user.id" :user="user"/>
+			<XFiles :key="user.id" :user="user" @unfold="emit('unfoldFiles')"/>
 			<XActivity v-if="!hideCounters" :key="user.id" :user="user"/>
 		</div>
 	</div>
-</MkSpacer>
+</div>
 </template>
 
 <script lang="ts" setup>
 import { defineAsyncComponent, computed, onMounted, onUnmounted, nextTick, watch, ref } from 'vue';
 import * as Misskey from 'misskey-js';
+import { getScrollPosition } from '@@/js/scroll.js';
 import MkNote from '@/components/MkNote.vue';
 import MkFollowButton from '@/components/MkFollowButton.vue';
 import MkAccountMoved from '@/components/MkAccountMoved.vue';
+import MkFukidashi from '@/components/MkFukidashi.vue';
 import MkRemoteCaution from '@/components/MkRemoteCaution.vue';
 import MkTextarea from '@/components/MkTextarea.vue';
 import MkOmit from '@/components/MkOmit.vue';
 import MkInfo from '@/components/MkInfo.vue';
 import MkButton from '@/components/MkButton.vue';
-import { getScrollPosition } from '@/scripts/scroll.js';
-import { getUserMenu } from '@/scripts/get-user-menu.js';
+import { getUserMenu } from '@/utility/get-user-menu.js';
 import number from '@/filters/number.js';
 import { userPage } from '@/filters/user.js';
 import * as os from '@/os.js';
 import { i18n } from '@/i18n.js';
 import { instance } from '@/instance.js';
-import { $i, iAmModerator } from '@/account.js';
+import { $i, iAmModerator } from '@/i.js';
 import { dateString } from '@/filters/date.js';
-import { confetti } from '@/scripts/confetti.js';
-import { misskeyApi, misskeyApiGet } from '@/scripts/misskey-api.js';
-import { isFollowingVisibleForMe, isFollowersVisibleForMe } from '@/scripts/isFfVisibleForMe.js';
-import { useRouter } from '@/router/supplier.js';
-import { defaultStore } from '@/store.js';
+import { confetti } from '@/utility/confetti.js';
+import { misskeyApi, misskeyApiGet } from '@/utility/misskey-api.js';
+import { isFollowingVisibleForMe, isFollowersVisibleForMe } from '@/utility/isFfVisibleForMe.js';
+import { useRouter } from '@/router.js';
+import { getStaticImageUrl } from '@/utility/media-proxy.js';
+import MkSparkle from '@/components/MkSparkle.vue';
+import { prefer } from '@/preferences.js';
 import MkLink from '@/components/MkLink.vue';
 import MkContainer from '@/components/MkContainer.vue';
 
@@ -269,6 +280,10 @@ const props = withDefaults(defineProps<{
 	disableNotes: false,
 });
 
+const emit = defineEmits<{
+	(ev: 'unfoldFiles'): void;
+}>();
+
 const router = useRouter();
 
 const user = ref(props.user);
@@ -281,12 +296,11 @@ const memoTextareaEl = ref<null | HTMLElement>(null);
 const memoDraft = ref(props.user.memo);
 const isEditingMemo = ref(false);
 const moderationNote = ref(props.user.moderationNote);
+const hideModerationNote = !iAmModerator || (prefer.s.privateMode && prefer.s.hideModerationLog);
+const hideRoleList = prefer.s.privateMode && prefer.s.hideRoleList;
+const hideCounters = prefer.s.hideCounters;
 const editModerationNote = ref(false);
-const movedFromLog = ref<null | {movedFromId:string;}[]>(null);
-
-const hideModerationNote = !iAmModerator || (defaultStore.state.privateMode && defaultStore.state.hideModerationLog);
-const hideRoleList = defaultStore.state.privateMode && defaultStore.state.hideRoleList;
-const hideCounters = defaultStore.state.hideCounters;
+const movedFromLog = ref<null | { movedFromId: string; }[]>(null);
 
 watch(moderationNote, async () => {
 	await misskeyApi('admin/update-user-note', { userId: props.user.id, text: moderationNote.value });
@@ -294,13 +308,18 @@ watch(moderationNote, async () => {
 
 const style = computed(() => {
 	if (props.user.bannerUrl == null) return {};
-	return {
-		backgroundImage: `url(${ props.user.bannerUrl })`,
-	};
+	if (prefer.s.disableShowingAnimatedImages) {
+		return {
+			backgroundImage: `url(${ getStaticImageUrl(props.user.bannerUrl) })`,
+		};
+	} else {
+		return {
+			backgroundImage: `url(${ props.user.bannerUrl })`,
+		};
+	}
 });
 
 const age = computed(() => {
-	if (props.user.birthday == null) return 0;
 	return calcAge(props.user.birthday);
 });
 
@@ -324,7 +343,7 @@ function parallaxLoop() {
 }
 
 function parallax() {
-	const banner = bannerEl.value as any;
+	const banner = bannerEl.value;
 	if (banner == null) return;
 
 	const top = getScrollPosition(rootEl.value);
@@ -363,7 +382,11 @@ async function fetchSkebStatus() {
 		return;
 	}
 
-	userSkebStatus.value = await misskeyApiGet('users/get-skeb-status', { userId: props.user.id });
+	try {
+		userSkebStatus.value = await misskeyApiGet('users/get-skeb-status', { userId: props.user.id });
+	} catch {
+		userSkebStatus.value = null;
+	}
 }
 
 function buildSkebStatus(): string {
@@ -438,9 +461,9 @@ onUnmounted(() => {
 		> .punished {
 			font-size: 0.8em;
 			padding: 16px;
-			background: var(--infoWarnBg);
-			color: var(--infoWarnFg);
-			border-radius: var(--radius);
+			background: var(--MI_THEME-infoWarnBg);
+			color: var(--MI_THEME-infoWarnFg);
+			border-radius: var(--MI-radius);
 			overflow: clip;
 		}
 
@@ -490,8 +513,8 @@ onUnmounted(() => {
 						position: absolute;
 						top: 12px;
 						right: 12px;
-						-webkit-backdrop-filter: var(--blur, blur(8px));
-						backdrop-filter: var(--blur, blur(8px));
+						-webkit-backdrop-filter: var(--MI-blur, blur(8px));
+						backdrop-filter: var(--MI-blur, blur(8px));
 						background: rgba(0, 0, 0, 0.2);
 						padding: 8px;
 						border-radius: 24px;
@@ -522,11 +545,12 @@ onUnmounted(() => {
 
 						> .name {
 							display: block;
-							margin: 0;
+							margin: -10px;
+							padding: 10px;
 							line-height: 32px;
 							font-weight: bold;
 							font-size: 1.8em;
-							text-shadow: 0 0 8px #000;
+							filter: drop-shadow(0 0 4px #000);
 						}
 
 						> .bottom {
@@ -544,8 +568,8 @@ onUnmounted(() => {
 							> .add-note-button {
 								background: rgba(0, 0, 0, 0.2);
 								color: #fff;
-								-webkit-backdrop-filter: var(--blur, blur(8px));
-								backdrop-filter: var(--blur, blur(8px));
+								-webkit-backdrop-filter: var(--MI-blur, blur(8px));
+								backdrop-filter: var(--MI-blur, blur(8px));
 								border-radius: 24px;
 								padding: 4px 8px;
 								font-size: 80%;
@@ -559,7 +583,7 @@ onUnmounted(() => {
 					text-align: center;
 					padding: 50px 8px 16px 8px;
 					font-weight: bold;
-					border-bottom: solid 0.5px var(--divider);
+					border-bottom: solid 0.5px var(--MI_THEME-divider);
 
 					> .bottom {
 						> * {
@@ -581,6 +605,22 @@ onUnmounted(() => {
 					box-shadow: 1px 1px 3px rgba(#000, 0.2);
 				}
 
+				> .followedMessage {
+					padding: 24px 24px 0 154px;
+
+					> .fukidashi {
+						display: block;
+						--fukidashi-bg: color-mix(in srgb, var(--MI_THEME-accent), var(--MI_THEME-panel) 85%);
+						--fukidashi-radius: 16px;
+						font-size: 0.9em;
+
+						.messageHeader {
+							opacity: 0.7;
+							font-size: 0.85em;
+						}
+					}
+				}
+
 				> .roles {
 					padding: 24px 24px 0 154px;
 					font-size: 0.95em;
@@ -589,7 +629,7 @@ onUnmounted(() => {
 					gap: 8px;
 
 					> .role {
-						border: solid 1px var(--color, var(--divider));
+						border: solid 1px var(--color, var(--MI_THEME-divider));
 						border-radius: 999px;
 						margin-right: 4px;
 						padding: 3px 8px;
@@ -603,15 +643,15 @@ onUnmounted(() => {
 				> .memo {
 					margin: 12px 24px 0 154px;
 					background: transparent;
-					color: var(--fg);
-					border: 1px solid var(--divider);
+					color: var(--MI_THEME-fg);
+					border: 1px solid var(--MI_THEME-divider);
 					border-radius: 8px;
 					padding: 8px;
 					line-height: 0;
 
 					> .heading {
 						text-align: left;
-						color: var(--fgTransparent);
+						color: color(from var(--MI_THEME-fg) srgb r g b / 0.5);
 						line-height: 1.5;
 						font-size: 85%;
 					}
@@ -626,7 +666,7 @@ onUnmounted(() => {
 						height: auto;
 						min-height: 0;
 						line-height: 1.5;
-						color: var(--fg);
+						color: var(--MI_THEME-fg);
 						overflow: hidden;
 						background: transparent;
 						font-family: inherit;
@@ -646,7 +686,7 @@ onUnmounted(() => {
 				> .fields {
 					padding: 24px;
 					font-size: 0.9em;
-					border-top: solid 0.5px var(--divider);
+					border-top: solid 0.5px var(--MI_THEME-divider);
 					margin-top: 0.5px;
 
 					> .field {
@@ -684,14 +724,14 @@ onUnmounted(() => {
 				> .status {
 					display: flex;
 					padding: 24px;
-					border-top: solid 0.5px var(--divider);
+					border-top: solid 0.5px var(--MI_THEME-divider);
 
 					> a {
 						flex: 1;
 						text-align: center;
 
 						&.active {
-							color: var(--accent);
+							color: var(--MI_THEME-accent);
 						}
 
 						&:hover {
@@ -713,7 +753,7 @@ onUnmounted(() => {
 
 		> .contents {
 			> .content {
-				margin-bottom: var(--margin);
+				margin-bottom: var(--MI-margin);
 			}
 		}
 	}
@@ -730,7 +770,7 @@ onUnmounted(() => {
 		> .sub {
 			max-width: 350px;
 			min-width: 350px;
-			margin-left: var(--margin);
+			margin-left: var(--MI-margin);
 		}
 	}
 }
@@ -762,6 +802,10 @@ onUnmounted(() => {
 					width: 92px;
 					height: 92px;
 					margin: auto;
+				}
+
+				> .followedMessage {
+					padding: 16px 16px 0 16px;
 				}
 
 				> .roles {
@@ -803,14 +847,14 @@ onUnmounted(() => {
 
 <style lang="scss" module>
 .tl {
-	background: var(--bg);
-	border-radius: var(--radius);
+	background: var(--MI_THEME-bg);
+	border-radius: var(--MI-radius);
 	overflow: clip;
 }
 
 .verifiedLink {
 	margin-left: 4px;
-	color: var(--success);
+	color: var(--MI_THEME-success);
 }
 
 .skebAcceptable,
@@ -844,7 +888,7 @@ onUnmounted(() => {
 	flex-wrap: wrap;
 	justify-content: space-around;
 	flex-direction: column;
-	background: var(--panel);
+	background: var(--MI_THEME-panel);
 	gap: 8px;
 	margin-bottom: 8px;
 

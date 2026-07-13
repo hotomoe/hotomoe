@@ -5,7 +5,7 @@
 
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, ChannelFollowingsRepository } from '@/models/_.js';
+import type { NotesRepository, ChannelFollowingsRepository, MiMeta } from '@/models/_.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { QueryService } from '@/core/QueryService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
@@ -15,7 +15,6 @@ import { IdService } from '@/core/IdService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { MiLocalUser } from '@/models/User.js';
-import { MetaService } from '@/core/MetaService.js';
 import { FanoutTimelineEndpointService } from '@/core/FanoutTimelineEndpointService.js';
 
 export const meta = {
@@ -49,6 +48,7 @@ export const paramDef = {
 		includeLocalRenotes: { type: 'boolean', default: true },
 		withFiles: { type: 'boolean', default: false },
 		withRenotes: { type: 'boolean', default: true },
+		dimension: { type: 'integer', minimum: 0, nullable: true },
 	},
 	required: [],
 } as const;
@@ -56,6 +56,9 @@ export const paramDef = {
 @Injectable()
 export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-disable-line import/no-default-export
 	constructor(
+		@Inject(DI.meta)
+		private serverSettings: MiMeta,
+
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
@@ -69,15 +72,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private fanoutTimelineEndpointService: FanoutTimelineEndpointService,
 		private userFollowingService: UserFollowingService,
 		private queryService: QueryService,
-		private metaService: MetaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const untilId = ps.untilId ?? (ps.untilDate ? this.idService.gen(ps.untilDate!) : null);
 			const sinceId = ps.sinceId ?? (ps.sinceDate ? this.idService.gen(ps.sinceDate!) : null);
-
-			const serverSettings = await this.metaService.fetch();
-
-			if (!serverSettings.enableFanoutTimeline) {
+			const viewerDimension = ps.dimension ?? 0;
+			if (!this.serverSettings.enableFanoutTimeline) {
 				const timeline = await this.getFromDb({
 					untilId,
 					sinceId,
@@ -93,7 +93,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					this.activeUsersChart.read(me);
 				});
 
-				return await this.noteEntityService.packMany(timeline, me);
+				return await this.noteEntityService.packMany(
+					timeline,
+					me,
+					{ viewerDimension },
+				);
 			}
 
 			const [
@@ -102,19 +106,20 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				this.cacheService.userFollowingsCache.fetch(me.id),
 			]);
 
-			const timeline = this.fanoutTimelineEndpointService.timeline({
+			const timeline = await this.fanoutTimelineEndpointService.timeline({
 				untilId,
 				sinceId,
 				limit: ps.limit,
 				allowPartial: ps.allowPartial,
 				me,
-				useDbFallback: serverSettings.enableFanoutTimelineDbFallback,
+				viewerDimension,
+				useDbFallback: this.serverSettings.enableFanoutTimelineDbFallback,
 				redisTimelines: ps.withFiles ? [`homeTimelineWithFiles:${me.id}`] : [`homeTimeline:${me.id}`],
 				alwaysIncludeMyNotes: true,
 				excludePureRenotes: !ps.withRenotes,
 				noteFilter: note => {
-					if (note.reply && (me.id !== note.reply.userId) && (note.reply.visibility === 'followers')) {
-						if (!Object.hasOwn(followings, note.reply.userId)) return false;
+					if (note.reply && note.reply.visibility === 'followers') {
+						if (!Object.hasOwn(followings, note.reply.userId) && note.reply.userId !== me.id) return false;
 					}
 
 					return true;
@@ -200,8 +205,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		}));
 
 		this.queryService.generateVisibilityQuery(query, me);
-		this.queryService.generateMutedUserQuery(query, me);
-		this.queryService.generateBlockedUserQuery(query, me);
+		this.queryService.generateBlockedHostQueryForNote(query);
+		this.queryService.generateMutedUserQueryForNotes(query, me);
+		this.queryService.generateBlockedUserQueryForNotes(query, me);
 		this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
 
 		if (ps.includeMyRenotes === false) {

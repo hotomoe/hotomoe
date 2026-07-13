@@ -6,6 +6,10 @@ on:
       - hotomoe
   pull_request:
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   dockle:
     runs-on: ubuntu-latest
@@ -21,7 +25,7 @@ jobs:
           context: .
           push: false
           provenance: false
-          cache-from: type=registry,ref=ghcr.io/hotomoe/hotomoe:hotomoe-buildcache
+          cache-from: type=registry,ref=ghcr.io/hotomoe/hotomoe:buildcache-hotomoe
           tags: |
             misskey:scan
       - name: Run dockle

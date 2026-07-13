@@ -14,6 +14,7 @@ import type { MiDriveFile } from '@/models/DriveFile.js';
 import type { MiNote } from '@/models/Note.js';
 import type { MiChannel } from '@/models/Channel.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
+import { postingLangCodes } from '@/misc/langmap.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
@@ -165,7 +166,7 @@ export const meta = {
 			message: 'You cannot schedule notes any more.',
 			code: 'TOO_MANY_SCHEDULED_NOTES',
 			kind: 'permission',
-			id: '9e33041f-f6fb-414d-98c1-591466e55287'
+			id: '9e33041f-f6fb-414d-98c1-591466e55287',
 		},
 
 		cannotScheduleToFarFuture: {
@@ -194,6 +195,7 @@ export const paramDef = {
 		} },
 		cw: { type: 'string', nullable: true, minLength: 1, maxLength: 100 },
 		localOnly: { type: 'boolean', default: false },
+		dimension: { type: 'integer', nullable: true, minimum: 0 },
 		reactionAcceptance: { type: 'string', nullable: true, enum: [null, 'likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote'], default: null },
 		noExtractMentions: { type: 'boolean', default: false },
 		noExtractHashtags: { type: 'boolean', default: false },
@@ -201,6 +203,7 @@ export const paramDef = {
 		replyId: { type: 'string', format: 'misskey:id', nullable: true },
 		renoteId: { type: 'string', format: 'misskey:id', nullable: true },
 		channelId: { type: 'string', format: 'misskey:id', nullable: true },
+		lang: { type: 'string', enum: [null, ...postingLangCodes] as string[], nullable: true },
 
 		// anyOf内にバリデーションを書いても最初の一つしかチェックされない
 		// See https://github.com/misskey-dev/misskey/pull/10082
@@ -319,7 +322,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				if (note) {
 					logger.info('The request has already been processed.', { noteId: note.id });
 					if (ps.noCreatedNote) return;
-					else return { createdNote: await this.noteEntityService.pack(note, me) };
+					else return {
+						createdNote: await this.noteEntityService.pack(note, me, {
+							skipLanguageCheck: true,
+							viewerDimension: null,
+						}),
+					};
 				}
 			}
 
@@ -420,7 +428,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					throw new ApiError(meta.errors.cannotReplyToInvisibleNote);
 				} else if (reply.visibility === 'specified' && ps.visibility !== 'specified') {
 					throw new ApiError(meta.errors.cannotReplyToSpecifiedVisibilityNoteWithExtendedVisibility);
-				} else if (me.isBot && reply.user!.isBot) {
+				} else if (me.isBot && reply.user!.isBot && reply.userId !== me.id) {
 					throw new ApiError(meta.errors.replyingToAnotherBot);
 				}
 
@@ -488,6 +496,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					renote,
 					cw: ps.cw,
 					localOnly: ps.localOnly,
+					dimension: ps.dimension ?? undefined,
 					reactionAcceptance: ps.reactionAcceptance,
 					visibility: ps.visibility,
 					visibleUsers,
@@ -495,6 +504,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 					apMentions: ps.noExtractMentions ? [] : undefined,
 					apHashtags: ps.noExtractHashtags ? [] : undefined,
 					apEmojis: ps.noExtractEmojis ? [] : undefined,
+					lang: ps.lang ?? undefined,
 				});
 
 				// 1分間、リクエストの処理結果を記録
@@ -503,7 +513,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				if (!scheduledAt) {
 					logger.info('Successfully created a note.', { noteId: note.id });
 				} else {
-					this.notificationService.createNotification(me.id, "noteScheduled", {
+					this.notificationService.createNotification(me.id, 'noteScheduled', {
 						draftId: note.id,
 					});
 					logger.info('Successfully scheduled a note.', { draftId: note.id });
@@ -511,7 +521,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 				if (ps.noCreatedNote || scheduledAt) return;
 				else return {
-					createdNote: await this.noteEntityService.pack(note as MiNote, me),
+					createdNote: await this.noteEntityService.pack(note as MiNote, me, {
+						skipLanguageCheck: true,
+						viewerDimension: null,
+					}),
 				};
 			} catch (err) {
 				// エラーが発生した場合、まだ処理中として記録されている場合はリクエストの処理結果を削除
