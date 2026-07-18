@@ -24,7 +24,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, onUnmounted, useTemplateRef } from 'vue';
+import { nextTick, onMounted, onUnmounted, useTemplateRef, watch } from 'vue';
 import * as os from '@/os.js';
 import { calcPopupPosition } from '@/utility/popup-position.js';
 import { prefer } from '@/preferences.js';
@@ -71,23 +71,43 @@ function setPosition() {
 	el.value.style.top = data.top + 'px';
 }
 
-let loopHandler;
+let loopHandler: number | undefined;
+let unmounted = false;
+
+// 位置追従ループは表示中のみ回す(非表示のままマウントされ続けた場合やアンマウント後にループが残るとCPUを食い続けるため)
+function startLoop() {
+	if (unmounted || loopHandler != null) return;
+
+	const loop = () => {
+		setPosition();
+		loopHandler = window.requestAnimationFrame(loop);
+	};
+
+	loop();
+}
+
+function stopLoop() {
+	if (loopHandler != null) {
+		window.cancelAnimationFrame(loopHandler);
+		loopHandler = undefined;
+	}
+}
+
+watch(() => props.showing, (showing) => {
+	if (showing) startLoop();
+	else stopLoop();
+});
 
 onMounted(() => {
 	nextTick(() => {
 		setPosition();
-
-		const loop = () => {
-			setPosition();
-			loopHandler = window.requestAnimationFrame(loop);
-		};
-
-		loop();
+		if (props.showing) startLoop();
 	});
 });
 
 onUnmounted(() => {
-	window.cancelAnimationFrame(loopHandler);
+	unmounted = true;
+	stopLoop();
 });
 </script>
 

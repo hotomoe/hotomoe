@@ -52,6 +52,21 @@ export default {
 			if (self.text == null) return;
 
 			const showing = ref(true);
+
+			// popupのマウントは非同期なので、await後に_closeを設定するとawait中のmouseleaveを取りこぼしてツールチップが閉じなくなる
+			self._close = () => {
+				showing.value = false;
+			};
+
+			// 表示中に対象要素がDOMから消えた場合(タイムラインのノート再利用など)、mouseleaveが発火しないため自前で閉じる
+			self.checkTimer = window.setInterval(() => {
+				if (!window.document.body.contains(el)) {
+					window.clearTimeout(self.showTimer);
+					window.clearTimeout(self.hideTimer);
+					self.close();
+				}
+			}, 1000);
+
 			await popup(defineAsyncComponent(() => import('@/components/MkTooltip.vue')), {
 				showing,
 				text: self.text,
@@ -59,10 +74,6 @@ export default {
 				direction: binding.modifiers.left ? 'left' : binding.modifiers.right ? 'right' : binding.modifiers.top ? 'top' : binding.modifiers.bottom ? 'bottom' : 'top',
 				targetElement: el,
 			}, {}, 'closed');
-
-			self._close = () => {
-				showing.value = false;
-			};
 		};
 
 		el.addEventListener('selectstart', ev => {
@@ -102,6 +113,9 @@ export default {
 
 	unmounted(el, binding, vn) {
 		const self = el._tooltipDirective_;
-		window.clearInterval(self.checkTimer);
+		// 表示中(または表示待ち)のままアンマウントされた場合に閉じないと、ツールチップが永久にDOMに残る
+		window.clearTimeout(self.showTimer);
+		window.clearTimeout(self.hideTimer);
+		self.close();
 	},
 } as Directive;
