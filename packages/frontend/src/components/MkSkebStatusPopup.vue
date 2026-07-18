@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, onMounted, onUnmounted, shallowRef } from 'vue';
+import { nextTick, onMounted, onUnmounted, shallowRef, watch } from 'vue';
 import * as Misskey from 'misskey-js';
 import * as os from '@/os.js';
 import { i18n } from '@/i18n.js';
@@ -66,23 +66,43 @@ function setPosition() {
 	el.value.style.top = data.top + 'px';
 }
 
-let loopHandler;
+let loopHandler: number | undefined;
+let unmounted = false;
+
+// 位置追従ループは表示中のみ回す(非表示のままマウントされ続けた場合やアンマウント後にループが残るとCPUを食い続けるため)
+function startLoop() {
+	if (unmounted || loopHandler != null) return;
+
+	const loop = () => {
+		setPosition();
+		loopHandler = window.requestAnimationFrame(loop);
+	};
+
+	loop();
+}
+
+function stopLoop() {
+	if (loopHandler != null) {
+		window.cancelAnimationFrame(loopHandler);
+		loopHandler = undefined;
+	}
+}
+
+watch(() => props.showing, (showing) => {
+	if (showing) startLoop();
+	else stopLoop();
+});
 
 onMounted(() => {
 	nextTick(() => {
 		setPosition();
-
-		const loop = () => {
-			setPosition();
-			loopHandler = window.requestAnimationFrame(loop);
-		};
-
-		loop();
+		if (props.showing) startLoop();
 	});
 });
 
 onUnmounted(() => {
-	window.cancelAnimationFrame(loopHandler);
+	unmounted = true;
+	stopLoop();
 });
 </script>
 
