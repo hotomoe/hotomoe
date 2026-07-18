@@ -117,7 +117,16 @@ export class InboxProcessorService implements OnApplicationShutdown {
 		}
 
 		// HTTP-Signatureの検証
-		const httpSignatureValidated = httpSignature.verifySignature(signature, authUser.key.keyPem);
+		let httpSignatureValidated = httpSignature.verifySignature(signature, authUser.key.keyPem);
+
+		// 検証に失敗した場合、リモートで鍵がローテーションされていてDB上の鍵が古い可能性があるため、鍵を再取得して一度だけ再検証する
+		if (!httpSignatureValidated && authUser.user.uri === activity.actor) {
+			const refetchedKey = await this.apDbResolverService.refetchPublicKeyForApId(authUser.user);
+			if (refetchedKey != null) {
+				authUser.key = refetchedKey;
+				httpSignatureValidated = httpSignature.verifySignature(signature, refetchedKey.keyPem);
+			}
+		}
 
 		// また、signatureのsignerは、activity.actorと一致する必要がある
 		if (!httpSignatureValidated || authUser.user.uri !== activity.actor) {

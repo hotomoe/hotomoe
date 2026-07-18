@@ -106,6 +106,19 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
+	private isTrustedInboxRelay(request: FastifyRequest): boolean {
+		const secret = this.config.inboxRelaySharedSecret;
+		if (secret == null || secret.length === 0) return false;
+
+		const header = request.headers['x-inbox-relay-auth'];
+		if (typeof header !== 'string') return false;
+
+		const a = Buffer.from(header);
+		const b = Buffer.from(secret);
+		return a.length === b.length && crypto.timingSafeEqual(a, b);
+	}
+
+	@bindThis
 	private async inbox(request: FastifyRequest, reply: FastifyReply) {
 		if (this.meta.federation === 'none') {
 			reply.code(403);
@@ -115,8 +128,15 @@ export class ActivityPubServerService {
 		const userId = (request.params as { user: string; } | undefined)?.user;
 		let signature;
 
+		// 認証されたinbox relayからの再送はDateヘッダーが古くても受け付ける(署名・digest等の検証は通常どおり行われる)
+		const isTrustedRelay = this.isTrustedInboxRelay(request);
+
 		try {
-			signature = httpSignature.parseRequest(request.raw, { 'headers': ['(request-target)', 'host', 'date'], authorizationHeaderName: 'signature' });
+			signature = httpSignature.parseRequest(request.raw, {
+				'headers': ['(request-target)', 'host', 'date'],
+				authorizationHeaderName: 'signature',
+				...(isTrustedRelay ? { clockSkew: Number.MAX_SAFE_INTEGER } : {}),
+			});
 		} catch (e) {
 			reply.code(401);
 			return;

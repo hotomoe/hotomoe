@@ -135,6 +135,7 @@ type Source = {
 	videoThumbnailGenerator?: string;
 
 	bypassRateLimit?: { header: string; value: string }[];
+	inboxRelaySharedSecret?: string;
 
 	remapDriveFileUrlForActivityPub?: { target: string; replacement: string }[];
 	signToActivityPubGet?: boolean;
@@ -257,6 +258,7 @@ export type Config = {
 	externalMediaProxyEnabled: boolean;
 	videoThumbnailGenerator: string | null;
 	bypassRateLimit: { header: string; value: string }[] | undefined;
+	inboxRelaySharedSecret: string | undefined;
 	redis: RedisOptions & RedisOptionsSource;
 	redisForPubsub: RedisOptions & RedisOptionsSource;
 	redisForSystemQueue: RedisOptions & RedisOptionsSource;
@@ -401,6 +403,7 @@ export function loadConfig(): Config {
 			config.videoThumbnailGenerator.endsWith('/') ? config.videoThumbnailGenerator.substring(0, config.videoThumbnailGenerator.length - 1) : config.videoThumbnailGenerator
 			: null,
 		bypassRateLimit: config.bypassRateLimit,
+		inboxRelaySharedSecret: config.inboxRelaySharedSecret,
 		userAgent: `Misskey/${version} (${config.url})`,
 		frontendEntry: frontendManifest['src/_boot_.ts'],
 		frontendManifestExists: frontendManifestExists,

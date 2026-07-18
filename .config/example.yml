@@ -332,6 +332,13 @@ proxyRemoteFiles: true
 # Sign to ActivityPub GET request (default: true)
 signToActivityPubGet: true
 
+# Shared secret for the trusted inbox relay.
+# Requests to /inbox with a matching X-Inbox-Relay-Auth header skip the
+# HTTP Signature Date freshness (clock skew) check, allowing the relay to
+# replay deliveries queued during an outage. All other signature checks
+# (signature, digest, host) still apply. Default: undefined (disabled)
+#inboxRelaySharedSecret: 'changeme'
+
 # Whether moderators/admins are required to have 2FA enabled
 # to call moderation APIs (hotomoe security policy). Default: true
 #requireModerator2fa: true
