@@ -13,7 +13,7 @@ import { CacheService } from '@/core/CacheService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { MiNote } from '@/models/Note.js';
 import { bindThis } from '@/decorators.js';
-import { MiLocalUser, MiRemoteUser } from '@/models/User.js';
+import type { MiLocalUser, MiRemoteUser } from '@/models/User.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { IObject } from './type.js';
@@ -38,6 +38,7 @@ export type UriParseResult = {
 export class ApDbResolverService implements OnApplicationShutdown {
 	private publicKeyCache: MemoryKVCache<MiUserPublickey | null>;
 	private publicKeyByUserIdCache: MemoryKVCache<MiUserPublickey | null>;
+	private refetchCooldownCache: MemoryKVCache<boolean>;
 
 	constructor(
 		@Inject(DI.config)
@@ -58,6 +59,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	) {
 		this.publicKeyCache = new MemoryKVCache<MiUserPublickey | null>(1000 * 60 * 60 * 12); // 12h
 		this.publicKeyByUserIdCache = new MemoryKVCache<MiUserPublickey | null>(1000 * 60 * 60 * 12); // 12h
+		this.refetchCooldownCache = new MemoryKVCache<boolean>(1000 * 60 * 10); // 10m
 	}
 
 	@bindThis
@@ -174,10 +176,35 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		};
 	}
 
+	/**
+	 * リモートで鍵がローテーションされた可能性があるとき、Personを再取得して公開鍵を更新する。
+	 * リモートへの問い合わせを伴うため、同一ユーザーに対する再取得は10分に1回に制限される。
+	 * @returns 再取得後の公開鍵 (再取得できなかった・クールダウン中はnull)
+	 */
+	@bindThis
+	public async refetchPublicKeyForApId(user: MiRemoteUser): Promise<MiUserPublickey | null> {
+		if (this.refetchCooldownCache.get(user.id) != null) return null;
+		this.refetchCooldownCache.set(user.id, true);
+
+		try {
+			await this.apPersonService.updatePerson(user.uri);
+		} catch {
+			return null;
+		}
+
+		const key = await this.userPublickeysRepository.findOneBy({ userId: user.id });
+		if (key != null) {
+			this.publicKeyCache.set(key.keyId, key);
+			this.publicKeyByUserIdCache.set(user.id, key);
+		}
+		return key;
+	}
+
 	@bindThis
 	public dispose(): void {
 		this.publicKeyCache.dispose();
 		this.publicKeyByUserIdCache.dispose();
+		this.refetchCooldownCache.dispose();
 	}
 
 	@bindThis
