@@ -9,6 +9,7 @@ import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DriveService } from '@/core/DriveService.js';
+import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -72,7 +73,7 @@ export const paramDef = {
 		folderId: { type: 'string', format: 'misskey:id', nullable: true },
 		name: { type: 'string' },
 		isSensitive: { type: 'boolean' },
-		comment: { type: 'string', nullable: true, maxLength: 512 },
+		comment: { type: 'string', nullable: true, maxLength: DB_MAX_IMAGE_COMMENT_LENGTH },
 	},
 	required: ['fileId'],
 } as const;
