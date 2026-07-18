@@ -99,9 +99,10 @@ const tick = () => {
 	const yearNumer = now.getTime() - new Date(ny, 0, 1).getTime();
 	const yearDenom = new Date(ny + 1, 0, 1).getTime() - new Date(ny, 0, 1).getTime();
 
-	dayP.value = dayNumer / dayDenom * 100;
-	monthP.value = monthNumer / monthDenom * 100;
-	yearP.value = yearNumer / yearDenom * 100;
+	// 表示精度(小数第1位)より細かく毎秒値を変えると、メーターのwidth transitionが毎秒再始動してlayout/paintが走り続けるため丸める
+	dayP.value = Math.round(dayNumer / dayDenom * 1000) / 10;
+	monthP.value = Math.round(monthNumer / monthDenom * 1000) / 10;
+	yearP.value = Math.round(yearNumer / yearDenom * 1000) / 10;
 
 	isHoliday.value = now.getDay() === 0 || now.getDay() === 6;
 };
