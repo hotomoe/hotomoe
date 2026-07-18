@@ -87,6 +87,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 			</p>
 			<div v-show="appearNote.cw == null || showContent">
 				<span v-if="appearNote.isHidden" style="opacity: 0.5">({{ i18n.ts.private }})</span>
+				<span v-if="appearNote.deletedAt" style="opacity: 0.5">({{ i18n.ts.deletedNote }})</span>
 				<MkA v-if="appearNote.replyId" :class="$style.noteReplyTarget" :to="`/notes/${appearNote.replyId}`"><i class="ti ti-arrow-back-up"></i></MkA>
 				<Mfm
 					v-if="appearNote.text"
@@ -125,7 +126,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</MkA>
 			</div>
 			<MkReactionsViewer v-if="appearNote.reactionAcceptance !== 'likeOnly'" ref="reactionsViewer" style="margin-top: 6px;" :note="appearNote"/>
-			<button class="_button" :class="$style.noteFooterButton" @click="reply()">
+			<button class="_button" :class="$style.noteFooterButton" :disabled="appearNote.deletedAt != null" @click="reply()">
 				<i class="ti ti-arrow-back-up"></i>
 				<p v-if="prefer.s.showRepliesCount && appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.repliesCount) }}</p>
 			</button>
@@ -134,6 +135,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				ref="renoteButton"
 				class="_button"
 				:class="$style.noteFooterButton"
+				:disabled="appearNote.deletedAt != null"
 				@mousedown.prevent="renote()"
 			>
 				<i class="ti ti-repeat"></i>
@@ -142,20 +144,20 @@ SPDX-License-Identifier: AGPL-3.0-only
 			<button v-else class="_button" :class="$style.noteFooterButton" disabled>
 				<i class="ti ti-ban"></i>
 			</button>
-			<button ref="reactButton" :class="$style.noteFooterButton" class="_button" @click="toggleReact()">
+			<button ref="reactButton" :class="$style.noteFooterButton" class="_button" :disabled="appearNote.deletedAt != null" @click="toggleReact()">
 				<i v-if=" (appearNote.reactionAcceptance === 'likeOnly' || !$i?.policies.canUseReaction) && appearNote.myReaction != null " class="ti-filled ti-filled-heart" style="color: var(--MI_THEME-love);"></i>
 				<i v-else-if="appearNote.myReaction != null " class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
 				<i v-else-if="appearNote.reactionAcceptance === 'likeOnly' || $i && !$i.policies.canUseReaction" class="ti ti-heart"></i>
 				<i v-else class="ti ti-plus"></i>
 				<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && appearNote.reactionCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.reactionCount) }}</p>
 			</button>
-			<button v-if="prefer.s.showTranslateButtonInNoteFooter && $i?.policies.canUseTranslator && instance.translatorAvailable" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="translate()">
+			<button v-if="prefer.s.showTranslateButtonInNoteFooter && $i?.policies.canUseTranslator && instance.translatorAvailable" class="_button" :class="$style.noteFooterButton" :disabled="appearNote.deletedAt != null" @mousedown.prevent="translate()">
 				<i class="ti ti-language-hiragana"></i>
 			</button>
-			<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="clip()">
+			<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" class="_button" :class="$style.noteFooterButton" :disabled="appearNote.deletedAt != null" @mousedown.prevent="clip()">
 				<i class="ti ti-paperclip"></i>
 			</button>
-			<button ref="menuButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="showMenu()">
+			<button ref="menuButton" class="_button" :class="$style.noteFooterButton" :disabled="appearNote.deletedAt != null" @mousedown.prevent="showMenu()">
 				<i class="ti ti-dots"></i>
 			</button>
 		</footer>
