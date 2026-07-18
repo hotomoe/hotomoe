@@ -7,7 +7,7 @@ import { Brackets, In, IsNull, Not } from 'typeorm';
 import { Injectable, Inject } from '@nestjs/common';
 import type { MiUser, MiLocalUser, MiRemoteUser } from '@/models/User.js';
 import type { MiNote, IMentionedRemoteUsers } from '@/models/Note.js';
-import type { InstancesRepository, MiMeta, NotesRepository, UsersRepository } from '@/models/_.js';
+import type { ClipNotesRepository, InstancesRepository, MiMeta, NoteFavoritesRepository, NoteReactionsRepository, NotesRepository, PollsRepository, PollVotesRepository, UserNotePiningsRepository, UsersRepository } from '@/models/_.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { DI } from '@/di-symbols.js';
@@ -42,6 +42,24 @@ export class NoteDeleteService {
 		@Inject(DI.instancesRepository)
 		private instancesRepository: InstancesRepository,
 
+		@Inject(DI.pollsRepository)
+		private pollsRepository: PollsRepository,
+
+		@Inject(DI.pollVotesRepository)
+		private pollVotesRepository: PollVotesRepository,
+
+		@Inject(DI.noteReactionsRepository)
+		private noteReactionsRepository: NoteReactionsRepository,
+
+		@Inject(DI.noteFavoritesRepository)
+		private noteFavoritesRepository: NoteFavoritesRepository,
+
+		@Inject(DI.clipNotesRepository)
+		private clipNotesRepository: ClipNotesRepository,
+
+		@Inject(DI.userNotePiningsRepository)
+		private userNotePiningsRepository: UserNotePiningsRepository,
+
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 		private relayService: RelayService,
@@ -61,8 +79,11 @@ export class NoteDeleteService {
 	 * @param note 投稿
 	 */
 	async delete(user: { id: MiUser['id']; uri: MiUser['uri']; host: MiUser['host']; isBot: MiUser['isBot']; }, note: MiNote, quiet = false, deleter?: MiUser) {
+		if (note.deletedAt != null) return;
+
 		const deletedAt = new Date();
 		const cascadingNotes = await this.findCascadingNotes(note);
+		const hasChildrenNotes = await this.hasChildrenNotes(note);
 
 		if (note.replyId) {
 			await this.notesRepository.decrement({ id: note.replyId }, 'repliesCount', 1);
@@ -92,12 +113,14 @@ export class NoteDeleteService {
 			}
 
 			// also deliver delete activity to cascaded notes
-			const federatedLocalCascadingNotes = (cascadingNotes).filter(note => !note.localOnly && note.userHost == null); // filter out local-only notes
-			for (const cascadingNote of federatedLocalCascadingNotes) {
-				if (!cascadingNote.user) continue;
-				if (!this.userEntityService.isLocalUser(cascadingNote.user)) continue;
-				const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${cascadingNote.id}`), cascadingNote.user));
-				this.deliverToConcerned(cascadingNote.user, cascadingNote, content);
+			if (!hasChildrenNotes) {
+				const federatedLocalCascadingNotes = (cascadingNotes).filter(note => !note.localOnly && note.userHost == null); // filter out local-only notes
+				for (const cascadingNote of federatedLocalCascadingNotes) {
+					if (!cascadingNote.user) continue;
+					if (!this.userEntityService.isLocalUser(cascadingNote.user)) continue;
+					const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${cascadingNote.id}`), cascadingNote.user));
+					this.deliverToConcerned(cascadingNote.user, cascadingNote, content);
+				}
 			}
 			//#endregion
 
@@ -118,15 +141,60 @@ export class NoteDeleteService {
 			}
 		}
 
-		for (const cascadingNote of cascadingNotes) {
-			this.searchService.unindexNote(cascadingNote);
+		if (!hasChildrenNotes) {
+			for (const cascadingNote of cascadingNotes) {
+				this.searchService.unindexNote(cascadingNote);
+			}
 		}
 		this.searchService.unindexNote(note);
 
-		await this.notesRepository.delete({
-			id: note.id,
-			userId: user.id,
-		});
+		if (hasChildrenNotes) {
+			// 返信や引用が存在する場合は、スレッド構造を保持するために内容を消去したノートを残す
+			await this.notesRepository.update({
+				id: note.id,
+				userId: user.id,
+			}, {
+				deletedAt: deletedAt,
+				text: null,
+				cw: null,
+				name: null,
+				url: null,
+				renoteId: null,
+				fileIds: [],
+				attachedFileTypes: [],
+				mentions: [],
+				mentionedRemoteUsers: '[]',
+				emojis: [],
+				tags: [],
+				hasPoll: false,
+				reactions: {},
+				reactionAndUserPairCache: [],
+			});
+
+			// 従来はカスケード削除されていた関連レコードを掃除する
+			await Promise.all([
+				this.pollsRepository.delete({ noteId: note.id }),
+				this.pollVotesRepository.delete({ noteId: note.id }),
+				this.noteReactionsRepository.delete({ noteId: note.id }),
+				this.noteFavoritesRepository.delete({ noteId: note.id }),
+				this.clipNotesRepository.delete({ noteId: note.id }),
+				this.userNotePiningsRepository.delete({ noteId: note.id }),
+			]);
+
+			// 純粋なリノートもカスケード削除されなくなるため明示的に削除する
+			await this.notesRepository.createQueryBuilder()
+				.delete()
+				.where('"renoteId" = :noteId', { noteId: note.id })
+				.andWhere('text IS NULL')
+				.andWhere('"fileIds" = \'{}\'')
+				.andWhere('"hasPoll" = FALSE')
+				.execute();
+		} else {
+			await this.notesRepository.delete({
+				id: note.id,
+				userId: user.id,
+			});
+		}
 
 		if (deleter && (note.userId !== deleter.id)) {
 			const user = await this.usersRepository.findOneByOrFail({ id: note.userId });
@@ -138,6 +206,21 @@ export class NoteDeleteService {
 				note: note,
 			});
 		}
+	}
+
+	@bindThis
+	private async hasChildrenNotes(note: MiNote): Promise<boolean> {
+		return await this.notesRepository.createQueryBuilder('note')
+			.where('note.replyId = :noteId', { noteId: note.id })
+			.orWhere(new Brackets(qb => {
+				qb.where('note.renoteId = :noteId', { noteId: note.id })
+					.andWhere(new Brackets(qb => {
+						qb.where('note.text IS NOT NULL')
+							.orWhere('note.fileIds != \'{}\'')
+							.orWhere('note.hasPoll = TRUE');
+					}));
+			}))
+			.getExists();
 	}
 
 	@bindThis

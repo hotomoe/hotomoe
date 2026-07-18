@@ -549,6 +549,7 @@ export class ActivityPubServerService {
 					.orWhere('note.visibility = \'home\'');
 			}))
 			.andWhere('note.localOnly = FALSE')
+			.andWhere('note.deletedAt IS NULL')
 			.limit(limit)
 			.getMany();
 	}
@@ -649,6 +650,7 @@ export class ActivityPubServerService {
 
 			const note = await this.notesRepository.findOneBy({
 				id: request.params.note,
+				deletedAt: IsNull(),
 				visibility: In(['public', 'home']),
 				localOnly: false,
 			});
@@ -685,6 +687,7 @@ export class ActivityPubServerService {
 			const note = await this.notesRepository.findOneBy({
 				id: request.params.note,
 				userHost: IsNull(),
+				deletedAt: IsNull(),
 				visibility: In(['public', 'home']),
 				localOnly: false,
 			});

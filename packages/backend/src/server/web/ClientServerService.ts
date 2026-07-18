@@ -645,6 +645,7 @@ export class ClientServerService {
 			const note = await this.notesRepository.findOne({
 				where: {
 					id: request.params.note,
+					deletedAt: IsNull(),
 					visibility: In(['public', 'home']),
 				},
 				relations: ['user'],
@@ -684,6 +685,7 @@ export class ClientServerService {
 		fastify.get<{ Params: { note: string; } }>('/notes/:note.json', async (request, reply) => {
 			const note = await this.notesRepository.findOneBy({
 				id: request.params.note,
+				deletedAt: IsNull(),
 				visibility: In(['public', 'home']),
 			});
 

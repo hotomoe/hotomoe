@@ -428,6 +428,7 @@ export class NoteEntityService implements OnModuleInit {
 			skipLanguageCheck?: boolean;
 			withReactionAndUserPairCache?: boolean;
 			viewerDimension?: number | null;
+			allowDeleted?: boolean;
 			_hint_?: {
 				bufferedReactions: Map<MiNote['id'], { deltas: Record<string, number>; pairs: ([MiUser['id'], string])[] }> | null;
 				myReactions: Map<MiNote['id'], string | null>;
@@ -440,10 +441,15 @@ export class NoteEntityService implements OnModuleInit {
 			detail: true,
 			skipHide: false,
 			withReactionAndUserPairCache: false,
+			allowDeleted: false,
 		}, options);
 
 		const meId = me ? me.id : null;
 		const note = typeof src === 'object' ? src : await this.noteLoader.load(src);
+
+		if (note.deletedAt != null && !opts.allowDeleted) {
+			throw new IdentifiableError('c725abcd-0d3a-4bfe-9b5f-7ac21f420b8f', 'Note is deleted.');
+		}
 
 		if (!opts.skipLanguageCheck && meId && !(await this.isLanguageVisibleToMe(note, meId))) {
 			throw new IdentifiableError('ab3e8c80-9d5b-4fb8-9ee0-089ed96d07e0', 'Note language is not visible for you.');
@@ -491,6 +497,7 @@ export class NoteEntityService implements OnModuleInit {
 		const packed: Packed<'Note'> = await awaitAll({
 			id: note.id,
 			createdAt: this.idService.parse(note.id).date.toISOString(),
+			deletedAt: note.deletedAt ? note.deletedAt.toISOString() : undefined,
 			userId: note.userId,
 			user: packedUsers?.get(note.userId) ?? await this.userEntityService.pack(note.user ?? note.userId, me),
 			text: text,
@@ -535,6 +542,7 @@ export class NoteEntityService implements OnModuleInit {
 					skipLanguageCheck: true,
 					viewerDimension: null,
 					withReactionAndUserPairCache: opts.withReactionAndUserPairCache,
+					allowDeleted: true,
 					_hint_: options?._hint_,
 				}) : undefined,
 
@@ -544,6 +552,7 @@ export class NoteEntityService implements OnModuleInit {
 					skipLanguageCheck: true,
 					viewerDimension: null,
 					withReactionAndUserPairCache: opts.withReactionAndUserPairCache,
+					allowDeleted: true,
 					_hint_: options?._hint_,
 				}) : undefined,
 
@@ -583,6 +592,7 @@ export class NoteEntityService implements OnModuleInit {
 			detail?: boolean;
 			skipHide?: boolean;
 			viewerDimension?: number | null;
+			allowDeleted?: boolean;
 		},
 	) : Promise<Packed<'Note'>[]> {
 		if (notes.length === 0) return [];

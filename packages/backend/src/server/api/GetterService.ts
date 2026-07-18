@@ -29,10 +29,10 @@ export class GetterService {
 	 * Get note for API processing
 	 */
 	@bindThis
-	public async getNote(noteId: MiNote['id']) {
+	public async getNote(noteId: MiNote['id'], includeDeleted = false) {
 		const note = await this.notesRepository.findOneBy({ id: noteId });
 
-		if (note == null) {
+		if (note == null || (note.deletedAt != null && !includeDeleted)) {
 			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', 'No such note.');
 		}
 
@@ -40,10 +40,10 @@ export class GetterService {
 	}
 
 	@bindThis
-	public async getNoteWithUser(noteId: MiNote['id']) {
+	public async getNoteWithUser(noteId: MiNote['id'], includeDeleted = false) {
 		const note = await this.notesRepository.findOne({ where: { id: noteId }, relations: ['user'] });
 
-		if (note == null) {
+		if (note == null || (note.deletedAt != null && !includeDeleted)) {
 			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', 'No such note.');
 		}
 
