@@ -68,7 +68,7 @@ export class MiDriveFile {
 	public size: number;
 
 	@Column('varchar', {
-		length: 512, nullable: true,
+		length: 8192, nullable: true,
 		comment: 'The comment of the DriveFile.',
 	})
 	public comment: string | null;
@@ -95,13 +95,13 @@ export class MiDriveFile {
 	public url: string;
 
 	@Column('varchar', {
-		length: 512, nullable: true,
+		length: 1024, nullable: true,
 		comment: 'The URL of the thumbnail of the DriveFile.',
 	})
 	public thumbnailUrl: string | null;
 
 	@Column('varchar', {
-		length: 512, nullable: true,
+		length: 1024, nullable: true,
 		comment: 'The URL of the webpublic of the DriveFile.',
 	})
 	public webpublicUrl: string | null;
