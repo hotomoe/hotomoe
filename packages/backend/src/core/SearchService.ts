@@ -193,10 +193,6 @@ export class SearchService {
 		return true;
 	}
 
-	/**
-	 * Whether the configured MeiliSearch scope covers this note. Only MeiliSearch has a
-	 * scope setting; the OpenSearch path indexes everything.
-	 */
 	private isInMeilisearchScope(note: MiNote): boolean {
 		switch (this.meilisearchIndexScope) {
 			case 'global':
@@ -223,8 +219,6 @@ export class SearchService {
 		};
 	}
 
-	// Deliberately derived from the id, not from note.createdAt - that is what the
-	// OpenSearch path has always used, and it decides which monthly index a note lands in.
 	private toOpensearchDocument(note: MiNote) {
 		return {
 			createdAt: this.idService.parse(note.id).date.getTime(),
@@ -247,15 +241,6 @@ export class SearchService {
 		return this.indexNotes([note]);
 	}
 
-	/**
-	 * Index a batch of notes in a single request per engine.
-	 *
-	 * indexNote() used to be the only entry point, and a full re-index therefore issued one
-	 * HTTP request per note. Measured against MeiliSearch on a 4-core host that is ~295
-	 * documents/second, or 28.7 hours for a 30.5M-note instance; the same documents sent
-	 * 1000 at a time reach ~8,000/second, or about 1.1 hours. The bottleneck was never the
-	 * database or the engine, only the per-document round trip.
-	 */
 	@bindThis
 	public async indexNotes(notes: MiNote[]): Promise<void> {
 		const indexable = notes.filter(note => this.isIndexable(note));
@@ -271,9 +256,6 @@ export class SearchService {
 				primaryKey: 'id',
 			});
 		} else if (this.opensearch) {
-			// One _bulk request covering every monthly index the batch touches. Each
-			// document still carries its own _index, so notes spanning a month boundary
-			// are routed exactly as they would be one at a time.
 			const operations = indexable.flatMap(note => [
 				{ index: { _index: this.opensearchIndexFor(note), _id: note.id } },
 				this.toOpensearchDocument(note),
@@ -281,6 +263,16 @@ export class SearchService {
 
 			await this.opensearch.bulk({
 				body: operations,
+			}).then((response) => {
+				if (!response.body?.errors) return;
+
+				const failures = (response.body.items ?? [])
+					.map((item: Record<string, { _id?: string; error?: unknown }>) => item.index)
+					.filter((result?: { error?: unknown }) => result?.error);
+
+				this.logger.error(`bulk index: ${failures.length} of ${indexable.length} documents failed`, {
+					failures: failures.slice(0, 10),
+				});
 			}).catch((error) => {
 				this.logger.error(error);
 			});

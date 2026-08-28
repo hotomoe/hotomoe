@@ -4,7 +4,6 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common';
-import { LessThanOrEqual } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { MiNote, NotesRepository } from '@/models/_.js';
 import type Logger from '@/logger.js';
@@ -13,11 +12,6 @@ import { SearchService } from '@/core/SearchService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 
-/**
- * Notes read from Postgres per round, and handed to the search engine as one bulk
- * request. Larger batches mean fewer round trips; 1000 keeps a batch small enough that
- * a failure costs little and the JSON body stays a sensible size.
- */
 const BATCH_SIZE = 1000;
 
 @Injectable()
@@ -32,6 +26,16 @@ export class ReindexNotesProcessorService {
 		private queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('reindex-notes');
+	}
+
+	private async countNotesApproximately(): Promise<number> {
+		const rows = await this.notesRepository.query(
+			'SELECT reltuples::bigint AS estimate FROM pg_class WHERE oid = $1::regclass',
+			['note'],
+		) as { estimate: string }[];
+
+		const estimate = Number(rows[0]?.estimate ?? 0);
+		return Number.isFinite(estimate) && estimate > 0 ? estimate : 0;
 	}
 
 	@bindThis
@@ -54,23 +58,12 @@ export class ReindexNotesProcessorService {
 			return;
 		}
 
-		// Counted once, before the loop. This used to be recomputed on every iteration, so a
-		// full COUNT(*) over `note` ran for each batch of 20 notes purely to update a progress
-		// percentage. On a 30M-note instance that count alone takes ~35s, which put a complete
-		// re-index into the hundreds of days.
-		const total = await this.notesRepository.countBy({
-			id: LessThanOrEqual(lastNote.id),
-		});
+		const total = Math.max(1, await this.countNotesApproximately());
 
 		let indexedCount = 0;
 		let cursor: MiNote['id'] | null = null;
 
 		while (true) {
-			// A query builder rather than find(), because two conditions are needed on `id`.
-			// The previous version spread `{ id: MoreThan(cursor) }` over
-			// `{ id: LessThanOrEqual(lastNote.id) }` in the same object literal, so the later
-			// key silently replaced the earlier one: once the cursor was set the upper bound
-			// was gone and the scan chased notes created while it ran.
 			const query = this.notesRepository.createQueryBuilder('note')
 				.where('note.id <= :lastId', { lastId: lastNote.id })
 				.orderBy('note.id', 'ASC')
@@ -91,8 +84,6 @@ export class ReindexNotesProcessorService {
 
 			await this.searchService.indexNotes(notes);
 
-			// notes.length, not a flat batch size: the final batch is usually partial, and
-			// the old `indexedCount += 20` pushed the reported progress past 100%.
 			indexedCount += notes.length;
 
 			await job.updateProgress(Math.min(100, 100 / total * indexedCount));
