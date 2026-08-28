@@ -13,14 +13,12 @@ import { SearchService } from '@/core/SearchService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 
-const BATCH_SIZE = 1000;
-
 /**
- * How many notes are handed to the search engine at once. indexNote() issues one request
- * per note, so putting a whole batch in flight would open a thousand simultaneous
- * connections and overwhelm the engine long before the database became the limit.
+ * Notes read from Postgres per round, and handed to the search engine as one bulk
+ * request. Larger batches mean fewer round trips; 1000 keeps a batch small enough that
+ * a failure costs little and the JSON body stays a sensible size.
  */
-const INDEX_CONCURRENCY = 50;
+const BATCH_SIZE = 1000;
 
 @Injectable()
 export class ReindexNotesProcessorService {
@@ -91,11 +89,7 @@ export class ReindexNotesProcessorService {
 
 			cursor = notes[notes.length - 1].id;
 
-			for (let i = 0; i < notes.length; i += INDEX_CONCURRENCY) {
-				await Promise.all(notes
-					.slice(i, i + INDEX_CONCURRENCY)
-					.map(note => this.searchService.indexNote(note)));
-			}
+			await this.searchService.indexNotes(notes);
 
 			// notes.length, not a flat batch size: the final batch is usually partial, and
 			// the old `indexedCount += 20` pushed the reported progress past 100%.
