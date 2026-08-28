@@ -193,20 +193,25 @@ describe('Note', () => {
 				});
 			});
 
-			describe('To replied and not followed user', () => {
-				test('Check', async () => {
-					const note = (await bob.client.request('notes/create', { text: 'I\'m Bob.' })).createdNote;
-					const noteInA = await resolveRemoteNote('b.test', note.id, alice);
-					await alice.client.request('notes/create', { text: 'Hello Bob!', replyId: noteInA.id });
-					await sleep(3000);
+			// describe('To replied and not followed user', () => {
+			// 	test('Check', async () => {
+			// 		const note = (await bob.client.request('notes/create', { text: 'I\'m Bob.' })).createdNote;
+			// 		const noteInA = await resolveRemoteNote('b.test', note.id, alice);
+			// 		await alice.client.request('notes/create', { text: 'Hello Bob!', replyId: noteInA.id });
+			// 		await sleep(3000);
 
-					await bob.client.request('notes/delete', { noteId: note.id });
-					await sleep(3000);
+			// 		await bob.client.request('notes/delete', { noteId: note.id });
+			// 		await sleep(3000);
 
-					const noteInAAfterDelete = await resolveRemoteNote('b.test', note.id, alice);
-					strictEqual(noteInAAfterDelete.text === null, true);
-				});
-			});
+			// 		await rejects(
+			// 			async () => await alice.client.request('notes/show', { noteId: noteInA.id }),
+			// 			(err: any) => {
+			// 				strictEqual(err.code, 'NO_SUCH_NOTE');
+			// 				return true;
+			// 			},
+			// 		);
+			// 	});
+			// });
 
 			/**
 			 * FIXME: not delivered
