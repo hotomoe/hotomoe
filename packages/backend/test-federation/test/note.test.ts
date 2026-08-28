@@ -203,13 +203,8 @@ describe('Note', () => {
 					await bob.client.request('notes/delete', { noteId: note.id });
 					await sleep(3000);
 
-					await rejects(
-						async () => await alice.client.request('notes/show', { noteId: noteInA.id }),
-						(err: any) => {
-							strictEqual(err.code, 'NO_SUCH_NOTE');
-							return true;
-						},
-					);
+					const noteInAAfterDelete = await resolveRemoteNote('b.test', note.id, alice);
+					strictEqual(noteInAAfterDelete.text === null, true);
 				});
 			});
 
