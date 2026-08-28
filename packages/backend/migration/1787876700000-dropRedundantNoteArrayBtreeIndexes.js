@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-export class dropRedundantNoteArrayBtreeIndexes1787961600000 {
-	name = 'dropRedundantNoteArrayBtreeIndexes1787961600000'
+export class dropRedundantNoteArrayBtreeIndexes1787876700000 {
+	name = 'dropRedundantNoteArrayBtreeIndexes1787876700000'
 	transaction = false;
 
 	async up(queryRunner) {
